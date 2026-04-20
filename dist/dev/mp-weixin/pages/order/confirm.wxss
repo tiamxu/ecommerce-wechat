@@ -1,0 +1,173 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.order-confirm.data-v-36cb8dad {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding-bottom: 140rpx;
+}
+.address-section.data-v-36cb8dad {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  background: var(--bg-card);
+  margin-bottom: 24rpx;
+}
+.address-content.data-v-36cb8dad {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.address-icon.data-v-36cb8dad {
+  font-size: 48rpx;
+  margin-right: 20rpx;
+}
+.address-info.data-v-36cb8dad {
+  flex: 1;
+}
+.address-header.data-v-36cb8dad {
+  display: flex;
+  gap: 24rpx;
+  margin-bottom: 12rpx;
+}
+.name.data-v-36cb8dad {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.phone.data-v-36cb8dad {
+  font-size: 28rpx;
+  color: var(--text-sub);
+}
+.detail.data-v-36cb8dad {
+  font-size: 28rpx;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+.arrow.data-v-36cb8dad {
+  font-size: 32rpx;
+  color: var(--text-placeholder);
+}
+.goods-section.data-v-36cb8dad {
+  background: var(--bg-card);
+  padding: 24rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+.section-title.data-v-36cb8dad {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 24rpx;
+}
+.goods-item.data-v-36cb8dad {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+}
+.goods-img.data-v-36cb8dad {
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  overflow: hidden;
+}
+.placeholder-text.data-v-36cb8dad {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+}
+.goods-info.data-v-36cb8dad {
+  flex: 1;
+}
+.goods-name.data-v-36cb8dad {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-main);
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.goods-price.data-v-36cb8dad {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-sub);
+}
+.summary-section.data-v-36cb8dad {
+  background: var(--bg-card);
+  padding: 24rpx 32rpx;
+}
+.summary-row.data-v-36cb8dad {
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx 0;
+}
+.summary-row.total.data-v-36cb8dad {
+  border-top: 1rpx solid var(--border);
+  padding-top: 24rpx;
+  margin-top: 8rpx;
+}
+.label.data-v-36cb8dad {
+  font-size: 28rpx;
+  color: var(--text-sub);
+}
+.value.data-v-36cb8dad {
+  font-size: 28rpx;
+  color: var(--text-main);
+}
+.value.discount.data-v-36cb8dad {
+  color: var(--primary);
+}
+.value.price.data-v-36cb8dad {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+.pay-section.data-v-36cb8dad {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: var(--bg-card);
+  border-top: 1rpx solid var(--border);
+  z-index: 100;
+}
+.pay-btn.data-v-36cb8dad {
+  display: block;
+  width: 100%;
+  padding: 28rpx;
+  background: var(--primary);
+  color: #ffffff;
+  text-align: center;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}

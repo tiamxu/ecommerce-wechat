@@ -1,0 +1,37 @@
+{
+  "tabbar": {
+    "home": "首页",
+    "product": "商品",
+    "cart": "购物车",
+    "user": "我的"
+  },
+  "theme": {
+    "title": "主题",
+    "light": "经典商务",
+    "dark": "深邃暗色",
+    "green": "清新自然",
+    "luxury": "高端轻奢"
+  },
+  "product": {
+    "addCart": "加入购物车",
+    "buyNow": "立即购买",
+    "stock": "库存",
+    "price": "价格"
+  },
+  "cart": {
+    "empty": "购物车是空的",
+    "total": "合计",
+    "checkout": "结算"
+  },
+  "user": {
+    "login": "登录",
+    "order": "我的订单",
+    "settings": "设置",
+    "my": {
+      "order": "我的订单",
+      "favorite": "我的收藏",
+      "address": "收货地址",
+      "settings": "设置"
+    }
+  }
+}

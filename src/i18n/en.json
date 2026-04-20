@@ -1,0 +1,37 @@
+{
+  "tabbar": {
+    "home": "Home",
+    "product": "Product",
+    "cart": "Cart",
+    "user": "My"
+  },
+  "theme": {
+    "title": "Theme",
+    "light": "Classic Business",
+    "dark": "Dark",
+    "green": "Nature",
+    "luxury": "Luxury"
+  },
+  "product": {
+    "addCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "stock": "Stock",
+    "price": "Price"
+  },
+  "cart": {
+    "empty": "Cart is empty",
+    "total": "Total",
+    "checkout": "Checkout"
+  },
+  "user": {
+    "login": "Login",
+    "order": "My Orders",
+    "settings": "Settings",
+    "my": {
+      "order": "My Orders",
+      "favorite": "Favorites",
+      "address": "Address",
+      "settings": "Settings"
+    }
+  }
+}
