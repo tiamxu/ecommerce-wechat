@@ -1,27 +1,42 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_product = require("../../api/product.js");
+require("../../utils/env.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "detail",
   setup(__props) {
-    const product = common_vendor.ref({
-      id: 1,
-      name: "示例商品",
-      price: 299,
-      stock: 100,
-      description: "这是商品的详细描述信息，包含商品的特点、材质、使用方法等。",
-      coverImage: "",
-      images: [],
-      tags: ["热销", "新品"]
-    });
+    const product = common_vendor.ref(null);
+    const loading = common_vendor.ref(false);
     const quantity = common_vendor.ref(1);
     common_vendor.ref(0);
+    common_vendor.onMounted(() => {
+      var _a;
+      const pages = getCurrentPages();
+      const currentPage = pages[pages.length - 1];
+      const id = (_a = currentPage == null ? void 0 : currentPage.options) == null ? void 0 : _a.id;
+      if (id) {
+        loadProduct(Number(id));
+      }
+    });
+    async function loadProduct(id) {
+      loading.value = true;
+      try {
+        const res = await api_product.productApi.getDetail(id);
+        if (res.code === 200 && res.data) {
+          product.value = res.data;
+        }
+      } catch (error) {
+      } finally {
+        loading.value = false;
+      }
+    }
     function decreaseQty() {
       if (quantity.value > 1) {
         quantity.value--;
       }
     }
     function increaseQty() {
-      if (quantity.value < product.value.stock) {
+      if (product.value && quantity.value < product.value.stock) {
         quantity.value++;
       }
     }
@@ -38,33 +53,35 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       });
     }
     return (_ctx, _cache) => {
-      var _a, _b, _c;
+      var _a, _b, _c, _d, _e, _f;
       return common_vendor.e({
-        a: common_vendor.t(((_a = product.value.name) == null ? void 0 : _a.charAt(0)) || "P"),
-        b: common_vendor.t(product.value.price),
-        c: common_vendor.t(_ctx.$t("product.stock")),
-        d: common_vendor.t(product.value.stock),
-        e: common_vendor.t(product.value.name),
-        f: product.value.description
+        a: common_vendor.t(((_b = (_a = product.value) == null ? void 0 : _a.name) == null ? void 0 : _b.charAt(0)) || "P"),
+        b: product.value
+      }, product.value ? common_vendor.e({
+        c: common_vendor.t(product.value.price),
+        d: common_vendor.t(_ctx.$t("product.stock")),
+        e: common_vendor.t(product.value.stock),
+        f: common_vendor.t(product.value.name),
+        g: product.value.description
       }, product.value.description ? {
-        g: common_vendor.t(product.value.description)
-      } : {}, {
-        h: (_b = product.value.tags) == null ? void 0 : _b.length
-      }, ((_c = product.value.tags) == null ? void 0 : _c.length) ? {
-        i: common_vendor.f(product.value.tags, (tag, k0, i0) => {
+        h: common_vendor.t(product.value.description)
+      } : {}) : {}, {
+        i: (_d = (_c = product.value) == null ? void 0 : _c.tags) == null ? void 0 : _d.length
+      }, ((_f = (_e = product.value) == null ? void 0 : _e.tags) == null ? void 0 : _f.length) ? {
+        j: common_vendor.f(product.value.tags, (tag, k0, i0) => {
           return {
             a: common_vendor.t(tag),
             b: tag
           };
         })
       } : {}, {
-        j: common_vendor.o(decreaseQty),
-        k: common_vendor.t(quantity.value),
-        l: common_vendor.o(increaseQty),
-        m: common_vendor.t(_ctx.$t("product.addCart")),
-        n: common_vendor.o(addToCart),
-        o: common_vendor.t(_ctx.$t("product.buyNow")),
-        p: common_vendor.o(buyNow)
+        k: common_vendor.o(decreaseQty),
+        l: common_vendor.t(quantity.value),
+        m: common_vendor.o(increaseQty),
+        n: common_vendor.t(_ctx.$t("product.addCart")),
+        o: common_vendor.o(addToCart),
+        p: common_vendor.t(_ctx.$t("product.buyNow")),
+        q: common_vendor.o(buyNow)
       });
     };
   }

@@ -45,15 +45,15 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         item.selected = !item.selected;
       }
     }
-    function updateQuantity(id, delta) {
-      const item = cartItems.value.find((i) => i.id === id);
+    function updateQuantity(productId, delta) {
+      const item = cartItems.value.find((i) => i.productId === productId);
       if (!item) return;
       const newQty = item.quantity + delta;
       if (newQty < 1) return;
       item.quantity = newQty;
     }
-    function removeItem(id) {
-      cartItems.value = cartItems.value.filter((item) => item.id !== id);
+    function removeItem(productId) {
+      cartItems.value = cartItems.value.filter((item) => item.productId !== productId);
       common_vendor.index.showToast({ title: "已删除", icon: "success" });
     }
     function checkout() {
@@ -90,10 +90,10 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           }, {
             f: common_vendor.t(item.productName),
             g: common_vendor.t(item.price),
-            h: common_vendor.o(($event) => updateQuantity(item.id, -1), item.id),
+            h: common_vendor.o(($event) => updateQuantity(item.productId, -1), item.id),
             i: common_vendor.t(item.quantity),
-            j: common_vendor.o(($event) => updateQuantity(item.id, 1), item.id),
-            k: common_vendor.o(($event) => removeItem(item.id), item.id),
+            j: common_vendor.o(($event) => updateQuantity(item.productId, 1), item.id),
+            k: common_vendor.o(($event) => removeItem(item.productId), item.id),
             l: item.id
           });
         }),

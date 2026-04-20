@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 const orders = ref<any[]>([])
 const loading = ref(false)
@@ -54,6 +54,13 @@ function changeTab(tab: string) {
   activeTab.value = tab
 }
 
+const filteredOrders = computed(() => {
+  if (activeTab.value === 'all') {
+    return orders.value
+  }
+  return orders.value.filter(o => o.status === activeTab.value)
+})
+
 function goToDetail(orderId: number) {
   uni.navigateTo({ url: `/pages/order/detail?id=${orderId}` })
 }
@@ -103,12 +110,12 @@ onMounted(() => {
 
     <!-- 订单列表 -->
     <view class="order-content">
-      <view v-if="orders.length === 0" class="empty-tip">
+      <view v-if="filteredOrders.length === 0" class="empty-tip">
         <text class="empty-text">暂无订单</text>
       </view>
 
       <view v-else class="order-cards">
-        <view v-for="order in orders" :key="order.id" class="order-card" @click="goToDetail(order.id)">
+        <view v-for="order in filteredOrders" :key="order.id" class="order-card" @click="goToDetail(order.id)">
           <view class="order-header">
             <text class="order-no">订单号: {{ order.orderNo }}</text>
             <text class="order-status" :class="order.status">{{ statusMap[order.status] || order.status }}</text>

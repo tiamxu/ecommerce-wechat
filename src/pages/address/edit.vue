@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
+import { MOCK_MODE } from '../../utils/env'
 
 const form = ref({
   name: '',
@@ -46,7 +47,7 @@ async function loadAddressDetail(id: number) {
       }
     }
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (MOCK_MODE) {
       form.value = {
         name: '张三',
         phone: '13812345678',
@@ -86,7 +87,7 @@ async function saveAddress() {
       uni.navigateBack()
     }, 1500)
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (MOCK_MODE) {
       uni.showToast({ title: '保存成功', icon: 'success' })
       setTimeout(() => {
         uni.navigateBack()

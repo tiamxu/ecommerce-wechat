@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { BASE_URL } from '../utils/env'
+import { BASE_URL, MOCK_MODE } from '../utils/env'
 
 interface UserInfo {
   id: number
@@ -59,7 +59,7 @@ export const useUserStore = defineStore('user', {
         }
       } catch (error: any) {
         // 开发环境：模拟登录
-        if (import.meta.env.DEV) {
+        if (MOCK_MODE) {
           this.token = 'mock_token_' + Date.now()
           this.userInfo = {
             id: 1,

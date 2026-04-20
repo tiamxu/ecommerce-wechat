@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
+import { MOCK_MODE } from '../../utils/env'
 
 const addresses = ref<Address[]>([])
 const loading = ref(false)
@@ -22,7 +23,7 @@ async function loadAddresses() {
       }
     }
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (MOCK_MODE) {
       addresses.value = [
         { id: 1, name: '张三', phone: '13812345678', province: '北京市', city: '北京市', district: '朝阳区', detail: '某某街道某某小区1号楼101', isDefault: true },
         { id: 2, name: '李四', phone: '13987654321', province: '上海市', city: '上海市', district: '浦东新区', detail: '某某路某某号', isDefault: false }
@@ -61,7 +62,7 @@ async function deleteAddress(id: number) {
       uni.showToast({ title: '已删除', icon: 'success' })
     }
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (MOCK_MODE) {
       addresses.value = addresses.value.filter(a => a.id !== id)
       uni.showToast({ title: '已删除', icon: 'success' })
     }
@@ -74,7 +75,7 @@ async function setDefault(id: number) {
     addresses.value.forEach(a => a.isDefault = a.id === id)
     uni.showToast({ title: '设置成功', icon: 'success' })
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (MOCK_MODE) {
       addresses.value.forEach(a => a.isDefault = a.id === id)
       uni.showToast({ title: '设置成功', icon: 'success' })
     }

@@ -50,6 +50,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     function changeTab(tab) {
       activeTab.value = tab;
     }
+    const filteredOrders = common_vendor.computed(() => {
+      if (activeTab.value === "all") {
+        return orders.value;
+      }
+      return orders.value.filter((o) => o.status === activeTab.value);
+    });
     function goToDetail(orderId) {
       common_vendor.index.navigateTo({ url: `/pages/order/detail?id=${orderId}` });
     }
@@ -71,7 +77,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         }
       });
     }
-    onMounted(() => {
+    common_vendor.onMounted(() => {
       orders.value = MOCK_ORDERS;
     });
     return (_ctx, _cache) => {
@@ -84,9 +90,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             d: common_vendor.o(($event) => changeTab(tab.key), tab.key)
           };
         }),
-        b: orders.value.length === 0
-      }, orders.value.length === 0 ? {} : {
-        c: common_vendor.f(orders.value, (order, k0, i0) => {
+        b: filteredOrders.value.length === 0
+      }, filteredOrders.value.length === 0 ? {} : {
+        c: common_vendor.f(filteredOrders.value, (order, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(order.orderNo),
             b: common_vendor.t(statusMap[order.status] || order.status),

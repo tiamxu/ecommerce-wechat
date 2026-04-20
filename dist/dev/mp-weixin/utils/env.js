@@ -1,3 +1,3 @@
 "use strict";
-const BASE_URL = "http://sdapi.k-think.com";
-exports.BASE_URL = BASE_URL;
+exports.BASE_URL = "/api";
+exports.BASE_URL = "http://172.20.10.8:8800";

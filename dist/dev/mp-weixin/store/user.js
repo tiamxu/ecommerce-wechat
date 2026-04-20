@@ -38,15 +38,7 @@ const useUserStore = common_vendor.defineStore("user", {
         }
       } catch (error) {
         {
-          this.token = "mock_token_" + Date.now();
-          this.userInfo = {
-            id: 1,
-            openid: "mock_openid",
-            nickname: "测试用户",
-            avatar: ""
-          };
-          common_vendor.index.setStorageSync("token", this.token);
-          common_vendor.index.showToast({ title: "模拟登录成功", icon: "success" });
+          common_vendor.index.showToast({ title: error.message || "登录失败", icon: "none" });
         }
       }
     },

@@ -56,8 +56,8 @@ function toggleItem(id: number) {
   }
 }
 
-function updateQuantity(id: number, delta: number) {
-  const item = cartItems.value.find(i => i.id === id)
+function updateQuantity(productId: number, delta: number) {
+  const item = cartItems.value.find(i => i.productId === productId)
   if (!item) return
 
   const newQty = item.quantity + delta
@@ -66,8 +66,8 @@ function updateQuantity(id: number, delta: number) {
   item.quantity = newQty
 }
 
-function removeItem(id: number) {
-  cartItems.value = cartItems.value.filter(item => item.id !== id)
+function removeItem(productId: number) {
+  cartItems.value = cartItems.value.filter(item => item.productId !== productId)
   uni.showToast({ title: '已删除', icon: 'success' })
 }
 
@@ -124,13 +124,13 @@ function goToShop() {
 
           <!-- 数量控制 -->
           <view class="item-control">
-            <text class="qty-btn" @click="updateQuantity(item.id, -1)">-</text>
+            <text class="qty-btn" @click="updateQuantity(item.productId, -1)">-</text>
             <text class="qty-value">{{ item.quantity }}</text>
-            <text class="qty-btn" @click="updateQuantity(item.id, 1)">+</text>
+            <text class="qty-btn" @click="updateQuantity(item.productId, 1)">+</text>
           </view>
 
           <!-- 删除按钮 -->
-          <text class="delete-btn" @click="removeItem(item.id)">×</text>
+          <text class="delete-btn" @click="removeItem(item.productId)">×</text>
         </view>
       </view>
 

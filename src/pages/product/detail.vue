@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { productApi } from '../../api'
+import { MOCK_MODE } from '../../utils/env'
 
-const product = ref<any>({
+const MOCK_PRODUCT = {
   id: 1,
   name: '示例商品',
   price: 299,
@@ -10,10 +12,40 @@ const product = ref<any>({
   coverImage: '',
   images: [],
   tags: ['热销', '新品']
-})
+}
 
+const product = ref<any>(null)
+const loading = ref(false)
 const quantity = ref(1)
 const currentImageIndex = ref(0)
+
+onMounted(() => {
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const id = currentPage?.options?.id
+
+  if (id) {
+    loadProduct(Number(id))
+  } else if (MOCK_MODE) {
+    product.value = MOCK_PRODUCT
+  }
+})
+
+async function loadProduct(id: number) {
+  loading.value = true
+  try {
+    const res = await productApi.getDetail(id)
+    if (res.code === 200 && res.data) {
+      product.value = res.data
+    }
+  } catch (error) {
+    if (MOCK_MODE) {
+      product.value = { ...MOCK_PRODUCT, id }
+    }
+  } finally {
+    loading.value = false
+  }
+}
 
 function decreaseQty() {
   if (quantity.value > 1) {
@@ -22,7 +54,7 @@ function decreaseQty() {
 }
 
 function increaseQty() {
-  if (quantity.value < product.value.stock) {
+  if (product.value && quantity.value < product.value.stock) {
     quantity.value++
   }
 }
@@ -47,12 +79,12 @@ function buyNow() {
     <!-- 商品图片 -->
     <view class="detail-swiper">
       <view class="img-placeholder">
-        <text class="placeholder-text">{{ product.name?.charAt(0) || 'P' }}</text>
+        <text class="placeholder-text">{{ product?.name?.charAt(0) || 'P' }}</text>
       </view>
     </view>
 
     <!-- 商品信息 -->
-    <view class="detail-info">
+    <view v-if="product" class="detail-info">
       <view class="info-header">
         <text class="product-price">¥{{ product.price }}</text>
         <text class="product-stock">{{ $t('product.stock') }}: {{ product.stock }}</text>
@@ -62,7 +94,7 @@ function buyNow() {
     </view>
 
     <!-- 商品标签 -->
-    <view v-if="product.tags?.length" class="detail-tags">
+    <view v-if="product?.tags?.length" class="detail-tags">
       <text v-for="tag in product.tags" :key="tag" class="tag">{{ tag }}</text>
     </view>
 

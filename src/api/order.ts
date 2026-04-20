@@ -40,7 +40,7 @@ export const orderApi = {
   // 创建订单
   create(params: CreateOrderParams): Promise<ApiResponse<{ orderId: number; orderNo: string }>> {
     return request({
-      url: '/orders',
+      url: '/order',
       method: 'POST',
       data: params,
       showLoading: true
@@ -54,7 +54,7 @@ export const orderApi = {
     pageSize?: number
   }): Promise<ApiResponse<{ list: OrderItem[]; total: number }>> {
     return request({
-      url: '/orders',
+      url: '/order/query',
       method: 'GET',
       data: params,
       showLoading: true
@@ -64,13 +64,22 @@ export const orderApi = {
   // 获取订单详情
   getDetail(orderId: number): Promise<ApiResponse<OrderItem>> {
     return request({
-      url: `/orders/${orderId}`,
+      url: `/order/${orderId}`,
       method: 'GET',
       showLoading: true
     })
   },
 
-  // 获取收货地址列表
+  // 取消订单
+  cancel(orderId: number): Promise<ApiResponse<void>> {
+    return request({
+      url: `/order/${orderId}/cancel`,
+      method: 'PUT',
+      showLoading: true
+    })
+  },
+
+  // 获取收货地址列表（后端暂无接口，TODO）
   getAddresses(): Promise<ApiResponse<Address[]>> {
     return request({
       url: '/addresses',
@@ -79,7 +88,7 @@ export const orderApi = {
     })
   },
 
-  // 添加收货地址
+  // 添加收货地址（后端暂无接口，TODO）
   addAddress(params: Omit<Address, 'id'>): Promise<ApiResponse<void>> {
     return request({
       url: '/addresses',
@@ -89,7 +98,7 @@ export const orderApi = {
     })
   },
 
-  // 更新收货地址
+  // 更新收货地址（后端暂无接口，TODO）
   updateAddress(id: number, params: Partial<Address>): Promise<ApiResponse<void>> {
     return request({
       url: `/addresses/${id}`,
@@ -98,20 +107,11 @@ export const orderApi = {
     })
   },
 
-  // 删除收货地址
+  // 删除收货地址（后端暂无接口，TODO）
   deleteAddress(id: number): Promise<ApiResponse<void>> {
     return request({
       url: `/addresses/${id}`,
       method: 'DELETE',
-      showLoading: true
-    })
-  },
-
-  // 取消订单
-  cancel(orderId: number): Promise<ApiResponse<void>> {
-    return request({
-      url: `/orders/${orderId}/cancel`,
-      method: 'PUT',
       showLoading: true
     })
   }

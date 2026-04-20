@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+require("../../utils/env.js");
 const api_order = require("../../api/order.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "edit",
@@ -45,17 +46,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           }
         }
       } catch (error) {
-        {
-          form.value = {
-            name: "张三",
-            phone: "13812345678",
-            province: "北京市",
-            city: "北京市",
-            district: "朝阳区",
-            detail: "某某街道某某小区",
-            isDefault: false
-          };
-        }
       }
     }
     async function saveAddress() {
@@ -83,12 +73,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           common_vendor.index.navigateBack();
         }, 1500);
       } catch (error) {
-        {
-          common_vendor.index.showToast({ title: "保存成功", icon: "success" });
-          setTimeout(() => {
-            common_vendor.index.navigateBack();
-          }, 1500);
-        }
       } finally {
         loading.value = false;
       }

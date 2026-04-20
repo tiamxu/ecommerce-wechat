@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+require("../../utils/env.js");
 const api_order = require("../../api/order.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "list",
@@ -22,13 +23,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           }
         }
       } catch (error) {
-        {
-          addresses.value = [
-            { id: 1, name: "张三", phone: "13812345678", province: "北京市", city: "北京市", district: "朝阳区", detail: "某某街道某某小区1号楼101", isDefault: true },
-            { id: 2, name: "李四", phone: "13987654321", province: "上海市", city: "上海市", district: "浦东新区", detail: "某某路某某号", isDefault: false }
-          ];
-          selectedId.value = 1;
-        }
       } finally {
         loading.value = false;
       }
@@ -56,10 +50,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           common_vendor.index.showToast({ title: "已删除", icon: "success" });
         }
       } catch (error) {
-        {
-          addresses.value = addresses.value.filter((a) => a.id !== id);
-          common_vendor.index.showToast({ title: "已删除", icon: "success" });
-        }
       }
     }
     async function setDefault(id) {
@@ -68,10 +58,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         addresses.value.forEach((a) => a.isDefault = a.id === id);
         common_vendor.index.showToast({ title: "设置成功", icon: "success" });
       } catch (error) {
-        {
-          addresses.value.forEach((a) => a.isDefault = a.id === id);
-          common_vendor.index.showToast({ title: "设置成功", icon: "success" });
-        }
       }
     }
     return (_ctx, _cache) => {
