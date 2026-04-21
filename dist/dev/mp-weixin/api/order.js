@@ -35,7 +35,15 @@ const orderApi = {
       showLoading: true
     });
   },
-  // 获取收货地址列表（后端暂无接口，TODO）
+  // 支付订单
+  pay(orderId) {
+    return api_request.request({
+      url: `/order/${orderId}/pay`,
+      method: "POST",
+      showLoading: true
+    });
+  },
+  // 获取收货地址列表
   getAddresses() {
     return api_request.request({
       url: "/addresses",

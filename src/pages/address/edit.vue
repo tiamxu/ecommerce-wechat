@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
-import { MOCK_MODE } from '../../utils/env'
+import { THEME_CLASS } from '../../theme/config'
 
 const form = ref({
   name: '',
@@ -47,17 +47,7 @@ async function loadAddressDetail(id: number) {
       }
     }
   } catch (error) {
-    if (MOCK_MODE) {
-      form.value = {
-        name: '张三',
-        phone: '13812345678',
-        province: '北京市',
-        city: '北京市',
-        district: '朝阳区',
-        detail: '某某街道某某小区',
-        isDefault: false
-      }
-    }
+    console.error('加载地址详情失败', error)
   }
 }
 
@@ -87,12 +77,8 @@ async function saveAddress() {
       uni.navigateBack()
     }, 1500)
   } catch (error) {
-    if (MOCK_MODE) {
-      uni.showToast({ title: '保存成功', icon: 'success' })
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
-    }
+    console.error('保存地址失败', error)
+    uni.showToast({ title: '保存失败', icon: 'none' })
   } finally {
     loading.value = false
   }
@@ -100,7 +86,7 @@ async function saveAddress() {
 </script>
 
 <template>
-  <view class="address-edit">
+  <view :class="['address-edit', THEME_CLASS]">
     <view class="form-section">
       <view class="form-item">
         <text class="form-label">收货人</text>
@@ -129,7 +115,7 @@ async function saveAddress() {
         <switch
           :checked="form.isDefault"
           @change="(e: any) => form.isDefault = e.detail.value"
-          color="#165dff"
+          color="#07c160"
         />
       </view>
     </view>
@@ -200,7 +186,7 @@ async function saveAddress() {
   width: 100%;
   padding: 28rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   text-align: center;
   border-radius: 48rpx;
   font-size: 32rpx;

@@ -57,7 +57,7 @@
 .avatar-text.data-v-642c545b {
   font-size: 48rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 .user-detail.data-v-642c545b {
   display: flex;

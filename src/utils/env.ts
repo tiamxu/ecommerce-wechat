@@ -4,14 +4,11 @@
 let BASE_URL = '/api'
 
 // #ifdef MP-WEIXIN
-BASE_URL = 'http://172.20.10.8:8800'
+BASE_URL = 'https://sdapi.k-think.com'
 // #endif
 
 // #ifdef H5
 BASE_URL = '/api'
 // #endif
-
-// 开发/模拟模式 - 请求失败时返回模拟数据
-export const MOCK_MODE = false
 
 export { BASE_URL }

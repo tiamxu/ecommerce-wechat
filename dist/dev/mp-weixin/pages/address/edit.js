@@ -2,6 +2,7 @@
 const common_vendor = require("../../common/vendor.js");
 require("../../utils/env.js");
 const api_order = require("../../api/order.js");
+const theme_config = require("../../theme/config.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "edit",
   setup(__props) {
@@ -46,6 +47,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           }
         }
       } catch (error) {
+        console.error("加载地址详情失败", error);
       }
     }
     async function saveAddress() {
@@ -73,6 +75,8 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           common_vendor.index.navigateBack();
         }, 1500);
       } catch (error) {
+        console.error("保存地址失败", error);
+        common_vendor.index.showToast({ title: "保存失败", icon: "none" });
       } finally {
         loading.value = false;
       }
@@ -93,7 +97,8 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         l: common_vendor.o(($event) => form.value.detail = $event.detail.value),
         m: form.value.isDefault,
         n: common_vendor.o((e) => form.value.isDefault = e.detail.value),
-        o: common_vendor.o(saveAddress)
+        o: common_vendor.o(saveAddress),
+        p: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       };
     };
   }

@@ -2,29 +2,45 @@ import { request, type ApiResponse } from './request'
 
 export interface Product {
   id: number
-  name: string
-  nameEn?: string
   price: number
-  coverImage?: string
-  images?: string[]
   stock: number
-  description?: string
-  categoryId?: number
-  tags?: string[]
+  status: number
+  categoryId: number
+  metaImage?: string
+  name: { zh?: string; en?: string }
+  description?: { zh?: string; en?: string }
+  images?: { url: string; isCover?: number }[]
+  primaryTag?: { name: string }
+  tags?: { name: string }[]
 }
 
 export interface Category {
   id: number
-  name: string
-  nameEn?: string
+  name: { zh?: string; en?: string }
   icon?: string
 }
 
 interface ProductListResponse {
-  list: Product[]
+  pageData: Product[]
   total: number
   pageNo: number
   pageSize: number
+}
+
+interface CategoryListResponse {
+  pageData: Category[]
+  total: number
+}
+
+// 过滤空值参数
+function cleanParams(params: Record<string, any>): Record<string, any> {
+  const cleaned: Record<string, any> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') {
+      cleaned[key] = value
+    }
+  }
+  return cleaned
 }
 
 export const productApi = {
@@ -35,30 +51,43 @@ export const productApi = {
     categoryId?: number
     keyword?: string
     lang?: string
+    status?: string
   }): Promise<ApiResponse<ProductListResponse>> {
     return request({
-      url: '/products',
+      url: '/public/products',
       method: 'GET',
-      data: params,
+      data: cleanParams({ ...params, lang: 'zh', status: '1' }),
       showLoading: true
+    })
+  },
+
+  // 获取热门推荐商品
+  getHotProducts(pageSize = 6): Promise<ApiResponse<ProductListResponse>> {
+    return request({
+      url: '/public/products',
+      method: 'GET',
+      data: { pageNo: 1, pageSize, lang: 'zh', status: '1', tag: 'hot' },
+      showLoading: false
     })
   },
 
   // 获取商品详情
   getDetail(id: number): Promise<ApiResponse<Product>> {
     return request({
-      url: `/products/${id}`,
+      url: `/public/products/${id}`,
       method: 'GET',
+      data: { lang: 'zh' },
       showLoading: true
     })
   },
 
   // 获取分类列表
-  getCategories(): Promise<ApiResponse<Category[]>> {
+  getCategories(): Promise<ApiResponse<CategoryListResponse>> {
     return request({
-      url: '/categories',
+      url: '/public/categories',
       method: 'GET',
-      showLoading: true
+      data: { lang: 'zh' },
+      showLoading: false
     })
   }
 }

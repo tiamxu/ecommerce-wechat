@@ -37,9 +37,7 @@ const useUserStore = common_vendor.defineStore("user", {
           throw new Error(data.message || "登录失败");
         }
       } catch (error) {
-        {
-          common_vendor.index.showToast({ title: error.message || "登录失败", icon: "none" });
-        }
+        common_vendor.index.showToast({ title: error.message || "登录失败", icon: "none" });
       }
     },
     logout() {

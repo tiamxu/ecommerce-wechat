@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const theme_config = require("../../theme/config.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "confirm",
   setup(__props) {
@@ -82,7 +83,8 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         k: common_vendor.t(freight.value === 0 ? "免运费" : "¥" + freight.value),
         l: freight.value === 0 ? 1 : "",
         m: common_vendor.t(orderTotal.value),
-        n: common_vendor.o(submitOrder)
+        n: common_vendor.o(submitOrder),
+        o: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

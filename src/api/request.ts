@@ -1,8 +1,8 @@
-import { BASE_URL, MOCK_MODE } from '../utils/env'
+import { BASE_URL } from '../utils/env'
 
 interface RequestOptions {
   url: string
-  method?: 'GET' | 'POST' | 'PUT' | DELETE
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: any
   header?: Record<string, string>
   showLoading?: boolean
@@ -40,8 +40,21 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
           uni.hideLoading()
         }
 
+        console.log('API响应:', options.url, res)
+
         if (res.statusCode === 200) {
-          resolve(res.data as ApiResponse<T>)
+          const data = res.data
+          // 检查业务状态码
+          if (data.code === 200) {
+            resolve(data as ApiResponse<T>)
+          } else if (data.code === 401) {
+            uni.removeStorageSync('token')
+            uni.showToast({ title: '请先登录', icon: 'none' })
+            reject(new Error(data.message || '未授权'))
+          } else {
+            uni.showToast({ title: data.message || '请求失败', icon: 'none' })
+            reject(new Error(data.message || '请求失败'))
+          }
         } else if (res.statusCode === 401) {
           uni.removeStorageSync('token')
           uni.showToast({ title: '请先登录', icon: 'none' })
@@ -55,36 +68,12 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
         if (options.showLoading) {
           uni.hideLoading()
         }
-
-        // 模拟模式：请求失败时返回模拟数据
-        if (MOCK_MODE) {
-          console.log('请求失败，返回模拟数据:', options.url)
-          resolve({
-            code: 200,
-            message: 'success',
-            data: {} as T
-          })
-        } else {
-          console.error('请求失败:', error)
-          uni.showToast({ title: '网络错误', icon: 'none' })
-          reject(error)
-        }
+        console.error('请求失败:', options.url, error)
+        uni.showToast({ title: '网络错误，请检查网络', icon: 'none' })
+        reject(error)
       }
     }
 
     uni.request(requestOptions)
-  })
-}
-
-// 模拟请求（直接返回指定数据）
-export function mockRequest<T = any>(mockData: T): Promise<ApiResponse<T>> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        code: 200,
-        message: 'success',
-        data: mockData
-      })
-    }, 300)
   })
 }

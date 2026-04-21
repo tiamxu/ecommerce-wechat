@@ -79,7 +79,16 @@ export const orderApi = {
     })
   },
 
-  // 获取收货地址列表（后端暂无接口，TODO）
+  // 支付订单
+  pay(orderId: number): Promise<ApiResponse<void>> {
+    return request({
+      url: `/order/${orderId}/pay`,
+      method: 'POST',
+      showLoading: true
+    })
+  },
+
+  // 获取收货地址列表
   getAddresses(): Promise<ApiResponse<Address[]>> {
     return request({
       url: '/addresses',

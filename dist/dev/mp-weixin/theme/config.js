@@ -1,3 +1,4 @@
 "use strict";
-const CURRENT_THEME = "light";
-exports.CURRENT_THEME = CURRENT_THEME;
+const CURRENT_THEME = "blue";
+const THEME_CLASS = `theme-${CURRENT_THEME}`;
+exports.THEME_CLASS = THEME_CLASS;

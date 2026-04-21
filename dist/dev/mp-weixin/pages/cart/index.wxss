@@ -47,7 +47,7 @@
 .empty-btn.data-v-3277fd7b {
   padding: 20rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 40rpx;
   font-size: 28rpx;
 }
@@ -162,7 +162,7 @@
 }
 .cart-footer.data-v-3277fd7b {
   position: fixed;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 24rpx 32rpx;
@@ -201,7 +201,7 @@
 .checkout-btn.data-v-3277fd7b {
   padding: 24rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 44rpx;
   font-size: 28rpx;
   font-weight: 600;

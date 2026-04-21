@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { orderApi } from '../../api'
+import { THEME_CLASS } from '../../theme/config'
 
 const orders = ref<any[]>([])
 const loading = ref(false)
@@ -21,35 +23,6 @@ const statusMap: Record<string, string> = {
   cancelled: '已取消'
 }
 
-// 模拟订单数据
-const MOCK_ORDERS = [
-  {
-    id: 1,
-    orderNo: 'ORDER202404190001',
-    status: 'pending',
-    totalAmount: 898,
-    freight: 10,
-    items: [
-      { productId: 1, productName: '示例商品1', price: 299, quantity: 2, coverImage: '' },
-      { productId: 2, productName: '示例商品2', price: 599, quantity: 1, coverImage: '' }
-    ],
-    address: { id: 1, name: '张三', phone: '13812345678', province: '北京市', city: '北京市', district: '朝阳区', detail: '某某街道', isDefault: true },
-    createTime: '2024-04-19 10:30:00'
-  },
-  {
-    id: 2,
-    orderNo: 'ORDER202404180002',
-    status: 'completed',
-    totalAmount: 599,
-    freight: 0,
-    items: [
-      { productId: 2, productName: '示例商品2', price: 599, quantity: 1, coverImage: '' }
-    ],
-    address: { id: 1, name: '张三', phone: '13812345678', province: '北京市', city: '北京市', district: '朝阳区', detail: '某某街道', isDefault: true },
-    createTime: '2024-04-18 15:20:00'
-  }
-]
-
 function changeTab(tab: string) {
   activeTab.value = tab
 }
@@ -61,38 +34,59 @@ const filteredOrders = computed(() => {
   return orders.value.filter(o => o.status === activeTab.value)
 })
 
+onMounted(() => {
+  loadOrders()
+})
+
+async function loadOrders() {
+  loading.value = true
+  try {
+    const res = await orderApi.getList()
+    if (res.code === 200 && res.data) {
+      orders.value = res.data.list || []
+    }
+  } catch (error) {
+    console.error('加载订单失败', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 function goToDetail(orderId: number) {
   uni.navigateTo({ url: `/pages/order/detail?id=${orderId}` })
 }
 
-function payOrder(orderId: number) {
-  uni.showToast({ title: '模拟支付成功', icon: 'success' })
+async function payOrder(orderId: number) {
+  try {
+    await orderApi.pay(orderId)
+    uni.showToast({ title: '支付成功', icon: 'success' })
+    loadOrders()
+  } catch (error) {
+    console.error('支付失败', error)
+  }
 }
 
-function cancelOrder(orderId: number) {
-  uni.showModal({
+async function cancelOrder(orderId: number) {
+  const res = await uni.showModal({
     title: '确认取消',
     content: '确定要取消该订单吗？',
-    success: (res) => {
-      if (res.confirm) {
-        const order = orders.value.find(o => o.id === orderId)
-        if (order) {
-          order.status = 'cancelled'
-        }
-        uni.showToast({ title: '订单已取消', icon: 'success' })
-      }
-    }
+    showCancel: true
   })
-}
 
-// 初始化时加载模拟数据
-onMounted(() => {
-  orders.value = MOCK_ORDERS
-})
+  if (res.confirm) {
+    try {
+      await orderApi.cancel(orderId)
+      uni.showToast({ title: '订单已取消', icon: 'success' })
+      loadOrders()
+    } catch (error) {
+      console.error('取消订单失败', error)
+    }
+  }
+}
 </script>
 
 <template>
-  <view class="order-list">
+  <view :class="['order-list', THEME_CLASS]">
     <!-- 状态切换 -->
     <scroll-view class="tab-scroll" scroll-x>
       <view class="tab-list">
@@ -110,7 +104,10 @@ onMounted(() => {
 
     <!-- 订单列表 -->
     <view class="order-content">
-      <view v-if="filteredOrders.length === 0" class="empty-tip">
+      <view v-if="loading" class="loading-tip">
+        <text>加载中...</text>
+      </view>
+      <view v-else-if="filteredOrders.length === 0" class="empty-tip">
         <text class="empty-text">暂无订单</text>
       </view>
 
@@ -209,6 +206,12 @@ onMounted(() => {
   padding: 24rpx;
 }
 
+.loading-tip {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--text-sub);
+}
+
 .empty-tip {
   padding: 120rpx 0;
   text-align: center;
@@ -249,7 +252,7 @@ onMounted(() => {
 
   &.pending { color: var(--accent); }
   &.paid { color: var(--primary); }
-  &.shipped { color: #22c55e; }
+  &.shipped { color: var(--primary); }
   &.completed { color: var(--text-sub); }
   &.cancelled { color: var(--text-placeholder); }
 }
@@ -336,7 +339,7 @@ onMounted(() => {
 
   &.pay {
     background: var(--primary);
-    color: #ffffff;
+    color: var(--text-inverse);
   }
 
   &.cancel {

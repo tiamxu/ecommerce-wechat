@@ -28,6 +28,11 @@
   background: var(--bg-page);
   padding: 24rpx;
 }
+.loading-tip.data-v-b9746c2a {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--text-sub);
+}
 .empty-tip.data-v-b9746c2a {
   display: flex;
   flex-direction: column;
@@ -42,7 +47,7 @@
 .add-first.data-v-b9746c2a {
   padding: 20rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 40rpx;
   font-size: 28rpx;
 }
@@ -81,7 +86,7 @@
   margin-left: 16rpx;
   padding: 4rpx 16rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 20rpx;
   border-radius: 20rpx;
 }

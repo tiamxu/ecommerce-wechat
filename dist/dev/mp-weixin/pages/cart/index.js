@@ -1,23 +1,27 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
-const api_request = require("../../api/request.js");
+require("../../utils/env.js");
+const api_cart = require("../../api/cart.js");
+const theme_config = require("../../theme/config.js");
+if (!Math) {
+  TabBar();
+}
+const TabBar = () => "../../components/TabBar.js";
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "index",
   setup(__props) {
     const cartItems = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
-    const MOCK_CART = [
-      { id: 1, productId: 1, productName: "示例商品1", price: 299, quantity: 2, selected: true, coverImage: "" },
-      { id: 2, productId: 2, productName: "示例商品2", price: 599, quantity: 1, selected: true, coverImage: "" }
-    ];
     common_vendor.onMounted(() => {
       loadCart();
     });
     async function loadCart() {
       loading.value = true;
       try {
-        const res = await api_request.mockRequest(MOCK_CART);
-        cartItems.value = res.data;
+        const res = await api_cart.cartApi.getList();
+        if (res.code === 200) {
+          cartItems.value = res.data || [];
+        }
       } catch (error) {
         console.error("加载购物车失败", error);
       } finally {
@@ -49,7 +53,10 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       const item = cartItems.value.find((i) => i.productId === productId);
       if (!item) return;
       const newQty = item.quantity + delta;
-      if (newQty < 1) return;
+      if (newQty < 1) {
+        removeItem(productId);
+        return;
+      }
       item.quantity = newQty;
     }
     function removeItem(productId) {
@@ -62,7 +69,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         return;
       }
       const selectedItems = cartItems.value.filter((item) => item.selected);
-      common_vendor.index.setStorageSync("checkoutItems", selectedItems);
+      common_vendor.index.setStorageSync("checkoutItems", JSON.stringify(selectedItems));
       common_vendor.index.navigateTo({
         url: "/pages/order/confirm"
       });
@@ -74,10 +81,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       return common_vendor.e({
         a: !loading.value && cartItems.value.length === 0
       }, !loading.value && cartItems.value.length === 0 ? {
-        b: common_vendor.t(_ctx.$t("cart.empty")),
-        c: common_vendor.o(goToShop)
+        b: common_vendor.o(goToShop)
       } : {
-        d: common_vendor.f(cartItems.value, (item, k0, i0) => {
+        c: common_vendor.f(cartItems.value, (item, k0, i0) => {
           var _a;
           return common_vendor.e({
             a: item.selected ? 1 : "",
@@ -97,12 +103,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             l: item.id
           });
         }),
-        e: allSelected.value ? 1 : "",
-        f: common_vendor.o(toggleAll),
-        g: common_vendor.t(_ctx.$t("cart.total")),
-        h: common_vendor.t(totalPrice.value),
-        i: common_vendor.t(_ctx.$t("cart.checkout")),
-        j: common_vendor.o(checkout)
+        d: allSelected.value ? 1 : "",
+        e: common_vendor.o(toggleAll),
+        f: common_vendor.t(totalPrice.value),
+        g: common_vendor.o(checkout)
+      }, {
+        h: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
-import { MOCK_MODE } from '../../utils/env'
+import { THEME_CLASS } from '../../theme/config'
 
 const addresses = ref<Address[]>([])
 const loading = ref(false)
@@ -23,13 +23,7 @@ async function loadAddresses() {
       }
     }
   } catch (error) {
-    if (MOCK_MODE) {
-      addresses.value = [
-        { id: 1, name: '张三', phone: '13812345678', province: '北京市', city: '北京市', district: '朝阳区', detail: '某某街道某某小区1号楼101', isDefault: true },
-        { id: 2, name: '李四', phone: '13987654321', province: '上海市', city: '上海市', district: '浦东新区', detail: '某某路某某号', isDefault: false }
-      ]
-      selectedId.value = 1
-    }
+    console.error('加载地址失败', error)
   } finally {
     loading.value = false
   }
@@ -49,22 +43,19 @@ function goToEdit(id: number) {
 }
 
 async function deleteAddress(id: number) {
-  try {
-    const res = await uni.showModal({
-      title: '确认删除',
-      content: '确定要删除该地址吗？',
-      showCancel: true
-    })
+  const res = await uni.showModal({
+    title: '确认删除',
+    content: '确定要删除该地址吗？',
+    showCancel: true
+  })
 
-    if (res.confirm) {
+  if (res.confirm) {
+    try {
       await orderApi.deleteAddress(id)
       addresses.value = addresses.value.filter(a => a.id !== id)
       uni.showToast({ title: '已删除', icon: 'success' })
-    }
-  } catch (error) {
-    if (MOCK_MODE) {
-      addresses.value = addresses.value.filter(a => a.id !== id)
-      uni.showToast({ title: '已删除', icon: 'success' })
+    } catch (error) {
+      console.error('删除地址失败', error)
     }
   }
 }
@@ -75,17 +66,17 @@ async function setDefault(id: number) {
     addresses.value.forEach(a => a.isDefault = a.id === id)
     uni.showToast({ title: '设置成功', icon: 'success' })
   } catch (error) {
-    if (MOCK_MODE) {
-      addresses.value.forEach(a => a.isDefault = a.id === id)
-      uni.showToast({ title: '设置成功', icon: 'success' })
-    }
+    console.error('设置默认地址失败', error)
   }
 }
 </script>
 
 <template>
-  <view class="address-list">
-    <view v-if="!loading && addresses.length === 0" class="empty-tip">
+  <view :class="['address-list', THEME_CLASS]">
+    <view v-if="loading" class="loading-tip">
+      <text>加载中...</text>
+    </view>
+    <view v-else-if="addresses.length === 0" class="empty-tip">
       <text class="empty-text">暂无收货地址</text>
       <text class="add-first" @click="goToAdd">添加地址</text>
     </view>
@@ -130,6 +121,12 @@ async function setDefault(id: number) {
   padding: 24rpx;
 }
 
+.loading-tip {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--text-sub);
+}
+
 .empty-tip {
   display: flex;
   flex-direction: column;
@@ -146,7 +143,7 @@ async function setDefault(id: number) {
 .add-first {
   padding: 20rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 40rpx;
   font-size: 28rpx;
 }
@@ -193,7 +190,7 @@ async function setDefault(id: number) {
   margin-left: 16rpx;
   padding: 4rpx 16rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 20rpx;
   border-radius: 20rpx;
 }

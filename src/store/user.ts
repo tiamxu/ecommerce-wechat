@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { BASE_URL, MOCK_MODE } from '../utils/env'
+import { BASE_URL } from '../utils/env'
 
 interface UserInfo {
   id: number
@@ -58,20 +58,7 @@ export const useUserStore = defineStore('user', {
           throw new Error(data.message || '登录失败')
         }
       } catch (error: any) {
-        // 开发环境：模拟登录
-        if (MOCK_MODE) {
-          this.token = 'mock_token_' + Date.now()
-          this.userInfo = {
-            id: 1,
-            openid: 'mock_openid',
-            nickname: '测试用户',
-            avatar: ''
-          }
-          uni.setStorageSync('token', this.token)
-          uni.showToast({ title: '模拟登录成功', icon: 'success' })
-        } else {
-          uni.showToast({ title: error.message || '登录失败', icon: 'none' })
-        }
+        uni.showToast({ title: error.message || '登录失败', icon: 'none' })
       }
     },
 

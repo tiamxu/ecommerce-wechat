@@ -33,5 +33,14 @@
       "address": "Address",
       "settings": "Settings"
     }
+  },
+  "search": {
+    "placeholder": "Search products",
+    "history": "Search History",
+    "hot": "Hot Search",
+    "clear": "Clear",
+    "cancel": "Cancel",
+    "noResult": "No results found",
+    "searching": "Searching..."
   }
 }

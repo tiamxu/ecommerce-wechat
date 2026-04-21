@@ -4282,21 +4282,21 @@ function injectHook(type, hook, target = currentInstance, prepend = false) {
     );
   }
 }
-const createHook$1 = (lifecycle) => (hook, target = currentInstance) => (
+const createHook = (lifecycle) => (hook, target = currentInstance) => (
   // post-create lifecycle registrations are noops during SSR (except for serverPrefetch)
   (!isInSSRComponentSetup || lifecycle === "sp") && injectHook(lifecycle, (...args) => hook(...args), target)
 );
-const onBeforeMount = createHook$1("bm");
-const onMounted = createHook$1("m");
-const onBeforeUpdate = createHook$1("bu");
-const onUpdated = createHook$1("u");
-const onBeforeUnmount = createHook$1("bum");
-const onUnmounted = createHook$1("um");
-const onServerPrefetch = createHook$1("sp");
-const onRenderTriggered = createHook$1(
+const onBeforeMount = createHook("bm");
+const onMounted = createHook("m");
+const onBeforeUpdate = createHook("bu");
+const onUpdated = createHook("u");
+const onBeforeUnmount = createHook("bum");
+const onUnmounted = createHook("um");
+const onServerPrefetch = createHook("sp");
+const onRenderTriggered = createHook(
   "rtg"
 );
-const onRenderTracked = createHook$1(
+const onRenderTracked = createHook(
   "rtc"
 );
 function onErrorCaptured(hook, target = currentInstance) {
@@ -8153,15 +8153,9 @@ function defineStore(idOrOptions, setup, setupOptions) {
   let id;
   let options;
   const isSetupStore = typeof setup === "function";
-  if (typeof idOrOptions === "string") {
+  {
     id = idOrOptions;
     options = isSetupStore ? setupOptions : setup;
-  } else {
-    options = idOrOptions;
-    id = idOrOptions.id;
-    if (typeof id !== "string") {
-      throw new Error(`[🍍]: "defineStore()" must be passed a store id as its first argument.`);
-    }
   }
   function useStore(pinia, hot) {
     const hasContext = hasInjectionContext();
@@ -8208,10 +8202,6 @@ This will fail in production.`);
   useStore.$id = id;
   return useStore;
 }
-const createHook = (lifecycle) => (hook, target = getCurrentInstance()) => {
-  !isInSSRComponentSetup && injectHook(lifecycle, hook, target);
-};
-const onLaunch = /* @__PURE__ */ createHook(ON_LAUNCH);
 /*!
   * @intlify/shared v9.1.9
   * (c) 2021 kazuya kawaguchi
@@ -11610,7 +11600,6 @@ exports.f = f;
 exports.index = index;
 exports.n = n;
 exports.o = o;
-exports.onLaunch = onLaunch;
 exports.onMounted = onMounted;
 exports.p = p;
 exports.ref = ref;

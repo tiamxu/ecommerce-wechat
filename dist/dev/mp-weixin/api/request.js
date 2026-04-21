@@ -21,8 +21,19 @@ function request(options) {
         if (options.showLoading) {
           common_vendor.index.hideLoading();
         }
+        console.log("API响应:", options.url, res);
         if (res.statusCode === 200) {
-          resolve(res.data);
+          const data = res.data;
+          if (data.code === 200) {
+            resolve(data);
+          } else if (data.code === 401) {
+            common_vendor.index.removeStorageSync("token");
+            common_vendor.index.showToast({ title: "请先登录", icon: "none" });
+            reject(new Error(data.message || "未授权"));
+          } else {
+            common_vendor.index.showToast({ title: data.message || "请求失败", icon: "none" });
+            reject(new Error(data.message || "请求失败"));
+          }
         } else if (res.statusCode === 401) {
           common_vendor.index.removeStorageSync("token");
           common_vendor.index.showToast({ title: "请先登录", icon: "none" });
@@ -36,26 +47,12 @@ function request(options) {
         if (options.showLoading) {
           common_vendor.index.hideLoading();
         }
-        {
-          console.error("请求失败:", error);
-          common_vendor.index.showToast({ title: "网络错误", icon: "none" });
-          reject(error);
-        }
+        console.error("请求失败:", options.url, error);
+        common_vendor.index.showToast({ title: "网络错误，请检查网络", icon: "none" });
+        reject(error);
       }
     };
     common_vendor.index.request(requestOptions);
   });
 }
-function mockRequest(mockData) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        code: 200,
-        message: "success",
-        data: mockData
-      });
-    }, 300);
-  });
-}
-exports.mockRequest = mockRequest;
 exports.request = request;

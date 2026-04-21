@@ -33,5 +33,14 @@
       "address": "收货地址",
       "settings": "设置"
     }
+  },
+  "search": {
+    "placeholder": "搜索商品",
+    "history": "搜索历史",
+    "hot": "热门搜索",
+    "clear": "清除",
+    "cancel": "取消",
+    "noResult": "未找到相关商品",
+    "searching": "搜索中..."
   }
 }

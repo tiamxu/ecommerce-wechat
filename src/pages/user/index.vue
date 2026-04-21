@@ -1,18 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useUserStore } from '../../store/user'
+import TabBar from '../../components/TabBar.vue'
+import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
 
 const menuItems = [
-  { id: 1, icon: '📋', text: 'my.order', path: '/pages/order/list' },
-  { id: 2, icon: '❤️', text: 'my.favorite', path: '' },
-  { id: 3, icon: '📍', text: 'my.address', path: '/pages/address/list' },
-  { id: 4, icon: '⚙️', text: 'my.settings', path: '' }
+  { id: 1, icon: '📋', text: '我的订单', path: '/pages/order/list' },
+  { id: 2, icon: '❤️', text: '我的收藏', path: '' },
+  { id: 3, icon: '📍', text: '收货地址', path: '/pages/address/list' },
+  { id: 5, icon: '⚙️', text: '设置', path: '' }
 ]
 
-function handleMenuClick(path: string) {
-  if (path) {
-    uni.navigateTo({ url: path })
+function handleMenuClick(item: typeof menuItems[0]) {
+  if (item.path) {
+    uni.navigateTo({ url: item.path })
   }
 }
 
@@ -33,10 +36,12 @@ function handleLogout() {
     }
   })
 }
+
 </script>
 
 <template>
-  <view class="user-page">
+  <view :class="['user-page', THEME_CLASS]">
+    <TabBar />
     <!-- 用户头部 -->
     <view class="user-header">
       <view v-if="userStore.isLoggedIn" class="user-info">
@@ -53,7 +58,7 @@ function handleLogout() {
         <view class="avatar login-avatar">
           <text class="avatar-text">?</text>
         </view>
-        <text class="login-text">{{ $t('user.login') }}</text>
+        <text class="login-text">点击登录</text>
       </view>
     </view>
 
@@ -63,11 +68,11 @@ function handleLogout() {
         v-for="item in menuItems"
         :key="item.id"
         class="menu-item"
-        @click="handleMenuClick(item.path)"
+        @click="handleMenuClick(item)"
       >
         <text class="menu-icon">{{ item.icon }}</text>
-        <text class="menu-text">{{ $t(item.text) }}</text>
-        <text class="menu-arrow">></text>
+        <text class="menu-text">{{ item.text }}</text>
+        <text class="menu-arrow">›</text>
       </view>
     </view>
 
@@ -119,7 +124,7 @@ function handleLogout() {
 .avatar-text {
   font-size: 48rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .user-detail {

@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "首页",
   "usingComponents": {
-    "theme-switcher": "../../components/ThemeSwitcher"
+    "tab-bar": "../../components/TabBar"
   }
 }

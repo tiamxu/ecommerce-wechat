@@ -63,6 +63,11 @@
 .order-content.data-v-80f8e5f8 {
   padding: 24rpx;
 }
+.loading-tip.data-v-80f8e5f8 {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--text-sub);
+}
 .empty-tip.data-v-80f8e5f8 {
   padding: 120rpx 0;
   text-align: center;
@@ -102,7 +107,7 @@
   color: var(--primary);
 }
 .order-status.shipped.data-v-80f8e5f8 {
-  color: #22c55e;
+  color: var(--primary);
 }
 .order-status.completed.data-v-80f8e5f8 {
   color: var(--text-sub);
@@ -181,7 +186,7 @@
 }
 .action-btn.pay.data-v-80f8e5f8 {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 .action-btn.cancel.data-v-80f8e5f8 {
   background: var(--bg-page);

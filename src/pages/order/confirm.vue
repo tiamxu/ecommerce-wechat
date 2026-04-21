@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { THEME_CLASS } from '../../theme/config'
 
 const selectedAddressId = ref<number>(1)
 const checkoutItems = ref<any[]>([])
@@ -71,7 +72,7 @@ function submitOrder() {
 </script>
 
 <template>
-  <view class="order-confirm">
+  <view :class="['order-confirm', THEME_CLASS]">
     <!-- 收货地址 -->
     <view class="address-section" @click="goToAddressList">
       <view v-if="selectedAddress" class="address-content">
@@ -295,7 +296,7 @@ function submitOrder() {
   width: 100%;
   padding: 28rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   text-align: center;
   border-radius: 48rpx;
   font-size: 32rpx;

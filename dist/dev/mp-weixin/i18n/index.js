@@ -35,12 +35,22 @@ const user$1 = {
     settings: "Settings"
   }
 };
+const search$1 = {
+  placeholder: "Search products",
+  history: "Search History",
+  hot: "Hot Search",
+  clear: "Clear",
+  cancel: "Cancel",
+  noResult: "No results found",
+  searching: "Searching..."
+};
 const en = {
   tabbar: tabbar$1,
   theme: theme$1,
   product: product$1,
   cart: cart$1,
-  user: user$1
+  user: user$1,
+  search: search$1
 };
 const tabbar = {
   home: "首页",
@@ -77,12 +87,22 @@ const user = {
     settings: "设置"
   }
 };
+const search = {
+  placeholder: "搜索商品",
+  history: "搜索历史",
+  hot: "热门搜索",
+  clear: "清除",
+  cancel: "取消",
+  noResult: "未找到相关商品",
+  searching: "搜索中..."
+};
 const zh = {
   tabbar,
   theme,
   product,
   cart,
-  user
+  user,
+  search
 };
 const i18n = common_vendor.createI18n({
   legacy: false,

@@ -1,23 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { productApi } from '../../api'
-import { MOCK_MODE } from '../../utils/env'
+import { productApi, cartApi, type Product } from '../../api'
+import { useUserStore } from '../../store/user'
+import { THEME_CLASS } from '../../theme/config'
+import TabBar from '../../components/TabBar.vue'
 
-const MOCK_PRODUCT = {
-  id: 1,
-  name: '示例商品',
-  price: 299,
-  stock: 100,
-  description: '这是商品的详细描述信息，包含商品的特点、材质、使用方法等。',
-  coverImage: '',
-  images: [],
-  tags: ['热销', '新品']
-}
-
-const product = ref<any>(null)
+const product = ref<Product | null>(null)
 const loading = ref(false)
 const quantity = ref(1)
-const currentImageIndex = ref(0)
+const userStore = useUserStore()
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -26,8 +17,6 @@ onMounted(() => {
 
   if (id) {
     loadProduct(Number(id))
-  } else if (MOCK_MODE) {
-    product.value = MOCK_PRODUCT
   }
 })
 
@@ -39,9 +28,7 @@ async function loadProduct(id: number) {
       product.value = res.data
     }
   } catch (error) {
-    if (MOCK_MODE) {
-      product.value = { ...MOCK_PRODUCT, id }
-    }
+    console.error('加载商品详情失败', error)
   } finally {
     loading.value = false
   }
@@ -59,11 +46,37 @@ function increaseQty() {
   }
 }
 
-function addToCart() {
-  uni.showToast({ title: '已加入购物车', icon: 'success' })
+async function addToCart() {
+  if (!product.value) return
+
+  if (!userStore.isLoggedIn) {
+    uni.showModal({
+      title: '提示',
+      content: '请先登录后再添加购物车',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          userStore.login()
+        }
+      }
+    })
+    return
+  }
+
+  try {
+    await cartApi.add({
+      productId: product.value.id,
+      quantity: quantity.value
+    })
+    uni.showToast({ title: '已加入购物车', icon: 'success' })
+  } catch (error) {
+    console.error('添加购物车失败', error)
+    uni.showToast({ title: '添加失败，请重试', icon: 'none' })
+  }
 }
 
 function buyNow() {
+  if (!product.value) return
   uni.setStorageSync('quickBuy', {
     productId: product.value.id,
     quantity: quantity.value
@@ -72,14 +85,41 @@ function buyNow() {
     url: '/pages/order/confirm'
   })
 }
+
+function getProductName(): string {
+  if (!product.value) return ''
+  return product.value.name?.zh || product.value.name?.en || '商品'
+}
+
+function getProductDesc(): string {
+  if (!product.value?.description) return ''
+  return product.value.description?.zh || product.value.description?.en || ''
+}
+
+function getCoverImage(): string {
+  if (!product.value) return ''
+  if (product.value.metaImage) return product.value.metaImage
+  if (product.value.images && product.value.images.length > 0) {
+    const cover = product.value.images.find(img => img.isCover === 1)
+    return cover?.url || product.value.images[0].url
+  }
+  return ''
+}
 </script>
 
 <template>
-  <view class="product-detail">
+  <view :class="['product-detail', THEME_CLASS]">
+    <TabBar />
     <!-- 商品图片 -->
     <view class="detail-swiper">
-      <view class="img-placeholder">
-        <text class="placeholder-text">{{ product?.name?.charAt(0) || 'P' }}</text>
+      <image
+        v-if="getCoverImage()"
+        :src="getCoverImage()"
+        mode="aspectFill"
+        class="cover-image"
+      />
+      <view v-else class="img-placeholder">
+        <text class="placeholder-text">{{ getProductName().charAt(0) || 'P' }}</text>
       </view>
     </view>
 
@@ -87,15 +127,15 @@ function buyNow() {
     <view v-if="product" class="detail-info">
       <view class="info-header">
         <text class="product-price">¥{{ product.price }}</text>
-        <text class="product-stock">{{ $t('product.stock') }}: {{ product.stock }}</text>
+        <text class="product-stock">库存: {{ product.stock }}</text>
       </view>
-      <text class="product-name">{{ product.name }}</text>
-      <text v-if="product.description" class="product-desc">{{ product.description }}</text>
+      <text class="product-name">{{ getProductName() }}</text>
+      <text v-if="getProductDesc()" class="product-desc">{{ getProductDesc() }}</text>
     </view>
 
     <!-- 商品标签 -->
-    <view v-if="product?.tags?.length" class="detail-tags">
-      <text v-for="tag in product.tags" :key="tag" class="tag">{{ tag }}</text>
+    <view v-if="product?.primaryTag" class="detail-tags">
+      <text class="tag">{{ product.primaryTag.name }}</text>
     </view>
 
     <!-- 操作栏 -->
@@ -109,8 +149,8 @@ function buyNow() {
         </view>
       </view>
       <view class="action-buttons">
-        <text class="btn-add" @click="addToCart">{{ $t('product.addCart') }}</text>
-        <text class="btn-buy" @click="buyNow">{{ $t('product.buyNow') }}</text>
+        <text class="btn-add" @click="addToCart">加入购物车</text>
+        <text class="btn-buy" @click="buyNow">立即购买</text>
       </view>
     </view>
   </view>
@@ -127,9 +167,11 @@ function buyNow() {
   width: 100%;
   height: 750rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
 }
 
 .img-placeholder {
@@ -205,7 +247,7 @@ function buyNow() {
 
 .action-bar {
   position: fixed;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 24rpx 32rpx;
@@ -273,11 +315,11 @@ function buyNow() {
 
 .btn-add {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .btn-buy {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 </style>

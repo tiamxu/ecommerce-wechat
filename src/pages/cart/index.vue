@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { mockRequest, type CartItem } from '../../api'
+import { cartApi, type CartItem } from '../../api'
+import TabBar from '../../components/TabBar.vue'
+import { THEME_CLASS } from '../../theme/config'
 
 const cartItems = ref<CartItem[]>([])
 const loading = ref(false)
-
-// 模拟购物车数据
-const MOCK_CART: CartItem[] = [
-  { id: 1, productId: 1, productName: '示例商品1', price: 299, quantity: 2, selected: true, coverImage: '' },
-  { id: 2, productId: 2, productName: '示例商品2', price: 599, quantity: 1, selected: true, coverImage: '' }
-]
 
 onMounted(() => {
   loadCart()
@@ -18,9 +14,10 @@ onMounted(() => {
 async function loadCart() {
   loading.value = true
   try {
-    // 模拟请求
-    const res = await mockRequest(MOCK_CART)
-    cartItems.value = res.data
+    const res = await cartApi.getList()
+    if (res.code === 200) {
+      cartItems.value = res.data || []
+    }
   } catch (error) {
     console.error('加载购物车失败', error)
   } finally {
@@ -61,7 +58,10 @@ function updateQuantity(productId: number, delta: number) {
   if (!item) return
 
   const newQty = item.quantity + delta
-  if (newQty < 1) return
+  if (newQty < 1) {
+    removeItem(productId)
+    return
+  }
 
   item.quantity = newQty
 }
@@ -78,7 +78,7 @@ function checkout() {
   }
 
   const selectedItems = cartItems.value.filter(item => item.selected)
-  uni.setStorageSync('checkoutItems', selectedItems)
+  uni.setStorageSync('checkoutItems', JSON.stringify(selectedItems))
 
   uni.navigateTo({
     url: '/pages/order/confirm'
@@ -91,11 +91,12 @@ function goToShop() {
 </script>
 
 <template>
-  <view class="cart-page">
+  <view :class="['cart-page', THEME_CLASS]">
+    <TabBar />
     <!-- 空状态 -->
     <view v-if="!loading && cartItems.length === 0" class="empty-cart">
       <text class="empty-icon">🛒</text>
-      <text class="empty-text">{{ $t('cart.empty') }}</text>
+      <text class="empty-text">购物车是空的</text>
       <text class="empty-btn" @click="goToShop">去逛逛</text>
     </view>
 
@@ -141,10 +142,10 @@ function goToShop() {
           <text class="select-text">全选</text>
         </view>
         <view class="total-section">
-          <text class="total-label">{{ $t('cart.total') }}</text>
+          <text class="total-label">合计</text>
           <text class="total-price">¥{{ totalPrice }}</text>
         </view>
-        <text class="checkout-btn" @click="checkout">{{ $t('cart.checkout') }}</text>
+        <text class="checkout-btn" @click="checkout">结算</text>
       </view>
     </view>
   </view>
@@ -179,7 +180,7 @@ function goToShop() {
 .empty-btn {
   padding: 20rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 40rpx;
   font-size: 28rpx;
 }
@@ -312,7 +313,7 @@ function goToShop() {
 
 .cart-footer {
   position: fixed;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 24rpx 32rpx;
@@ -357,7 +358,7 @@ function goToShop() {
 .checkout-btn {
   padding: 24rpx 48rpx;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-radius: 44rpx;
   font-size: 28rpx;
   font-weight: 600;
