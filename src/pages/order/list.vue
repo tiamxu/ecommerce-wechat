@@ -1,26 +1,28 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { orderApi } from '../../api'
+import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
 
+const userStore = useUserStore()
 const orders = ref<any[]>([])
 const loading = ref(false)
 const activeTab = ref('all')
 
 const tabs = [
   { key: 'all', label: '全部' },
-  { key: 'pending', label: '待付款' },
-  { key: 'paid', label: '待发货' },
-  { key: 'shipped', label: '待收货' },
-  { key: 'completed', label: '已完成' }
+  { key: '0', label: '待付款' },
+  { key: '1', label: '待发货' },
+  { key: '2', label: '待收货' },
+  { key: '3', label: '已完成' }
 ]
 
 const statusMap: Record<string, string> = {
-  pending: '待付款',
-  paid: '待发货',
-  shipped: '待收货',
-  completed: '已完成',
-  cancelled: '已取消'
+  '0': '待付款',
+  '1': '待发货',
+  '2': '待收货',
+  '3': '已完成',
+  '4': '已取消'
 }
 
 function changeTab(tab: string) {
@@ -31,7 +33,7 @@ const filteredOrders = computed(() => {
   if (activeTab.value === 'all') {
     return orders.value
   }
-  return orders.value.filter(o => o.status === activeTab.value)
+  return orders.value.filter(o => String(o.status) === activeTab.value)
 })
 
 onMounted(() => {
@@ -39,9 +41,12 @@ onMounted(() => {
 })
 
 async function loadOrders() {
+  if (!userStore.email) {
+    return
+  }
   loading.value = true
   try {
-    const res = await orderApi.getList()
+    const res = await orderApi.getList({ email: userStore.email })
     if (res.code === 200 && res.data) {
       orders.value = res.data.list || []
     }

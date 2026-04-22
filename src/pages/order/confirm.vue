@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { orderApi } from '../../api'
+import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
 
-const selectedAddressId = ref<number>(1)
+// 获取用户信息
+const userStore = useUserStore()
+const addresses = ref<Array<{ id: number; name: string; phone: string; province: string; city: string; district: string; detail: string; isDefault: boolean }>>([])
+const selectedAddressId = ref<number | null>(null)
 const checkoutItems = ref<any[]>([])
 const loading = ref(false)
 
-// 模拟收货地址
-const addresses = ref([
-  { id: 1, name: '张三', phone: '13812345678', province: '北京市', city: '北京市', district: '朝阳区', detail: '某某街道某某小区1号楼101', isDefault: true },
-  { id: 2, name: '李四', phone: '13987654321', province: '上海市', city: '上海市', district: '浦东新区', detail: '某某路某某号', isDefault: false }
-])
-
-// 模拟商品数据（从本地存储获取）
-onMounted(() => {
+// 从真实接口获取地址
+onMounted(async () => {
+  // 获取订单确认商品
   const items = uni.getStorageSync('checkoutItems')
   if (items && items.length > 0) {
     checkoutItems.value = items
@@ -31,7 +31,26 @@ onMounted(() => {
       }]
     }
   }
+
+  // 加载地址列表
+  await loadAddresses()
 })
+
+async function loadAddresses() {
+  try {
+    const res = await orderApi.getAddresses()
+    if (res.code === 200 && res.data) {
+      addresses.value = res.data
+      // 设置默认地址
+      const defaultAddr = addresses.value.find(a => a.isDefault) || addresses.value[0]
+      if (defaultAddr) {
+        selectedAddressId.value = defaultAddr.id
+      }
+    }
+  } catch (error) {
+    console.error('加载地址失败', error)
+  }
+}
 
 const selectedAddress = computed(() => {
   return addresses.value.find(a => a.id === selectedAddressId.value) || addresses.value[0]
@@ -58,15 +77,50 @@ function goToAddressList() {
 }
 
 function submitOrder() {
-  uni.showModal({
-    title: '提示',
-    content: '模拟创建订单成功',
-    showCancel: false,
-    success: () => {
+  if (!selectedAddress.value) {
+    uni.showToast({ title: '请选择收货地址', icon: 'none' })
+    return
+  }
+
+  loading.value = true
+  const addr = selectedAddress.value
+  const items = checkoutItems.value.map(item => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    price: item.price,
+    productName: item.productName,
+    coverImage: item.coverImage
+  }))
+
+  orderApi.create({
+    email: userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com',
+    receiverName: addr.name,
+    phone: addr.phone,
+    country: '中国',
+    province: addr.province,
+    city: addr.city,
+    address: addr.detail,
+    postalCode: '000000',
+    items,
+    remark: ''
+  }).then(res => {
+    if (res.code === 200) {
+      // 保存用户 email 用于后续查询订单
+      userStore.setEmail(userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com')
+      uni.showToast({ title: '订单创建成功', icon: 'success' })
       uni.removeStorageSync('checkoutItems')
       uni.removeStorageSync('quickBuy')
-      uni.redirectTo({ url: '/pages/order/list' })
+      setTimeout(() => {
+        uni.redirectTo({ url: '/pages/order/list' })
+      }, 1500)
+    } else {
+      uni.showToast({ title: res.message || '创建失败', icon: 'none' })
     }
+  }).catch(err => {
+    console.error('创建订单失败', err)
+    uni.showToast({ title: '创建失败，请重试', icon: 'none' })
+  }).finally(() => {
+    loading.value = false
   })
 }
 </script>

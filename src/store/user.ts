@@ -7,17 +7,20 @@ interface UserInfo {
   nickname: string
   avatar: string
   phone?: string
+  email?: string
 }
 
 interface UserState {
   token: string | null
   userInfo: UserInfo | null
+  email: string | null
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     token: uni.getStorageSync('token') || null,
-    userInfo: null
+    userInfo: null,
+    email: uni.getStorageSync('user_email') || null
   }),
 
   getters: {
@@ -65,8 +68,15 @@ export const useUserStore = defineStore('user', {
     logout() {
       this.token = null
       this.userInfo = null
+      this.email = null
       uni.removeStorageSync('token')
+      uni.removeStorageSync('user_email')
       uni.showToast({ title: '已退出登录', icon: 'success' })
+    },
+
+    setEmail(email: string) {
+      this.email = email
+      uni.setStorageSync('user_email', email)
     },
 
     async fetchUserInfo() {

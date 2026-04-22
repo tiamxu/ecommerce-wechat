@@ -31,8 +31,15 @@ export interface OrderProduct {
 }
 
 export interface CreateOrderParams {
-  addressId: number
-  items: { productId: number; quantity: number }[]
+  email: string
+  receiverName: string
+  phone: string
+  country: string
+  province: string
+  city: string
+  address: string
+  postalCode: string
+  items: { productId: number; quantity: number; price?: number; productName?: string; coverImage?: string }[]
   remark?: string
 }
 

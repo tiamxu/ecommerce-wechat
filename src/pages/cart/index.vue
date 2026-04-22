@@ -15,8 +15,13 @@ async function loadCart() {
   loading.value = true
   try {
     const res = await cartApi.getList()
-    if (res.code === 200) {
-      cartItems.value = res.data || []
+    if (res.code === 200 && res.data) {
+      // 后端返回 { items: [], totalCount, totalPrice } 结构
+      // 为每个item添加默认selected字段
+      cartItems.value = (res.data.items || []).map(item => ({
+        ...item,
+        selected: item.selected ?? true
+      }))
     }
   } catch (error) {
     console.error('加载购物车失败', error)
@@ -35,7 +40,7 @@ const allSelected = computed({
 const totalPrice = computed(() => {
   return cartItems.value
     .filter(item => item.selected)
-    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+    .reduce((sum, item) => sum + item.productPrice * item.quantity, 0)
 })
 
 const selectedCount = computed(() => {
@@ -120,7 +125,7 @@ function goToShop() {
           <!-- 商品信息 -->
           <view class="item-info">
             <text class="item-name">{{ item.productName }}</text>
-            <text class="item-price">¥{{ item.price }}</text>
+            <text class="item-price">¥{{ item.productPrice }}</text>
           </view>
 
           <!-- 数量控制 -->

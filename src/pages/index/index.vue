@@ -9,13 +9,8 @@ const hotProducts = ref<Product[]>([])
 const loading = ref(false)
 const searchKeyword = ref('')
 
-// 模拟秒杀数据
-const seckillEndTime = ref<Date>(new Date(Date.now() + 4 * 60 * 60 * 1000)) // 4小时后
-const countdown = ref({ hours: 0, minutes: 0, seconds: 0 })
-
 onMounted(() => {
   loadData()
-  startCountdown()
 })
 
 async function loadData() {
@@ -37,18 +32,6 @@ async function loadData() {
   } finally {
     loading.value = false
   }
-}
-
-function startCountdown() {
-  setInterval(() => {
-    const now = new Date()
-    const diff = seckillEndTime.value.getTime() - now.getTime()
-    if (diff > 0) {
-      countdown.value.hours = Math.floor(diff / (1000 * 60 * 60))
-      countdown.value.minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      countdown.value.seconds = Math.floor((diff % (1000 * 60)) / 1000)
-    }
-  }, 1000)
 }
 
 function goToSearch() {
@@ -90,8 +73,8 @@ function getCoverImage(product: Product): string {
   return ''
 }
 
-function padZero(num: number): string {
-  return num.toString().padStart(2, '0')
+function getOriginalPrice(product: Product): number {
+  return product.originalPrice || Math.round(product.price * 1.3)
 }
 </script>
 
@@ -152,22 +135,12 @@ function padZero(num: number): string {
       </view>
     </view>
 
-    <!-- 限时秒杀 -->
+    <!-- 热门推荐 -->
     <view class="section seckill-section">
       <view class="seckill-header">
         <view class="seckill-title">
-          <text class="seckill-icon">⚡</text>
-          <text class="seckill-text">限时秒杀</text>
-        </view>
-        <view class="seckill-countdown">
-          <text class="countdown-label">距结束</text>
-          <view class="countdown-time">
-            <text class="time-block">{{ padZero(countdown.hours) }}</text>
-            <text class="time-sep">:</text>
-            <text class="time-block">{{ padZero(countdown.minutes) }}</text>
-            <text class="time-sep">:</text>
-            <text class="time-block">{{ padZero(countdown.seconds) }}</text>
-          </view>
+          <text class="seckill-icon">🔥</text>
+          <text class="seckill-text">热门推荐</text>
         </view>
       </view>
       <scroll-view class="seckill-scroll" scroll-x>
@@ -188,7 +161,7 @@ function padZero(num: number): string {
               <text>{{ getProductName(item).charAt(0) }}</text>
             </view>
             <text class="seckill-price">¥{{ item.price }}</text>
-            <text class="seckill-original">¥{{ Math.round(item.price * 1.5) }}</text>
+            <text v-if="getOriginalPrice(item) > item.price" class="seckill-original">¥{{ getOriginalPrice(item) }}</text>
           </view>
         </view>
       </scroll-view>
@@ -231,7 +204,7 @@ function padZero(num: number): string {
             <text class="card-name">{{ getProductName(item) }}</text>
             <view class="card-bottom">
               <text class="card-price">¥{{ item.price }}</text>
-              <text class="card-sales">已售{{ Math.floor(Math.random() * 500 + 100) }}件</text>
+              <text class="card-sales">已售{{ item.sales || 0 }}件</text>
             </view>
           </view>
         </view>

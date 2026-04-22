@@ -14,11 +14,8 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     const hotProducts = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
     const searchKeyword = common_vendor.ref("");
-    const seckillEndTime = common_vendor.ref(new Date(Date.now() + 4 * 60 * 60 * 1e3));
-    const countdown = common_vendor.ref({ hours: 0, minutes: 0, seconds: 0 });
     common_vendor.onMounted(() => {
       loadData();
-      startCountdown();
     });
     async function loadData() {
       loading.value = true;
@@ -38,17 +35,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       } finally {
         loading.value = false;
       }
-    }
-    function startCountdown() {
-      setInterval(() => {
-        const now = /* @__PURE__ */ new Date();
-        const diff = seckillEndTime.value.getTime() - now.getTime();
-        if (diff > 0) {
-          countdown.value.hours = Math.floor(diff / (1e3 * 60 * 60));
-          countdown.value.minutes = Math.floor(diff % (1e3 * 60 * 60) / (1e3 * 60));
-          countdown.value.seconds = Math.floor(diff % (1e3 * 60) / 1e3);
-        }
-      }, 1e3);
     }
     function goToSearch() {
       if (searchKeyword.value.trim()) {
@@ -84,8 +70,8 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
       return "";
     }
-    function padZero(num) {
-      return num.toString().padStart(2, "0");
+    function getOriginalPrice(product) {
+      return product.originalPrice || Math.round(product.price * 1.3);
     }
     return (_ctx, _cache) => {
       return common_vendor.e({
@@ -102,10 +88,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             e: common_vendor.o(($event) => goToCategoryProducts(cat.id), cat.id)
           };
         }),
-        e: common_vendor.t(padZero(countdown.value.hours)),
-        f: common_vendor.t(padZero(countdown.value.minutes)),
-        g: common_vendor.t(padZero(countdown.value.seconds)),
-        h: common_vendor.f(hotProducts.value.slice(0, 4), (item, k0, i0) => {
+        e: common_vendor.f(hotProducts.value.slice(0, 4), (item, k0, i0) => {
           return common_vendor.e({
             a: getCoverImage(item)
           }, getCoverImage(item) ? {
@@ -114,13 +97,16 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             c: common_vendor.t(getProductName(item).charAt(0))
           }, {
             d: common_vendor.t(item.price),
-            e: common_vendor.t(Math.round(item.price * 1.5)),
-            f: item.id,
-            g: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
+            e: getOriginalPrice(item) > item.price
+          }, getOriginalPrice(item) > item.price ? {
+            f: common_vendor.t(getOriginalPrice(item))
+          } : {}, {
+            g: item.id,
+            h: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
           });
         }),
-        i: common_vendor.o(goToAllProducts),
-        j: common_vendor.f(hotProducts.value, (item, k0, i0) => {
+        f: common_vendor.o(goToAllProducts),
+        g: common_vendor.f(hotProducts.value, (item, k0, i0) => {
           return common_vendor.e({
             a: getCoverImage(item)
           }, getCoverImage(item) ? {
@@ -134,14 +120,14 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           } : {}, {
             f: common_vendor.t(getProductName(item)),
             g: common_vendor.t(item.price),
-            h: item.id,
-            i: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
+            h: common_vendor.t(item.sales || 0),
+            i: item.id,
+            j: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
           });
         }),
-        k: common_vendor.t(Math.floor(Math.random() * 500 + 100)),
-        l: hotProducts.value.length === 0 && !loading.value
+        h: hotProducts.value.length === 0 && !loading.value
       }, hotProducts.value.length === 0 && !loading.value ? {} : {}, {
-        m: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        i: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

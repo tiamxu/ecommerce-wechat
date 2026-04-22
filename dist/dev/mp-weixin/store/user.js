@@ -4,7 +4,8 @@ const utils_env = require("../utils/env.js");
 const useUserStore = common_vendor.defineStore("user", {
   state: () => ({
     token: common_vendor.index.getStorageSync("token") || null,
-    userInfo: null
+    userInfo: null,
+    email: common_vendor.index.getStorageSync("user_email") || null
   }),
   getters: {
     isLoggedIn: (state) => !!state.token
@@ -43,8 +44,14 @@ const useUserStore = common_vendor.defineStore("user", {
     logout() {
       this.token = null;
       this.userInfo = null;
+      this.email = null;
       common_vendor.index.removeStorageSync("token");
+      common_vendor.index.removeStorageSync("user_email");
       common_vendor.index.showToast({ title: "已退出登录", icon: "success" });
+    },
+    setEmail(email) {
+      this.email = email;
+      common_vendor.index.setStorageSync("user_email", email);
     },
     async fetchUserInfo() {
       if (!this.token) return;

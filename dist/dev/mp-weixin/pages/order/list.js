@@ -2,26 +2,28 @@
 const common_vendor = require("../../common/vendor.js");
 require("../../utils/env.js");
 const api_order = require("../../api/order.js");
+const store_user = require("../../store/user.js");
 const theme_config = require("../../theme/config.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "list",
   setup(__props) {
+    const userStore = store_user.useUserStore();
     const orders = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
     const activeTab = common_vendor.ref("all");
     const tabs = [
       { key: "all", label: "全部" },
-      { key: "pending", label: "待付款" },
-      { key: "paid", label: "待发货" },
-      { key: "shipped", label: "待收货" },
-      { key: "completed", label: "已完成" }
+      { key: "0", label: "待付款" },
+      { key: "1", label: "待发货" },
+      { key: "2", label: "待收货" },
+      { key: "3", label: "已完成" }
     ];
     const statusMap = {
-      pending: "待付款",
-      paid: "待发货",
-      shipped: "待收货",
-      completed: "已完成",
-      cancelled: "已取消"
+      "0": "待付款",
+      "1": "待发货",
+      "2": "待收货",
+      "3": "已完成",
+      "4": "已取消"
     };
     function changeTab(tab) {
       activeTab.value = tab;
@@ -30,15 +32,18 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       if (activeTab.value === "all") {
         return orders.value;
       }
-      return orders.value.filter((o) => o.status === activeTab.value);
+      return orders.value.filter((o) => String(o.status) === activeTab.value);
     });
     common_vendor.onMounted(() => {
       loadOrders();
     });
     async function loadOrders() {
+      if (!userStore.email) {
+        return;
+      }
       loading.value = true;
       try {
-        const res = await api_order.orderApi.getList();
+        const res = await api_order.orderApi.getList({ email: userStore.email });
         if (res.code === 200 && res.data) {
           orders.value = res.data.list || [];
         }

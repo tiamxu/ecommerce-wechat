@@ -33,8 +33,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       return Math.round(props.product.price * 1.3);
     });
     const salesCount = common_vendor.computed(() => {
-      if (props.product.sales) return props.product.sales;
-      return Math.floor(Math.random() * 500 + 100);
+      return props.product.sales || 0;
     });
     function handleClick() {
       emit("click", props.product.id);

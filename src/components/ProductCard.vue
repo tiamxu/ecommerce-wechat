@@ -52,8 +52,7 @@ const originalPrice = computed(() => {
 })
 
 const salesCount = computed(() => {
-  if (props.product.sales) return props.product.sales
-  return Math.floor(Math.random() * 500 + 100)
+  return props.product.sales || 0
 })
 
 function handleClick() {

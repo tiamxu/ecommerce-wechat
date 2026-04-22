@@ -1,17 +1,18 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+require("../../utils/env.js");
+const api_order = require("../../api/order.js");
+const store_user = require("../../store/user.js");
 const theme_config = require("../../theme/config.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "confirm",
   setup(__props) {
-    const selectedAddressId = common_vendor.ref(1);
+    const userStore = store_user.useUserStore();
+    const addresses = common_vendor.ref([]);
+    const selectedAddressId = common_vendor.ref(null);
     const checkoutItems = common_vendor.ref([]);
-    common_vendor.ref(false);
-    const addresses = common_vendor.ref([
-      { id: 1, name: "张三", phone: "13812345678", province: "北京市", city: "北京市", district: "朝阳区", detail: "某某街道某某小区1号楼101", isDefault: true },
-      { id: 2, name: "李四", phone: "13987654321", province: "上海市", city: "上海市", district: "浦东新区", detail: "某某路某某号", isDefault: false }
-    ]);
-    onMounted(() => {
+    const loading = common_vendor.ref(false);
+    common_vendor.onMounted(async () => {
       const items = common_vendor.index.getStorageSync("checkoutItems");
       if (items && items.length > 0) {
         checkoutItems.value = items;
@@ -29,7 +30,22 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           }];
         }
       }
+      await loadAddresses();
     });
+    async function loadAddresses() {
+      try {
+        const res = await api_order.orderApi.getAddresses();
+        if (res.code === 200 && res.data) {
+          addresses.value = res.data;
+          const defaultAddr = addresses.value.find((a) => a.isDefault) || addresses.value[0];
+          if (defaultAddr) {
+            selectedAddressId.value = defaultAddr.id;
+          }
+        }
+      } catch (error) {
+        console.error("加载地址失败", error);
+      }
+    }
     const selectedAddress = common_vendor.computed(() => {
       return addresses.value.find((a) => a.id === selectedAddressId.value) || addresses.value[0];
     });
@@ -46,15 +62,49 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       common_vendor.index.navigateTo({ url: "/pages/address/list" });
     }
     function submitOrder() {
-      common_vendor.index.showModal({
-        title: "提示",
-        content: "模拟创建订单成功",
-        showCancel: false,
-        success: () => {
+      var _a;
+      if (!selectedAddress.value) {
+        common_vendor.index.showToast({ title: "请选择收货地址", icon: "none" });
+        return;
+      }
+      loading.value = true;
+      const addr = selectedAddress.value;
+      const items = checkoutItems.value.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        productName: item.productName,
+        coverImage: item.coverImage
+      }));
+      api_order.orderApi.create({
+        email: ((_a = userStore.userInfo) == null ? void 0 : _a.phone) ? `${userStore.userInfo.phone}@example.com` : "guest@example.com",
+        receiverName: addr.name,
+        phone: addr.phone,
+        country: "中国",
+        province: addr.province,
+        city: addr.city,
+        address: addr.detail,
+        postalCode: "000000",
+        items,
+        remark: ""
+      }).then((res) => {
+        var _a2;
+        if (res.code === 200) {
+          userStore.setEmail(((_a2 = userStore.userInfo) == null ? void 0 : _a2.phone) ? `${userStore.userInfo.phone}@example.com` : "guest@example.com");
+          common_vendor.index.showToast({ title: "订单创建成功", icon: "success" });
           common_vendor.index.removeStorageSync("checkoutItems");
           common_vendor.index.removeStorageSync("quickBuy");
-          common_vendor.index.redirectTo({ url: "/pages/order/list" });
+          setTimeout(() => {
+            common_vendor.index.redirectTo({ url: "/pages/order/list" });
+          }, 1500);
+        } else {
+          common_vendor.index.showToast({ title: res.message || "创建失败", icon: "none" });
         }
+      }).catch((err) => {
+        console.error("创建订单失败", err);
+        common_vendor.index.showToast({ title: "创建失败，请重试", icon: "none" });
+      }).finally(() => {
+        loading.value = false;
       });
     }
     return (_ctx, _cache) => {

@@ -19,8 +19,11 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       loading.value = true;
       try {
         const res = await api_cart.cartApi.getList();
-        if (res.code === 200) {
-          cartItems.value = res.data || [];
+        if (res.code === 200 && res.data) {
+          cartItems.value = (res.data.items || []).map((item) => ({
+            ...item,
+            selected: item.selected ?? true
+          }));
         }
       } catch (error) {
         console.error("加载购物车失败", error);
@@ -35,7 +38,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
     });
     const totalPrice = common_vendor.computed(() => {
-      return cartItems.value.filter((item) => item.selected).reduce((sum, item) => sum + item.price * item.quantity, 0);
+      return cartItems.value.filter((item) => item.selected).reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
     });
     const selectedCount = common_vendor.computed(() => {
       return cartItems.value.filter((item) => item.selected).length;
@@ -95,7 +98,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             e: common_vendor.t(((_a = item.productName) == null ? void 0 : _a.charAt(0)) || "P")
           }, {
             f: common_vendor.t(item.productName),
-            g: common_vendor.t(item.price),
+            g: common_vendor.t(item.productPrice),
             h: common_vendor.o(($event) => updateQuantity(item.productId, -1), item.id),
             i: common_vendor.t(item.quantity),
             j: common_vendor.o(($event) => updateQuantity(item.productId, 1), item.id),
