@@ -22,11 +22,11 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           checkoutItems.value = [{
             id: 0,
             productId: quickBuy.productId,
-            productName: "示例商品",
-            price: 299,
+            productName: quickBuy.productName || "商品",
+            price: quickBuy.price || 0,
             quantity: quickBuy.quantity,
             selected: true,
-            coverImage: ""
+            coverImage: quickBuy.coverImage || ""
           }];
         }
       }

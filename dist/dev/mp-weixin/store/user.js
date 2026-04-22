@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../common/vendor.js");
 const utils_env = require("../utils/env.js");
+const api_request = require("../api/request.js");
 const useUserStore = common_vendor.defineStore("user", {
   state: () => ({
     token: common_vendor.index.getStorageSync("token") || null,
@@ -23,10 +24,11 @@ const useUserStore = common_vendor.defineStore("user", {
         if (!loginRes.code) {
           throw new Error("获取登录凭证失败");
         }
+        const sessionId = api_request.getSessionId();
         const res = await common_vendor.index.request({
           url: `${utils_env.BASE_URL}/public/wechat/login`,
           method: "POST",
-          data: { code: loginRes.code }
+          data: { code: loginRes.code, sessionId }
         });
         const data = res.data;
         if (data.code === 200) {

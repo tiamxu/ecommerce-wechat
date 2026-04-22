@@ -79,7 +79,10 @@ function buyNow() {
   if (!product.value) return
   uni.setStorageSync('quickBuy', {
     productId: product.value.id,
-    quantity: quantity.value
+    quantity: quantity.value,
+    price: product.value.price,
+    productName: getProductName(),
+    coverImage: getCoverImage()
   })
   uni.navigateTo({
     url: '/pages/order/confirm'

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { BASE_URL } from '../utils/env'
+import { getSessionId } from '../api/request'
 
 interface UserInfo {
   id: number
@@ -43,11 +44,12 @@ export const useUserStore = defineStore('user', {
           throw new Error('获取登录凭证失败')
         }
 
-        // 调用后端微信登录接口
+        // 调用后端微信登录接口，传递sessionId用于合并购物车
+        const sessionId = getSessionId()
         const res = await uni.request({
           url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          data: { code: loginRes.code }
+          data: { code: loginRes.code, sessionId }
         })
 
         const data = res.data as any

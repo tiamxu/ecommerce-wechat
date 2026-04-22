@@ -1,8 +1,17 @@
 "use strict";
 const common_vendor = require("../common/vendor.js");
 const utils_env = require("../utils/env.js");
+function getSessionId() {
+  let sessionId = common_vendor.index.getStorageSync("cart_session");
+  if (!sessionId) {
+    sessionId = "cart_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    common_vendor.index.setStorageSync("cart_session", sessionId);
+  }
+  return sessionId;
+}
 function request(options) {
   const token = common_vendor.index.getStorageSync("token");
+  const sessionId = getSessionId();
   return new Promise((resolve, reject) => {
     if (options.showLoading) {
       common_vendor.index.showLoading({ title: "加载中..." });
@@ -14,6 +23,7 @@ function request(options) {
       header: {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",
+        "X-Cart-Session": sessionId,
         ...options.header
       },
       timeout: options.timeout || 1e4,
@@ -55,4 +65,5 @@ function request(options) {
     common_vendor.index.request(requestOptions);
   });
 }
+exports.getSessionId = getSessionId;
 exports.request = request;

@@ -78,7 +78,10 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       if (!product.value) return;
       common_vendor.index.setStorageSync("quickBuy", {
         productId: product.value.id,
-        quantity: quantity.value
+        quantity: quantity.value,
+        price: product.value.price,
+        productName: getProductName(),
+        coverImage: getCoverImage()
       });
       common_vendor.index.navigateTo({
         url: "/pages/order/confirm"

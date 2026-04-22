@@ -17,8 +17,21 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
+// 获取或创建sessionId
+function getSessionId(): string {
+  let sessionId = uni.getStorageSync('cart_session')
+  if (!sessionId) {
+    sessionId = 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    uni.setStorageSync('cart_session', sessionId)
+  }
+  return sessionId
+}
+
+export { getSessionId }
+
 export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T>> {
   const token = uni.getStorageSync('token')
+  const sessionId = getSessionId()
 
   return new Promise((resolve, reject) => {
     if (options.showLoading) {
@@ -32,6 +45,7 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
       header: {
         'Content-Type': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
+        'X-Cart-Session': sessionId,
         ...options.header
       },
       timeout: options.timeout || 10000,
