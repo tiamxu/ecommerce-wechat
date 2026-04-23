@@ -7,7 +7,7 @@ const theme_config = require("../../theme/config.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "list",
   setup(__props) {
-    const userStore = store_user.useUserStore();
+    store_user.useUserStore();
     const orders = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
     const activeTab = common_vendor.ref("all");
@@ -38,12 +38,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       loadOrders();
     });
     async function loadOrders() {
-      if (!userStore.email) {
-        return;
-      }
       loading.value = true;
       try {
-        const res = await api_order.orderApi.getList({ email: userStore.email });
+        const res = await api_order.orderApi.getMyOrders();
         if (res.code === 200 && res.data) {
           orders.value = res.data.list || [];
         }

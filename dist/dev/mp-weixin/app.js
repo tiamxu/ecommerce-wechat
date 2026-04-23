@@ -9,7 +9,11 @@ if (!Math) {
   "./pages/cart/index.js";
   "./pages/order/confirm.js";
   "./pages/order/list.js";
+  "./pages/order/detail.js";
   "./pages/user/index.js";
+  "./pages/user/edit.js";
+  "./pages/user/password.js";
+  "./pages/user/bind-phone.js";
   "./pages/address/list.js";
   "./pages/address/edit.js";
   "./pages/search/index.js";

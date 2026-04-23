@@ -99,28 +99,42 @@ function getProductDesc(): string {
   return product.value.description?.zh || product.value.description?.en || ''
 }
 
-function getCoverImage(): string {
-  if (!product.value) return ''
-  if (product.value.metaImage) return product.value.metaImage
-  if (product.value.images && product.value.images.length > 0) {
-    const cover = product.value.images.find(img => img.isCover === 1)
-    return cover?.url || product.value.images[0].url
+function getCoverImages(): string[] {
+  if (!product.value) return []
+  const images: string[] = []
+  if (product.value.metaImage) {
+    images.push(product.value.metaImage)
   }
-  return ''
+  if (product.value.images && product.value.images.length > 0) {
+    product.value.images.forEach(img => {
+      if (img.url && !images.includes(img.url)) {
+        images.push(img.url)
+      }
+    })
+  }
+  return images
 }
 </script>
 
 <template>
   <view :class="['product-detail', THEME_CLASS]">
     <TabBar />
-    <!-- 商品图片 -->
+    <!-- 商品图片轮播 -->
     <view class="detail-swiper">
-      <image
-        v-if="getCoverImage()"
-        :src="getCoverImage()"
-        mode="aspectFill"
-        class="cover-image"
-      />
+      <swiper
+        v-if="getCoverImages().length > 0"
+        class="image-swiper"
+        :indicator-dots="getCoverImages().length > 1"
+        :autoplay="getCoverImages().length > 1"
+        :interval="3000"
+        :circular="true"
+        indicator-color="rgba(255,255,255,0.5)"
+        indicator-active-color="#fff"
+      >
+        <swiper-item v-for="(img, index) in getCoverImages()" :key="index">
+          <image :src="img" mode="aspectFill" class="swiper-image" />
+        </swiper-item>
+      </swiper>
       <view v-else class="img-placeholder">
         <text class="placeholder-text">{{ getProductName().charAt(0) || 'P' }}</text>
       </view>
@@ -172,7 +186,12 @@ function getCoverImage(): string {
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
-.cover-image {
+.image-swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-image {
   width: 100%;
   height: 100%;
 }

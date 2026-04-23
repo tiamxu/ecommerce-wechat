@@ -97,43 +97,56 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       if (!((_a = product.value) == null ? void 0 : _a.description)) return "";
       return ((_b = product.value.description) == null ? void 0 : _b.zh) || ((_c = product.value.description) == null ? void 0 : _c.en) || "";
     }
-    function getCoverImage() {
-      if (!product.value) return "";
-      if (product.value.metaImage) return product.value.metaImage;
-      if (product.value.images && product.value.images.length > 0) {
-        const cover = product.value.images.find((img) => img.isCover === 1);
-        return (cover == null ? void 0 : cover.url) || product.value.images[0].url;
+    function getCoverImages() {
+      if (!product.value) return [];
+      const images = [];
+      if (product.value.metaImage) {
+        images.push(product.value.metaImage);
       }
-      return "";
+      if (product.value.images && product.value.images.length > 0) {
+        product.value.images.forEach((img) => {
+          if (img.url && !images.includes(img.url)) {
+            images.push(img.url);
+          }
+        });
+      }
+      return images;
     }
     return (_ctx, _cache) => {
       var _a, _b;
       return common_vendor.e({
-        a: getCoverImage()
-      }, getCoverImage() ? {
-        b: getCoverImage()
+        a: getCoverImages().length > 0
+      }, getCoverImages().length > 0 ? {
+        b: common_vendor.f(getCoverImages(), (img, index, i0) => {
+          return {
+            a: img,
+            b: index
+          };
+        }),
+        c: getCoverImages().length > 1,
+        d: getCoverImages().length > 1
       } : {
-        c: common_vendor.t(getProductName().charAt(0) || "P")
+        e: common_vendor.t(getProductName().charAt(0) || "P")
       }, {
-        d: product.value
+        f: product.value
       }, product.value ? common_vendor.e({
-        e: common_vendor.t(product.value.price),
-        f: common_vendor.t(product.value.stock),
-        g: common_vendor.t(getProductName()),
-        h: getProductDesc()
+        g: common_vendor.t(product.value.price),
+        h: common_vendor.t(product.value.stock),
+        i: common_vendor.t(getProductName()),
+        j: getProductDesc()
       }, getProductDesc() ? {
-        i: common_vendor.t(getProductDesc())
+        k: common_vendor.t(getProductDesc())
       } : {}) : {}, {
-        j: (_a = product.value) == null ? void 0 : _a.primaryTag
+        l: (_a = product.value) == null ? void 0 : _a.primaryTag
       }, ((_b = product.value) == null ? void 0 : _b.primaryTag) ? {
-        k: common_vendor.t(product.value.primaryTag.name)
+        m: common_vendor.t(product.value.primaryTag.name)
       } : {}, {
-        l: common_vendor.o(decreaseQty),
-        m: common_vendor.t(quantity.value),
-        n: common_vendor.o(increaseQty),
-        o: common_vendor.o(addToCart),
-        p: common_vendor.o(buyNow),
-        q: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        n: common_vendor.o(decreaseQty),
+        o: common_vendor.t(quantity.value),
+        p: common_vendor.o(increaseQty),
+        q: common_vendor.o(addToCart),
+        r: common_vendor.o(buyNow),
+        s: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

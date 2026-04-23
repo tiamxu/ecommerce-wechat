@@ -54,16 +54,11 @@ export const orderApi = {
     })
   },
 
-  // 获取订单列表
-  getList(params?: {
-    status?: string
-    pageNo?: number
-    pageSize?: number
-  }): Promise<ApiResponse<{ list: OrderItem[]; total: number }>> {
+  // 获取我的订单列表（通过 JWT 自动识别用户）
+  getMyOrders(): Promise<ApiResponse<{ list: OrderItem[]; total: number }>> {
     return request({
-      url: '/order/query',
+      url: '/order/my',
       method: 'GET',
-      data: params,
       showLoading: true
     })
   },
@@ -98,35 +93,35 @@ export const orderApi = {
   // 获取收货地址列表
   getAddresses(): Promise<ApiResponse<Address[]>> {
     return request({
-      url: '/addresses',
+      url: '/api/addresses',
       method: 'GET',
       showLoading: true
     })
   },
 
-  // 添加收货地址（后端暂无接口，TODO）
+  // 添加收货地址
   addAddress(params: Omit<Address, 'id'>): Promise<ApiResponse<void>> {
     return request({
-      url: '/addresses',
+      url: '/api/addresses',
       method: 'POST',
       data: params,
       showLoading: true
     })
   },
 
-  // 更新收货地址（后端暂无接口，TODO）
+  // 更新收货地址
   updateAddress(id: number, params: Partial<Address>): Promise<ApiResponse<void>> {
     return request({
-      url: `/addresses/${id}`,
+      url: `/api/addresses/${id}`,
       method: 'PUT',
       data: params
     })
   },
 
-  // 删除收货地址（后端暂无接口，TODO）
+  // 删除收货地址
   deleteAddress(id: number): Promise<ApiResponse<void>> {
     return request({
-      url: `/addresses/${id}`,
+      url: `/api/addresses/${id}`,
       method: 'DELETE',
       showLoading: true
     })

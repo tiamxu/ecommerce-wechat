@@ -54,8 +54,6 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
           uni.hideLoading()
         }
 
-        console.log('API响应:', options.url, res)
-
         if (res.statusCode === 200) {
           const data = res.data
           // 检查业务状态码
@@ -82,7 +80,6 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
         if (options.showLoading) {
           uni.hideLoading()
         }
-        console.error('请求失败:', options.url, error)
         uni.showToast({ title: '网络错误，请检查网络', icon: 'none' })
         reject(error)
       }

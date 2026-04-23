@@ -32,10 +32,15 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       if (props.product.originalPrice) return props.product.originalPrice;
       return Math.round(props.product.price * 1.3);
     });
-    const salesCount = common_vendor.computed(() => {
-      return props.product.sales || 0;
+    const stockStatus = common_vendor.computed(() => {
+      const stock = props.product.stock;
+      if (stock === void 0 || stock === null) return "";
+      if (stock === 0) return { text: "补货中", type: "out" };
+      if (stock <= 10) return { text: `仅剩${stock}件`, type: "low" };
+      return "";
     });
     function handleClick() {
+      if (props.product.stock === 0) return;
       emit("click", props.product.id);
     }
     return (_ctx, _cache) => {
@@ -59,12 +64,14 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }, _ctx.showOriginalPrice && _ctx.product.price < originalPrice.value ? {
         j: common_vendor.t(originalPrice.value)
       } : {}, {
-        k: common_vendor.t(salesCount.value),
-        l: _ctx.product.stock !== void 0 && _ctx.product.stock < 10
-      }, _ctx.product.stock !== void 0 && _ctx.product.stock < 10 ? {
-        m: common_vendor.t(_ctx.product.stock)
+        k: common_vendor.t(_ctx.product.sales || 0),
+        l: stockStatus.value
+      }, stockStatus.value ? {
+        m: common_vendor.t(stockStatus.value.text),
+        n: common_vendor.n(stockStatus.value.type)
       } : {}, {
-        n: common_vendor.o(handleClick)
+        o: _ctx.product.stock === 0 ? 1 : "",
+        p: common_vendor.o(handleClick)
       });
     };
   }

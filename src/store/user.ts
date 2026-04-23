@@ -25,7 +25,9 @@ export const useUserStore = defineStore('user', {
   }),
 
   getters: {
-    isLoggedIn: (state) => !!state.token
+    isLoggedIn: (state) => !!state.token,
+    // 是否可以设置密码（微信用户没有密码）
+    canSetPassword: (state) => !state.userInfo?.phone
   },
 
   actions: {
@@ -81,12 +83,18 @@ export const useUserStore = defineStore('user', {
       uni.setStorageSync('user_email', email)
     },
 
+    updateUserInfo(info: Partial<UserInfo>) {
+      if (this.userInfo) {
+        this.userInfo = { ...this.userInfo, ...info }
+      }
+    },
+
     async fetchUserInfo() {
       if (!this.token) return
 
       try {
         const res = await uni.request({
-          url: `${BASE_URL}/user/info`,
+          url: `${BASE_URL}/api/users/profile`,
           method: 'GET',
           header: { Authorization: `Bearer ${this.token}` }
         })
@@ -97,6 +105,34 @@ export const useUserStore = defineStore('user', {
         }
       } catch (error) {
         console.error('获取用户信息失败', error)
+      }
+    },
+
+    async bindPhone(phone: string, password: string) {
+      try {
+        const res = await uni.request({
+          url: `${BASE_URL}/api/users/bind-phone`,
+          method: 'POST',
+          header: { Authorization: `Bearer ${this.token}` },
+          data: { phone, password }
+        })
+
+        const data = res.data as any
+        if (data.code === 200) {
+          // 更新本地用户信息
+          if (this.userInfo) {
+            this.userInfo.phone = phone
+          }
+          uni.showToast({ title: '绑定成功', icon: 'success' })
+          return { success: true }
+        } else {
+          uni.showToast({ title: data.message || '绑定失败', icon: 'none' })
+          return { success: false, message: data.message }
+        }
+      } catch (error: any) {
+        console.error('绑定手机号失败', error)
+        uni.showToast({ title: '绑定失败', icon: 'none' })
+        return { success: false, message: error.message }
       }
     }
   }

@@ -51,17 +51,22 @@ const originalPrice = computed(() => {
   return Math.round(props.product.price * 1.3)
 })
 
-const salesCount = computed(() => {
-  return props.product.sales || 0
+const stockStatus = computed(() => {
+  const stock = props.product.stock
+  if (stock === undefined || stock === null) return ''
+  if (stock === 0) return { text: '补货中', type: 'out' }
+  if (stock <= 10) return { text: `仅剩${stock}件`, type: 'low' }
+  return ''
 })
 
 function handleClick() {
+  if (props.product.stock === 0) return
   emit('click', props.product.id)
 }
 </script>
 
 <template>
-  <view class="product-card" @click="handleClick">
+  <view class="product-card" :class="{ 'stock-out': product.stock === 0 }" @click="handleClick">
     <view class="card-img">
       <image
         v-if="coverImage"
@@ -85,9 +90,9 @@ function handleClick() {
         </text>
       </view>
       <view class="info-bottom">
-        <text class="sales-count">已售{{ salesCount }}件</text>
-        <view v-if="product.stock !== undefined && product.stock < 10" class="stock-tip">
-          仅剩{{ product.stock }}件
+        <text class="sales-count">已售{{ product.sales || 0 }}件</text>
+        <view v-if="stockStatus" class="stock-tip" :class="stockStatus.type">
+          {{ stockStatus.text }}
         </view>
       </view>
     </view>
@@ -117,6 +122,7 @@ function handleClick() {
 .cover-img {
   width: 100%;
   height: 100%;
+  transition: opacity 0.3s;
 }
 
 .img-placeholder {
@@ -195,7 +201,23 @@ function handleClick() {
 
 .stock-tip {
   font-size: 20rpx;
-  color: var(--accent);
   font-weight: 500;
+
+  &.low {
+    color: var(--accent);
+  }
+
+  &.out {
+    color: var(--text-placeholder);
+    background: var(--bg-page);
+    padding: 4rpx 12rpx;
+    border-radius: 8rpx;
+  }
+}
+
+.product-card.stock-out {
+  .cover-img {
+    opacity: 0.6;
+  }
 }
 </style>

@@ -1,21 +1,61 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '../../store/user'
+import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
+const loading = ref(false)
+const userInfo = ref<UserInfo | null>(null)
 
-const menuItems = [
-  { id: 1, icon: '📋', text: '我的订单', path: '/pages/order/list' },
-  { id: 2, icon: '❤️', text: '我的收藏', path: '' },
-  { id: 3, icon: '📍', text: '收货地址', path: '/pages/address/list' },
-  { id: 5, icon: '⚙️', text: '设置', path: '' }
-]
+// 是否有手机号（决定了是否能修改密码）
+const hasPhone = computed(() => !!userInfo.value?.phone)
 
-function handleMenuClick(item: typeof menuItems[0]) {
+// 菜单项（根据是否有手机号动态显示）
+const menuItems = computed(() => {
+  const items = [
+    { id: 1, icon: '📋', text: '我的订单', path: '/pages/order/list' },
+    { id: 2, icon: '❤️', text: '我的收藏', path: '' },
+    { id: 3, icon: '📍', text: '收货地址', path: '/pages/address/list' },
+    { id: 4, icon: '✏️', text: '编辑资料', path: '/pages/user/edit' }
+  ]
+  // 如果没有手机号，显示绑定手机号；否则显示修改密码
+  if (!hasPhone.value) {
+    items.push({ id: 5, icon: '📱', text: '绑定手机号', path: '/pages/user/bind-phone' })
+  } else {
+    items.push({ id: 5, icon: '🔑', text: '修改密码', path: '/pages/user/password' })
+  }
+  items.push({ id: 6, icon: '⚙️', text: '设置', path: '' })
+  return items
+})
+
+onMounted(() => {
+  if (userStore.isLoggedIn) {
+    loadUserInfo()
+  }
+})
+
+async function loadUserInfo() {
+  loading.value = true
+  try {
+    const res = await userApi.getProfile()
+    if (res.code === 200 && res.data) {
+      userInfo.value = res.data
+      userStore.updateUserInfo(res.data)
+    }
+  } catch (error) {
+    console.error('加载用户信息失败', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleMenuClick(item: typeof menuItems.value[0]) {
   if (item.path) {
     uni.navigateTo({ url: item.path })
+  } else if (item.text === '我的收藏' || item.text === '设置') {
+    uni.showToast({ title: '功能开发中', icon: 'none' })
   }
 }
 
@@ -32,11 +72,11 @@ function handleLogout() {
     success: (res) => {
       if (res.confirm) {
         userStore.logout()
+        userInfo.value = null
       }
     }
   })
 }
-
 </script>
 
 <template>
@@ -46,12 +86,13 @@ function handleLogout() {
     <view class="user-header">
       <view v-if="userStore.isLoggedIn" class="user-info">
         <view class="avatar">
-          <image v-if="userStore.userInfo?.avatar" :src="userStore.userInfo.avatar" class="avatar-img" />
-          <text v-else class="avatar-text">{{ userStore.userInfo?.nickname?.charAt(0) || 'U' }}</text>
+          <image v-if="userInfo?.avatar" :src="userInfo.avatar" class="avatar-img" />
+          <text v-else class="avatar-text">{{ (userInfo?.nickname || userInfo?.username || 'U').charAt(0).toUpperCase() }}</text>
         </view>
         <view class="user-detail">
-          <text class="nickname">{{ userStore.userInfo?.nickname || '用户' }}</text>
-          <text v-if="userStore.userInfo?.phone" class="phone">{{ userStore.userInfo.phone }}</text>
+          <text class="nickname">{{ userInfo?.nickname || userInfo?.username || '微信用户' }}</text>
+          <text v-if="userInfo?.phone" class="phone">{{ userInfo.phone }}</text>
+          <text v-else class="phone bind-tip">未绑定手机号</text>
         </view>
       </view>
       <view v-else class="login-prompt" @click="handleLogin">
@@ -59,6 +100,18 @@ function handleLogout() {
           <text class="avatar-text">?</text>
         </view>
         <text class="login-text">点击登录</text>
+      </view>
+    </view>
+
+    <!-- 用户信息卡片 -->
+    <view v-if="userStore.isLoggedIn && userInfo" class="info-card">
+      <view class="info-row">
+        <text class="info-label">用户ID</text>
+        <text class="info-value">{{ userInfo.id }}</text>
+      </view>
+      <view v-if="userInfo.createdAt" class="info-row">
+        <text class="info-label">注册时间</text>
+        <text class="info-value">{{ userInfo.createdAt }}</text>
       </view>
     </view>
 
@@ -139,14 +192,41 @@ function handleLogout() {
   margin-bottom: 8rpx;
 }
 
-.phone {
+.phone, .email {
   font-size: 24rpx;
   color: var(--text-sub);
+  margin-top: 4rpx;
+}
+
+.bind-tip {
+  color: var(--accent);
 }
 
 .login-text {
   font-size: 32rpx;
   color: var(--primary);
+}
+
+.info-card {
+  background: var(--bg-card);
+  padding: 24rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12rpx 0;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: var(--text-sub);
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: var(--text-main);
 }
 
 .menu-section {
@@ -194,7 +274,7 @@ function handleLogout() {
   width: 100%;
   padding: 24rpx;
   background: var(--bg-card);
-  color: var(--text-sub);
+  color: var(--accent);
   text-align: center;
   border-radius: 16rpx;
   font-size: 28rpx;

@@ -9,7 +9,12 @@ const useUserStore = common_vendor.defineStore("user", {
     email: common_vendor.index.getStorageSync("user_email") || null
   }),
   getters: {
-    isLoggedIn: (state) => !!state.token
+    isLoggedIn: (state) => !!state.token,
+    // 是否可以设置密码（微信用户没有密码）
+    canSetPassword: (state) => {
+      var _a;
+      return !((_a = state.userInfo) == null ? void 0 : _a.phone);
+    }
   },
   actions: {
     async login() {
@@ -55,11 +60,16 @@ const useUserStore = common_vendor.defineStore("user", {
       this.email = email;
       common_vendor.index.setStorageSync("user_email", email);
     },
+    updateUserInfo(info) {
+      if (this.userInfo) {
+        this.userInfo = { ...this.userInfo, ...info };
+      }
+    },
     async fetchUserInfo() {
       if (!this.token) return;
       try {
         const res = await common_vendor.index.request({
-          url: `${utils_env.BASE_URL}/user/info`,
+          url: `${utils_env.BASE_URL}/api/users/profile`,
           method: "GET",
           header: { Authorization: `Bearer ${this.token}` }
         });
@@ -69,6 +79,31 @@ const useUserStore = common_vendor.defineStore("user", {
         }
       } catch (error) {
         console.error("获取用户信息失败", error);
+      }
+    },
+    async bindPhone(phone, password) {
+      try {
+        const res = await common_vendor.index.request({
+          url: `${utils_env.BASE_URL}/api/users/bind-phone`,
+          method: "POST",
+          header: { Authorization: `Bearer ${this.token}` },
+          data: { phone, password }
+        });
+        const data = res.data;
+        if (data.code === 200) {
+          if (this.userInfo) {
+            this.userInfo.phone = phone;
+          }
+          common_vendor.index.showToast({ title: "绑定成功", icon: "success" });
+          return { success: true };
+        } else {
+          common_vendor.index.showToast({ title: data.message || "绑定失败", icon: "none" });
+          return { success: false, message: data.message };
+        }
+      } catch (error) {
+        console.error("绑定手机号失败", error);
+        common_vendor.index.showToast({ title: "绑定失败", icon: "none" });
+        return { success: false, message: error.message };
       }
     }
   }

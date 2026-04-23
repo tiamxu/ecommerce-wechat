@@ -31,7 +31,6 @@ function request(options) {
         if (options.showLoading) {
           common_vendor.index.hideLoading();
         }
-        console.log("API响应:", options.url, res);
         if (res.statusCode === 200) {
           const data = res.data;
           if (data.code === 200) {
@@ -57,7 +56,6 @@ function request(options) {
         if (options.showLoading) {
           common_vendor.index.hideLoading();
         }
-        console.error("请求失败:", options.url, error);
         common_vendor.index.showToast({ title: "网络错误，请检查网络", icon: "none" });
         reject(error);
       }

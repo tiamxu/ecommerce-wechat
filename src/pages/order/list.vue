@@ -41,12 +41,9 @@ onMounted(() => {
 })
 
 async function loadOrders() {
-  if (!userStore.email) {
-    return
-  }
   loading.value = true
   try {
-    const res = await orderApi.getList({ email: userStore.email })
+    const res = await orderApi.getMyOrders()
     if (res.code === 200 && res.data) {
       orders.value = res.data.list || []
     }

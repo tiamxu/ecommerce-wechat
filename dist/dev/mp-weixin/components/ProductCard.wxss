@@ -42,6 +42,7 @@
 .cover-img.data-v-a4cce9c2 {
   width: 100%;
   height: 100%;
+  transition: opacity 0.3s;
 }
 .img-placeholder.data-v-a4cce9c2 {
   width: 100%;
@@ -109,6 +110,17 @@
 }
 .stock-tip.data-v-a4cce9c2 {
   font-size: 20rpx;
-  color: var(--accent);
   font-weight: 500;
+}
+.stock-tip.low.data-v-a4cce9c2 {
+  color: var(--accent);
+}
+.stock-tip.out.data-v-a4cce9c2 {
+  color: var(--text-placeholder);
+  background: var(--bg-page);
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+.product-card.stock-out .cover-img.data-v-a4cce9c2 {
+  opacity: 0.6;
 }

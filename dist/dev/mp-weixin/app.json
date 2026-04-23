@@ -8,6 +8,9 @@
     "pages/order/list",
     "pages/order/detail",
     "pages/user/index",
+    "pages/user/edit",
+    "pages/user/password",
+    "pages/user/bind-phone",
     "pages/address/list",
     "pages/address/edit",
     "pages/search/index"
