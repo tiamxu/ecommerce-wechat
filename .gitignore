@@ -12,4 +12,4 @@ LICENSE
 license
 LICENSE.MIT
 node_modules
-dist/
+dist/*
