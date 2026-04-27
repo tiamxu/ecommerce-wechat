@@ -17,7 +17,7 @@ async function loadAddresses() {
     const res = await orderApi.getAddresses()
     if (res.code === 200 && res.data) {
       addresses.value = res.data
-      const selected = res.data.find((a: Address) => a.isDefault)
+      const selected = res.data.find((a: Address) => a.isDefault === 1)
       if (selected) {
         selectedId.value = selected.id
       }
@@ -31,6 +31,12 @@ async function loadAddresses() {
 
 function selectAddress(id: number) {
   selectedId.value = id
+  // 通过页面栈传回 selectedId
+  const pages = getCurrentPages()
+  const prevPage = pages[pages.length - 2]
+  if (prevPage && prevPage.selectAddress) {
+    prevPage.selectAddress(id)
+  }
   uni.navigateBack()
 }
 
@@ -62,8 +68,8 @@ async function deleteAddress(id: number) {
 
 async function setDefault(id: number) {
   try {
-    await orderApi.updateAddress(id, { isDefault: true })
-    addresses.value.forEach(a => a.isDefault = a.id === id)
+    await orderApi.updateAddress(id, { isDefault: true } as any)
+    addresses.value.forEach(a => a.isDefault = a.id === id ? 1 : 0)
     uni.showToast({ title: '设置成功', icon: 'success' })
   } catch (error) {
     console.error('设置默认地址失败', error)
@@ -86,11 +92,11 @@ async function setDefault(id: number) {
         <view class="card-main" @click="selectAddress(addr.id)">
           <view class="address-info">
             <view class="info-header">
-              <text class="name">{{ addr.name }}</text>
+              <text class="name">{{ addr.receiverName }}</text>
               <text class="phone">{{ addr.phone }}</text>
-              <view v-if="addr.isDefault" class="default-tag">默认</view>
+              <view v-if="addr.isDefault === 1" class="default-tag">默认</view>
             </view>
-            <text class="address-detail">{{ addr.province }} {{ addr.city }} {{ addr.district }} {{ addr.detail }}</text>
+            <text class="address-detail">{{ addr.province }} {{ addr.city }} {{ addr.address }}</text>
           </view>
         </view>
 
@@ -98,7 +104,7 @@ async function setDefault(id: number) {
           <view class="action-item" @click="goToEdit(addr.id)">
             <text>编辑</text>
           </view>
-          <view v-if="!addr.isDefault" class="action-item" @click="setDefault(addr.id)">
+          <view v-if="addr.isDefault !== 1" class="action-item" @click="setDefault(addr.id)">
             <text>设为默认</text>
           </view>
           <view class="action-item delete" @click="deleteAddress(addr.id)">

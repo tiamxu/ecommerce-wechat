@@ -7,17 +7,23 @@ const loading = ref(false)
 const order = ref<OrderItem | null>(null)
 
 const statusMap: Record<string, { label: string; color: string }> = {
-  pending: { label: '待付款', color: 'var(--accent)' },
-  paid: { label: '待发货', color: 'var(--primary)' },
-  shipped: { label: '待收货', color: 'var(--primary)' },
-  completed: { label: '已完成', color: 'var(--text-sub)' },
-  cancelled: { label: '已取消', color: 'var(--text-placeholder)' }
+  '0': { label: '待付款', color: 'var(--accent)' },
+  '1': { label: '待发货', color: 'var(--primary)' },
+  '2': { label: '待收货', color: 'var(--primary)' },
+  '3': { label: '已完成', color: 'var(--text-sub)' },
+  '4': { label: '已取消', color: 'var(--text-placeholder)' }
 }
 
 const statusInfo = computed(() => {
   if (!order.value) return { label: '', color: '' }
-  return statusMap[order.value.status] || { label: order.value.status, color: 'var(--text-sub)' }
+  const key = String(order.value.status)
+  return statusMap[key] || { label: order.value.status, color: 'var(--text-sub)' }
 })
+
+// 判断是否是待付款状态
+function isPending(status: any): boolean {
+  return String(status) === '0'
+}
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -46,7 +52,7 @@ async function loadOrderDetail(orderId: number) {
 async function payOrder() {
   if (!order.value) return
   try {
-    await orderApi.pay(order.value.id)
+    await orderApi.pay(order.value.id, 'wechat')
     uni.showToast({ title: '支付成功', icon: 'success' })
     loadOrderDetail(order.value.id)
   } catch (error) {
@@ -165,12 +171,12 @@ function goBack() {
       <!-- 操作按钮 -->
       <view class="action-section">
         <text
-          v-if="order.status === 'pending'"
+          v-if="isPending(order.status)"
           class="action-btn pay"
           @click="payOrder"
         >去付款</text>
         <text
-          v-if="order.status === 'pending'"
+          v-if="isPending(order.status)"
           class="action-btn cancel"
           @click="cancelOrder"
         >取消订单</text>

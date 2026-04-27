@@ -49,17 +49,13 @@ function increaseQty() {
 async function addToCart() {
   if (!product.value) return
 
+  if (product.value.stock === 0) {
+    uni.showToast({ title: '商品已缺货', icon: 'none' })
+    return
+  }
+
   if (!userStore.isLoggedIn) {
-    uni.showModal({
-      title: '提示',
-      content: '请先登录后再添加购物车',
-      confirmText: '去登录',
-      success: (res) => {
-        if (res.confirm) {
-          userStore.login()
-        }
-      }
-    })
+    uni.navigateTo({ url: '/pages/user/login' })
     return
   }
 
@@ -77,12 +73,19 @@ async function addToCart() {
 
 function buyNow() {
   if (!product.value) return
+
+  if (product.value.stock === 0) {
+    uni.showToast({ title: '商品已缺货', icon: 'none' })
+    return
+  }
+
+  const images = getCoverImages()
   uni.setStorageSync('quickBuy', {
     productId: product.value.id,
     quantity: quantity.value,
     price: product.value.price,
     productName: getProductName(),
-    coverImage: getCoverImage()
+    coverImage: images.length > 0 ? images[0] : ''
   })
   uni.navigateTo({
     url: '/pages/order/confirm'
@@ -97,6 +100,20 @@ function getProductName(): string {
 function getProductDesc(): string {
   if (!product.value?.description) return ''
   return product.value.description?.zh || product.value.description?.en || ''
+}
+
+function getStockText(): string {
+  if (!product.value?.stock) return ''
+  if (product.value.stock === 0) return '缺货'
+  if (product.value.stock <= 10) return `仅剩${product.value.stock}件`
+  return `库存${product.value.stock}件`
+}
+
+function getStockClass(): string {
+  if (!product.value?.stock) return ''
+  if (product.value.stock === 0) return 'out'
+  if (product.value.stock <= 10) return 'low'
+  return 'normal'
 }
 
 function getCoverImages(): string[] {
@@ -144,7 +161,7 @@ function getCoverImages(): string[] {
     <view v-if="product" class="detail-info">
       <view class="info-header">
         <text class="product-price">¥{{ product.price }}</text>
-        <text class="product-stock">库存: {{ product.stock }}</text>
+        <text class="stock-status" :class="getStockClass()">{{ getStockText() }}</text>
       </view>
       <text class="product-name">{{ getProductName() }}</text>
       <text v-if="getProductDesc()" class="product-desc">{{ getProductDesc() }}</text>
@@ -177,12 +194,12 @@ function getCoverImages(): string[] {
 .product-detail {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 140rpx;
+  padding-bottom: 180rpx;
 }
 
 .detail-swiper {
   width: 100%;
-  height: 750rpx;
+  height: 500rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
@@ -229,9 +246,25 @@ function getCoverImages(): string[] {
   color: var(--price);
 }
 
-.product-stock {
+.stock-status {
   font-size: 24rpx;
-  color: var(--text-sub);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+
+  &.normal {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  &.low {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  &.out {
+    background: var(--bg-page);
+    color: var(--text-placeholder);
+  }
 }
 
 .product-name {
@@ -272,14 +305,14 @@ function getCoverImages(): string[] {
   bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   border-top: 1rpx solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 100;
+  z-index: 998;
 }
 
 .quantity {

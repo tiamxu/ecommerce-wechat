@@ -24,6 +24,20 @@ const cart$1 = {
   total: "Total",
   checkout: "Checkout"
 };
+const order$1 = {
+  createSuccess: "Order Created",
+  createFailed: "Failed to Create Order",
+  payNow: "Pay Now",
+  paying: "Processing...",
+  paySuccess: "Payment Successful",
+  payFailed: "Payment Failed",
+  pendingPayment: "Pending Payment",
+  paid: "Paid",
+  shipped: "Shipped",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  orderNo: "Order Number"
+};
 const user$1 = {
   login: "Login",
   order: "My Orders",
@@ -49,6 +63,7 @@ const en = {
   theme: theme$1,
   product: product$1,
   cart: cart$1,
+  order: order$1,
   user: user$1,
   search: search$1
 };
@@ -76,6 +91,20 @@ const cart = {
   total: "合计",
   checkout: "结算"
 };
+const order = {
+  createSuccess: "订单创建成功",
+  createFailed: "订单创建失败",
+  payNow: "去支付",
+  paying: "支付中...",
+  paySuccess: "支付成功",
+  payFailed: "支付失败",
+  pendingPayment: "待支付",
+  paid: "已支付",
+  shipped: "已发货",
+  completed: "已完成",
+  cancelled: "已取消",
+  orderNo: "订单号"
+};
 const user = {
   login: "登录",
   order: "我的订单",
@@ -101,6 +130,7 @@ const zh = {
   theme,
   product,
   cart,
+  order,
   user,
   search
 };

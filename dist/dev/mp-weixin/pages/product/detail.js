@@ -50,17 +50,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     }
     async function addToCart() {
       if (!product.value) return;
+      if (product.value.stock === 0) {
+        common_vendor.index.showToast({ title: "商品已缺货", icon: "none" });
+        return;
+      }
       if (!userStore.isLoggedIn) {
-        common_vendor.index.showModal({
-          title: "提示",
-          content: "请先登录后再添加购物车",
-          confirmText: "去登录",
-          success: (res) => {
-            if (res.confirm) {
-              userStore.login();
-            }
-          }
-        });
+        common_vendor.index.navigateTo({ url: "/pages/user/login" });
         return;
       }
       try {
@@ -76,12 +71,17 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     }
     function buyNow() {
       if (!product.value) return;
+      if (product.value.stock === 0) {
+        common_vendor.index.showToast({ title: "商品已缺货", icon: "none" });
+        return;
+      }
+      const images = getCoverImages();
       common_vendor.index.setStorageSync("quickBuy", {
         productId: product.value.id,
         quantity: quantity.value,
         price: product.value.price,
         productName: getProductName(),
-        coverImage: getCoverImage()
+        coverImage: images.length > 0 ? images[0] : ""
       });
       common_vendor.index.navigateTo({
         url: "/pages/order/confirm"
@@ -96,6 +96,20 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       var _a, _b, _c;
       if (!((_a = product.value) == null ? void 0 : _a.description)) return "";
       return ((_b = product.value.description) == null ? void 0 : _b.zh) || ((_c = product.value.description) == null ? void 0 : _c.en) || "";
+    }
+    function getStockText() {
+      var _a;
+      if (!((_a = product.value) == null ? void 0 : _a.stock)) return "";
+      if (product.value.stock === 0) return "缺货";
+      if (product.value.stock <= 10) return `仅剩${product.value.stock}件`;
+      return `库存${product.value.stock}件`;
+    }
+    function getStockClass() {
+      var _a;
+      if (!((_a = product.value) == null ? void 0 : _a.stock)) return "";
+      if (product.value.stock === 0) return "out";
+      if (product.value.stock <= 10) return "low";
+      return "normal";
     }
     function getCoverImages() {
       if (!product.value) return [];
@@ -131,22 +145,23 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         f: product.value
       }, product.value ? common_vendor.e({
         g: common_vendor.t(product.value.price),
-        h: common_vendor.t(product.value.stock),
-        i: common_vendor.t(getProductName()),
-        j: getProductDesc()
+        h: common_vendor.t(getStockText()),
+        i: common_vendor.n(getStockClass()),
+        j: common_vendor.t(getProductName()),
+        k: getProductDesc()
       }, getProductDesc() ? {
-        k: common_vendor.t(getProductDesc())
+        l: common_vendor.t(getProductDesc())
       } : {}) : {}, {
-        l: (_a = product.value) == null ? void 0 : _a.primaryTag
+        m: (_a = product.value) == null ? void 0 : _a.primaryTag
       }, ((_b = product.value) == null ? void 0 : _b.primaryTag) ? {
-        m: common_vendor.t(product.value.primaryTag.name)
+        n: common_vendor.t(product.value.primaryTag.name)
       } : {}, {
-        n: common_vendor.o(decreaseQty),
-        o: common_vendor.t(quantity.value),
-        p: common_vendor.o(increaseQty),
-        q: common_vendor.o(addToCart),
-        r: common_vendor.o(buyNow),
-        s: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        o: common_vendor.o(decreaseQty),
+        p: common_vendor.t(quantity.value),
+        q: common_vendor.o(increaseQty),
+        r: common_vendor.o(addToCart),
+        s: common_vendor.o(buyNow),
+        t: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

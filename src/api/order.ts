@@ -2,13 +2,14 @@ import { request, type ApiResponse } from './request'
 
 export interface Address {
   id: number
-  name: string
+  receiverName: string  // 后端字段
   phone: string
   province: string
   city: string
-  district: string
-  detail: string
-  isDefault: boolean
+  country: string
+  address: string  // 后端字段 (不是 detail)
+  postalCode: string
+  isDefault: number  // 后端是 int (0/1)
 }
 
 export interface OrderItem {
@@ -45,7 +46,7 @@ export interface CreateOrderParams {
 
 export const orderApi = {
   // 创建订单
-  create(params: CreateOrderParams): Promise<ApiResponse<{ orderId: number; orderNo: string }>> {
+  create(params: CreateOrderParams): Promise<ApiResponse<{ id: number; orderNo: string }>> {
     return request({
       url: '/order',
       method: 'POST',
@@ -82,9 +83,9 @@ export const orderApi = {
   },
 
   // 支付订单
-  pay(orderId: number): Promise<ApiResponse<void>> {
+  pay(orderId: number, mode: string = 'wechat'): Promise<ApiResponse<{ approval_url?: string; qrcode_url?: string }>> {
     return request({
-      url: `/order/${orderId}/pay`,
+      url: `/order/${orderId}/pay?mode=${mode}`,
       method: 'POST',
       showLoading: true
     })

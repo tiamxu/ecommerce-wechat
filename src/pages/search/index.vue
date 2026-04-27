@@ -182,7 +182,7 @@ function onCancel() {
   align-items: center;
   height: 96rpx;
   padding: 16rpx 24rpx;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   gap: 16rpx;
 }
 

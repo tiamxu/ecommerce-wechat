@@ -45,6 +45,15 @@ const productApi = {
       data: { lang: "zh" },
       showLoading: false
     });
+  },
+  // 获取内容块（如 Banner）
+  getContents(category) {
+    return api_request.request({
+      url: "/public/contents",
+      method: "GET",
+      data: { category },
+      showLoading: false
+    });
   }
 };
 exports.productApi = productApi;

@@ -6,7 +6,7 @@ import { THEME_CLASS } from '../../theme/config'
 
 // 获取用户信息
 const userStore = useUserStore()
-const addresses = ref<Array<{ id: number; name: string; phone: string; province: string; city: string; district: string; detail: string; isDefault: boolean }>>([])
+const addresses = ref<Array<{ id: number; receiverName: string; phone: string; province: string; city: string; country: string; address: string; postalCode: string; isDefault: number }>>([])
 const selectedAddressId = ref<number | null>(null)
 const checkoutItems = ref<any[]>([])
 const loading = ref(false)
@@ -14,10 +14,20 @@ const loading = ref(false)
 // 从真实接口获取地址
 onMounted(async () => {
   // 获取订单确认商品
-  const items = uni.getStorageSync('checkoutItems')
-  if (items && items.length > 0) {
-    checkoutItems.value = items
-  } else {
+  const itemsStr = uni.getStorageSync('checkoutItems')
+  if (itemsStr) {
+    try {
+      const items = typeof itemsStr === 'string' ? JSON.parse(itemsStr) : itemsStr
+      if (Array.isArray(items) && items.length > 0) {
+        checkoutItems.value = items
+      }
+    } catch (e) {
+      console.error('解析checkoutItems失败', e)
+    }
+  }
+
+  // 如果没有商品，尝试 quickBuy
+  if (checkoutItems.value.length === 0) {
     const quickBuy = uni.getStorageSync('quickBuy')
     if (quickBuy) {
       checkoutItems.value = [{
@@ -41,8 +51,8 @@ async function loadAddresses() {
     const res = await orderApi.getAddresses()
     if (res.code === 200 && res.data) {
       addresses.value = res.data
-      // 设置默认地址
-      const defaultAddr = addresses.value.find(a => a.isDefault) || addresses.value[0]
+      // 设置默认地址 (isDefault 是 number 类型，1 表示默认)
+      const defaultAddr = addresses.value.find(a => a.isDefault === 1) || addresses.value[0]
       if (defaultAddr) {
         selectedAddressId.value = defaultAddr.id
       }
@@ -57,7 +67,7 @@ const selectedAddress = computed(() => {
 })
 
 const totalAmount = computed(() => {
-  return checkoutItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  return checkoutItems.value.reduce((sum, item) => sum + (item.productPrice || item.price || 0) * item.quantity, 0)
 })
 
 const freight = computed(() => {
@@ -76,7 +86,7 @@ function goToAddressList() {
   uni.navigateTo({ url: '/pages/address/list' })
 }
 
-function submitOrder() {
+async function submitOrder() {
   if (!selectedAddress.value) {
     uni.showToast({ title: '请选择收货地址', icon: 'none' })
     return
@@ -87,41 +97,76 @@ function submitOrder() {
   const items = checkoutItems.value.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
-    price: item.price,
+    price: item.productPrice || item.price,
     productName: item.productName,
     coverImage: item.coverImage
   }))
 
-  orderApi.create({
-    email: userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com',
-    receiverName: addr.name,
-    phone: addr.phone,
-    country: '中国',
-    province: addr.province,
-    city: addr.city,
-    address: addr.detail,
-    postalCode: '000000',
-    items,
-    remark: ''
-  }).then(res => {
-    if (res.code === 200) {
-      // 保存用户 email 用于后续查询订单
-      userStore.setEmail(userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com')
-      uni.showToast({ title: '订单创建成功', icon: 'success' })
-      uni.removeStorageSync('checkoutItems')
-      uni.removeStorageSync('quickBuy')
-      setTimeout(() => {
-        uni.redirectTo({ url: '/pages/order/list' })
-      }, 1500)
-    } else {
-      uni.showToast({ title: res.message || '创建失败', icon: 'none' })
+  try {
+    // 1. 创建订单
+    const createRes = await orderApi.create({
+      email: userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com',
+      receiverName: addr.receiverName,
+      phone: addr.phone,
+      country: addr.country || '中国',
+      province: addr.province,
+      city: addr.city,
+      address: addr.address,
+      postalCode: addr.postalCode || '000000',
+      items,
+      remark: ''
+    })
+
+    if (createRes.code !== 200) {
+      uni.showToast({ title: createRes.message || '创建订单失败', icon: 'none' })
+      return
     }
-  }).catch(err => {
-    console.error('创建订单失败', err)
-    uni.showToast({ title: '创建失败，请重试', icon: 'none' })
-  }).finally(() => {
+
+    const { id: orderId, orderNo } = createRes.data
+
+    // 2. 发起支付
+    const payRes = await orderApi.pay(orderId, 'wechat')
+
+    if (payRes.code === 200 && payRes.data) {
+      if (payRes.data.approval_url) {
+        // 跳转式支付(如PayPal网页版) - 在小程序内打开 web-view
+        // #ifdef MP-WEIXIN
+        // 小程序可以 web-view 打开H5支付页面
+        // #endif
+        uni.showToast({ title: '正在跳转到支付...', icon: 'none' })
+        setTimeout(() => {
+          uni.redirectTo({
+            url: `/pages/order/success?orderId=${orderId}&orderNo=${orderNo}&status=pending`
+          })
+        }, 1500)
+      } else if (payRes.data.qrcode_url) {
+        // 二维码支付 - 跳转成功页（待实现二维码展示）
+        uni.showToast({ title: '订单创建成功', icon: 'success' })
+        uni.removeStorageSync('checkoutItems')
+        uni.removeStorageSync('quickBuy')
+        uni.redirectTo({
+          url: `/pages/order/success?orderId=${orderId}&orderNo=${orderNo}&status=pending`
+        })
+      } else {
+        // 支付接口返回成功但无支付链接，跳转到成功页
+        uni.showToast({ title: '订单创建成功', icon: 'success' })
+        uni.removeStorageSync('checkoutItems')
+        uni.removeStorageSync('quickBuy')
+        uni.redirectTo({
+          url: `/pages/order/success?orderId=${orderId}&orderNo=${orderNo}&status=pending`
+        })
+      }
+    } else {
+      uni.showToast({ title: payRes.message || '发起支付失败', icon: 'none' })
+      // 支付失败留在当前页，用户可重试
+      loading.value = false
+    }
+  } catch (err) {
+    console.error('提交订单失败', err)
+    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+  } finally {
     loading.value = false
-  })
+  }
 }
 </script>
 
@@ -133,11 +178,15 @@ function submitOrder() {
         <view class="address-icon">📍</view>
         <view class="address-info">
           <view class="address-header">
-            <text class="name">{{ selectedAddress.name }}</text>
+            <text class="name">{{ selectedAddress.receiverName }}</text>
             <text class="phone">{{ selectedAddress.phone }}</text>
           </view>
-          <text class="detail">{{ selectedAddress.province }} {{ selectedAddress.city }} {{ selectedAddress.district }} {{ selectedAddress.detail }}</text>
+          <text class="detail">{{ selectedAddress.province }} {{ selectedAddress.city }} {{ selectedAddress.address }}</text>
         </view>
+      </view>
+      <view v-else class="address-empty">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加收货地址</text>
       </view>
       <text class="arrow">></text>
     </view>
@@ -146,12 +195,13 @@ function submitOrder() {
     <view class="goods-section">
       <view class="section-title">商品信息</view>
       <view v-for="item in checkoutItems" :key="item.id" class="goods-item">
-        <view class="goods-img">
+        <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+        <view v-else class="goods-img">
           <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
         </view>
         <view class="goods-info">
           <text class="goods-name">{{ item.productName }}</text>
-          <text class="goods-price">¥{{ item.price }} × {{ item.quantity }}</text>
+          <text class="goods-price">¥{{ item.productPrice || item.price }} × {{ item.quantity }}</text>
         </view>
       </view>
     </view>
@@ -160,23 +210,29 @@ function submitOrder() {
     <view class="summary-section">
       <view class="summary-row">
         <text class="label">商品金额</text>
-        <text class="value">¥{{ totalAmount }}</text>
+        <text class="value">¥{{ totalAmount.toFixed(2) }}</text>
       </view>
       <view class="summary-row">
         <text class="label">运费</text>
         <text class="value" :class="{ discount: freight === 0 }">
-          {{ freight === 0 ? '免运费' : '¥' + freight }}
+          {{ freight === 0 ? '免运费' : '¥' + freight.toFixed(2) }}
         </text>
       </view>
       <view class="summary-row total">
         <text class="label">合计</text>
-        <text class="value price">¥{{ orderTotal }}</text>
+        <text class="value price">¥{{ orderTotal.toFixed(2) }}</text>
       </view>
     </view>
 
-    <!-- 提交按钮 -->
+    <!-- 去支付按钮 -->
     <view class="pay-section">
-      <text class="pay-btn" @click="submitOrder">提交订单</text>
+      <text
+        class="pay-btn"
+        :class="{ loading: loading, disabled: loading || !selectedAddress }"
+        @click="loading || !selectedAddress ? null : submitOrder()"
+      >
+        {{ loading ? '支付中...' : (!selectedAddress ? '请选择收货地址' : '去支付 ¥' + orderTotal) }}
+      </text>
     </view>
   </view>
 </template>
@@ -237,6 +293,30 @@ function submitOrder() {
 .arrow {
   font-size: 32rpx;
   color: var(--text-placeholder);
+}
+
+.address-empty {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.add-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border: 2rpx dashed var(--text-placeholder);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  color: var(--text-placeholder);
+}
+
+.add-text {
+  font-size: 28rpx;
+  color: var(--text-sub);
 }
 
 .goods-section {
@@ -355,5 +435,10 @@ function submitOrder() {
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
+
+  &.disabled {
+    background: var(--text-placeholder);
+    opacity: 0.6;
+  }
 }
 </style>

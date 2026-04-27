@@ -4,8 +4,13 @@ const store_user = require("../../store/user.js");
 require("../../utils/env.js");
 const api_user = require("../../api/user.js");
 const theme_config = require("../../theme/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons.js";
 if (!Math) {
-  TabBar();
+  (TabBar + _easycom_uni_icons)();
 }
 const TabBar = () => "../../components/TabBar.js";
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
@@ -14,25 +19,6 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     const userStore = store_user.useUserStore();
     const loading = common_vendor.ref(false);
     const userInfo = common_vendor.ref(null);
-    const hasPhone = common_vendor.computed(() => {
-      var _a;
-      return !!((_a = userInfo.value) == null ? void 0 : _a.phone);
-    });
-    const menuItems = common_vendor.computed(() => {
-      const items = [
-        { id: 1, icon: "📋", text: "我的订单", path: "/pages/order/list" },
-        { id: 2, icon: "❤️", text: "我的收藏", path: "" },
-        { id: 3, icon: "📍", text: "收货地址", path: "/pages/address/list" },
-        { id: 4, icon: "✏️", text: "编辑资料", path: "/pages/user/edit" }
-      ];
-      if (!hasPhone.value) {
-        items.push({ id: 5, icon: "📱", text: "绑定手机号", path: "/pages/user/bind-phone" });
-      } else {
-        items.push({ id: 5, icon: "🔑", text: "修改密码", path: "/pages/user/password" });
-      }
-      items.push({ id: 6, icon: "⚙️", text: "设置", path: "" });
-      return items;
-    });
     common_vendor.onMounted(() => {
       if (userStore.isLoggedIn) {
         loadUserInfo();
@@ -52,16 +38,14 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         loading.value = false;
       }
     }
-    function handleMenuClick(item) {
-      if (item.path) {
-        common_vendor.index.navigateTo({ url: item.path });
-      } else if (item.text === "我的收藏" || item.text === "设置") {
-        common_vendor.index.showToast({ title: "功能开发中", icon: "none" });
+    function goTo(path) {
+      if (path) {
+        common_vendor.index.navigateTo({ url: path });
       }
     }
     function handleLogin() {
       if (!userStore.isLoggedIn) {
-        userStore.login();
+        common_vendor.index.navigateTo({ url: "/pages/user/login" });
       }
     }
     function handleLogout() {
@@ -76,8 +60,23 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         }
       });
     }
+    const orderTabs = [
+      { id: "pending", text: "待付款", icon: "wallet", path: "/pages/order/list?status=pending" },
+      { id: "paid", text: "待发货", icon: "box", path: "/pages/order/list?status=paid" },
+      { id: "shipped", text: "待收货", icon: "car", path: "/pages/order/list?status=shipped" },
+      { id: "completed", text: "已完成", icon: "check", path: "/pages/order/list?status=completed" }
+    ];
+    const menuItems = [
+      { id: 1, icon: "location", text: "收货地址", path: "/pages/address/list" },
+      { id: 2, icon: "heart", text: "我的收藏", path: "" },
+      { id: 3, icon: "star", text: "关于我们", path: "/pages/about/index" }
+    ];
+    const accountItems = [
+      { id: 4, icon: "locked", text: "修改密码", path: "/pages/user/password" },
+      { id: 5, icon: "gear", text: "设置", path: "" }
+    ];
     return (_ctx, _cache) => {
-      var _a, _b, _c, _d, _e, _f, _g, _h;
+      var _a, _b, _c, _d, _e, _f;
       return common_vendor.e({
         a: common_vendor.unref(userStore).isLoggedIn
       }, common_vendor.unref(userStore).isLoggedIn ? common_vendor.e({
@@ -87,33 +86,104 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       } : {
         d: common_vendor.t((((_c = userInfo.value) == null ? void 0 : _c.nickname) || ((_d = userInfo.value) == null ? void 0 : _d.username) || "U").charAt(0).toUpperCase())
       }, {
-        e: common_vendor.t(((_e = userInfo.value) == null ? void 0 : _e.nickname) || ((_f = userInfo.value) == null ? void 0 : _f.username) || "微信用户"),
-        f: (_g = userInfo.value) == null ? void 0 : _g.phone
-      }, ((_h = userInfo.value) == null ? void 0 : _h.phone) ? {
-        g: common_vendor.t(userInfo.value.phone)
-      } : {}) : {
+        e: common_vendor.t(((_e = userInfo.value) == null ? void 0 : _e.nickname) || ((_f = userInfo.value) == null ? void 0 : _f.username) || "微信用户")
+      }) : {
+        f: common_vendor.p({
+          type: "person",
+          size: "40",
+          color: "var(--text-placeholder)"
+        }),
+        g: common_vendor.p({
+          type: "right",
+          size: "16",
+          color: "var(--text-placeholder)"
+        }),
         h: common_vendor.o(handleLogin)
       }, {
-        i: common_vendor.unref(userStore).isLoggedIn && userInfo.value
-      }, common_vendor.unref(userStore).isLoggedIn && userInfo.value ? common_vendor.e({
-        j: common_vendor.t(userInfo.value.id),
-        k: userInfo.value.createdAt
-      }, userInfo.value.createdAt ? {
-        l: common_vendor.t(userInfo.value.createdAt)
-      } : {}) : {}, {
-        m: common_vendor.f(menuItems.value, (item, k0, i0) => {
+        i: common_vendor.unref(userStore).isLoggedIn
+      }, common_vendor.unref(userStore).isLoggedIn ? {
+        j: common_vendor.p({
+          type: "right",
+          size: "12",
+          color: "var(--text-placeholder)"
+        }),
+        k: common_vendor.o(($event) => goTo("/pages/order/list")),
+        l: common_vendor.f(orderTabs, (tab, k0, i0) => {
           return {
-            a: common_vendor.t(item.icon),
-            b: common_vendor.t(item.text),
-            c: item.id,
-            d: common_vendor.o(($event) => handleMenuClick(item), item.id)
+            a: "642c545b-4-" + i0,
+            b: common_vendor.p({
+              type: tab.icon,
+              size: "28",
+              color: "var(--text-main)"
+            }),
+            c: common_vendor.t(tab.text),
+            d: tab.id,
+            e: common_vendor.o(($event) => goTo(tab.path), tab.id)
+          };
+        })
+      } : {
+        m: common_vendor.f(orderTabs, (tab, k0, i0) => {
+          return {
+            a: "642c545b-5-" + i0,
+            b: common_vendor.p({
+              type: tab.icon,
+              size: "28",
+              color: "var(--text-placeholder)"
+            }),
+            c: common_vendor.t(tab.text),
+            d: tab.id
+          };
+        })
+      }, {
+        n: common_vendor.f(menuItems, (item, index, i0) => {
+          return {
+            a: "642c545b-6-" + i0,
+            b: common_vendor.p({
+              type: item.icon,
+              size: "22",
+              color: "var(--primary)"
+            }),
+            c: common_vendor.t(item.text),
+            d: "642c545b-7-" + i0,
+            e: item.id,
+            f: common_vendor.o(($event) => item.path ? goTo(item.path) : _ctx.uni.showToast({
+              title: "功能开发中",
+              icon: "none"
+            }), item.id)
           };
         }),
-        n: common_vendor.unref(userStore).isLoggedIn
+        o: common_vendor.p({
+          type: "right",
+          size: "14",
+          color: "var(--text-placeholder)"
+        }),
+        p: common_vendor.f(accountItems, (item, k0, i0) => {
+          return {
+            a: "642c545b-8-" + i0,
+            b: common_vendor.p({
+              type: item.icon,
+              size: "22",
+              color: "var(--primary)"
+            }),
+            c: common_vendor.t(item.text),
+            d: "642c545b-9-" + i0,
+            e: item.id,
+            f: common_vendor.o(($event) => item.path ? goTo(item.path) : _ctx.uni.showToast({
+              title: "功能开发中",
+              icon: "none"
+            }), item.id)
+          };
+        }),
+        q: common_vendor.p({
+          type: "right",
+          size: "14",
+          color: "var(--text-placeholder)"
+        }),
+        r: common_vendor.unref(userStore).isLoggedIn
       }, common_vendor.unref(userStore).isLoggedIn ? {
-        o: common_vendor.o(handleLogout)
+        s: common_vendor.o(handleLogout)
       } : {}, {
-        p: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        t: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

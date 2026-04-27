@@ -6,6 +6,7 @@ import { THEME_CLASS } from '../../theme/config'
 
 const cartItems = ref<CartItem[]>([])
 const loading = ref(false)
+const updatingIds = ref<Set<number>>(new Set())
 
 onMounted(() => {
   loadCart()
@@ -58,22 +59,44 @@ function toggleItem(id: number) {
   }
 }
 
-function updateQuantity(productId: number, delta: number) {
+async function updateQuantity(productId: number, delta: number) {
   const item = cartItems.value.find(i => i.productId === productId)
   if (!item) return
 
+  // 防止重复点击
+  if (updatingIds.value.has(productId)) return
+  updatingIds.value.add(productId)
+
   const newQty = item.quantity + delta
   if (newQty < 1) {
-    removeItem(productId)
+    updatingIds.value.delete(productId)
+    await removeItem(productId)
     return
   }
 
+  // 乐观更新 UI
   item.quantity = newQty
+
+  // 同步到服务器
+  try {
+    await cartApi.update(productId, newQty)
+  } catch (error) {
+    // 失败则回滚
+    item.quantity -= delta
+    uni.showToast({ title: '更新失败', icon: 'none' })
+  } finally {
+    updatingIds.value.delete(productId)
+  }
 }
 
-function removeItem(productId: number) {
-  cartItems.value = cartItems.value.filter(item => item.productId !== productId)
-  uni.showToast({ title: '已删除', icon: 'success' })
+async function removeItem(productId: number) {
+  try {
+    await cartApi.remove(productId)
+    cartItems.value = cartItems.value.filter(item => item.productId !== productId)
+    uni.showToast({ title: '已删除', icon: 'success' })
+  } catch (error) {
+    uni.showToast({ title: '删除失败', icon: 'none' })
+  }
 }
 
 function checkout() {
@@ -100,7 +123,7 @@ function goToShop() {
     <TabBar />
     <!-- 空状态 -->
     <view v-if="!loading && cartItems.length === 0" class="empty-cart">
-      <text class="empty-icon">🛒</text>
+      <uni-icons type="cart" size="80" color="var(--text-placeholder)" />
       <text class="empty-text">购物车是空的</text>
       <text class="empty-btn" @click="goToShop">去逛逛</text>
     </view>
@@ -171,14 +194,10 @@ function goToShop() {
   height: 60vh;
 }
 
-.empty-icon {
-  font-size: 120rpx;
-  margin-bottom: 32rpx;
-}
-
 .empty-text {
   font-size: 32rpx;
   color: var(--text-sub);
+  margin-top: 32rpx;
   margin-bottom: 32rpx;
 }
 

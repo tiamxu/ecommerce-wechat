@@ -18,7 +18,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         const res = await api_order.orderApi.getAddresses();
         if (res.code === 200 && res.data) {
           addresses.value = res.data;
-          const selected = res.data.find((a) => a.isDefault);
+          const selected = res.data.find((a) => a.isDefault === 1);
           if (selected) {
             selectedId.value = selected.id;
           }
@@ -31,6 +31,11 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     }
     function selectAddress(id) {
       selectedId.value = id;
+      const pages = getCurrentPages();
+      const prevPage = pages[pages.length - 2];
+      if (prevPage && prevPage.selectAddress) {
+        prevPage.selectAddress(id);
+      }
       common_vendor.index.navigateBack();
     }
     function goToAdd() {
@@ -58,7 +63,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     async function setDefault(id) {
       try {
         await api_order.orderApi.updateAddress(id, { isDefault: true });
-        addresses.value.forEach((a) => a.isDefault = a.id === id);
+        addresses.value.forEach((a) => a.isDefault = a.id === id ? 1 : 0);
         common_vendor.index.showToast({ title: "设置成功", icon: "success" });
       } catch (error) {
         console.error("设置默认地址失败", error);
@@ -72,22 +77,21 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       } : {
         d: common_vendor.f(addresses.value, (addr, k0, i0) => {
           return common_vendor.e({
-            a: common_vendor.t(addr.name),
+            a: common_vendor.t(addr.receiverName),
             b: common_vendor.t(addr.phone),
-            c: addr.isDefault
-          }, addr.isDefault ? {} : {}, {
+            c: addr.isDefault === 1
+          }, addr.isDefault === 1 ? {} : {}, {
             d: common_vendor.t(addr.province),
             e: common_vendor.t(addr.city),
-            f: common_vendor.t(addr.district),
-            g: common_vendor.t(addr.detail),
-            h: common_vendor.o(($event) => selectAddress(addr.id), addr.id),
-            i: common_vendor.o(($event) => goToEdit(addr.id), addr.id),
-            j: !addr.isDefault
-          }, !addr.isDefault ? {
-            k: common_vendor.o(($event) => setDefault(addr.id), addr.id)
+            f: common_vendor.t(addr.address),
+            g: common_vendor.o(($event) => selectAddress(addr.id), addr.id),
+            h: common_vendor.o(($event) => goToEdit(addr.id), addr.id),
+            i: addr.isDefault !== 1
+          }, addr.isDefault !== 1 ? {
+            j: common_vendor.o(($event) => setDefault(addr.id), addr.id)
           } : {}, {
-            l: common_vendor.o(($event) => deleteAddress(addr.id), addr.id),
-            m: addr.id
+            k: common_vendor.o(($event) => deleteAddress(addr.id), addr.id),
+            l: addr.id
           });
         })
       }, {

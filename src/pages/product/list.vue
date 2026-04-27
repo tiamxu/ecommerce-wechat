@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { productApi, type Category } from '../../api'
+import { productApi, type Category, type Product } from '../../api'
 import ProductCard from '../../components/ProductCard.vue'
+import Skeleton from '../../components/Skeleton.vue'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const categories = ref<Category[]>([])
-const products = ref<any[]>([])
+const products = ref<Product[]>([])
 const selectedCategoryId = ref<number | null>(null)
 const loading = ref(false)
 const pageNo = ref(1)
@@ -15,6 +16,11 @@ const hasMore = ref(true)
 
 onMounted(() => {
   loadCategories()
+  // 恢复用户之前选择的分类
+  const savedCategoryId = uni.getStorageSync('selectedCategoryId')
+  if (savedCategoryId) {
+    selectedCategoryId.value = Number(savedCategoryId)
+  }
   loadProducts()
 })
 
@@ -22,7 +28,7 @@ async function loadCategories() {
   try {
     const res = await productApi.getCategories()
     if (res.code === 200) {
-      categories.value = res.data.pageData || []
+      categories.value = Array.isArray(res.data) ? res.data : (res.data.pageData || [])
     }
   } catch (error) {
     console.error('加载分类失败', error)
@@ -64,6 +70,8 @@ async function loadProducts(reset = false) {
 
 function selectCategory(id: number | null) {
   selectedCategoryId.value = id
+  // 持久化保存用户选择
+  uni.setStorageSync('selectedCategoryId', id)
   loadProducts(true)
 }
 
@@ -79,6 +87,14 @@ function goToSearch() {
   })
 }
 
+// 下拉刷新
+function onPullDownRefresh() {
+  loadProducts(true).finally(() => {
+    uni.stopPullDownRefresh()
+  })
+}
+
+// 上拉加载更多
 function onReachBottom() {
   if (hasMore.value && !loading.value) {
     loadProducts(false)
@@ -93,7 +109,7 @@ function onReachBottom() {
     <!-- 顶部搜索栏 -->
     <view class="search-bar" @click="goToSearch">
       <view class="search-input-wrap">
-        <text class="search-icon">🔍</text>
+        <uni-icons type="search" size="16" color="var(--text-placeholder)" />
         <text class="search-placeholder">搜索商品</text>
       </view>
     </view>
@@ -122,18 +138,31 @@ function onReachBottom() {
 
     <!-- 商品列表 -->
     <scroll-view class="product-scroll" scroll-y @scrolltolower="onReachBottom">
-      <view class="product-grid">
+      <!-- 骨架屏加载态 -->
+      <view v-if="loading && products.length === 0" class="product-grid skeleton-grid">
+        <view v-for="i in 6" :key="i" class="skeleton-card">
+          <Skeleton width="100%" height="340rpx" borderRadius="16rpx 16rpx 0 0" />
+          <view class="skeleton-info">
+            <Skeleton width="80%" height="32rpx" />
+            <Skeleton width="50%" height="28rpx" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 商品列表 -->
+      <view v-else class="product-grid">
         <ProductCard
           v-for="item in products"
           :key="item.id"
           :product="item"
-          @click="goToDetail"
+          @click="goToDetail(item.id)"
         />
       </view>
+
       <view class="loading-tip">
-        <text v-if="loading">加载中...</text>
-        <text v-else-if="!hasMore">没有更多了</text>
-        <text v-else-if="products.length === 0">暂无商品</text>
+        <text v-if="loading && products.length > 0">加载中...</text>
+        <text v-else-if="!hasMore && products.length > 0">没有更多了</text>
+        <text v-else-if="products.length === 0 && !loading">暂无商品</text>
       </view>
     </scroll-view>
   </view>
@@ -163,14 +192,10 @@ function onReachBottom() {
   padding: 0 24rpx;
 }
 
-.search-icon {
-  font-size: 28rpx;
-  margin-right: 12rpx;
-}
-
 .search-placeholder {
   color: var(--text-placeholder);
   font-size: 26rpx;
+  margin-left: 8rpx;
 }
 
 .category-nav {
@@ -212,6 +237,7 @@ function onReachBottom() {
 .product-scroll {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 .product-grid {
@@ -226,5 +252,22 @@ function onReachBottom() {
   text-align: center;
   color: var(--text-sub);
   font-size: 26rpx;
+}
+
+.skeleton-grid {
+  padding: 24rpx;
+}
+
+.skeleton-card {
+  background: var(--bg-card);
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.skeleton-info {
+  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
 </style>

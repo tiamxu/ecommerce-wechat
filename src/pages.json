@@ -1,4 +1,10 @@
 {
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
   "pages": [
     {
       "path": "pages/index/index",
@@ -33,13 +39,20 @@
     {
       "path": "pages/order/list",
       "style": {
-        "navigationBarTitleText": "我的订单"
+        "navigationBarTitleText": "我的订单",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/order/detail",
       "style": {
         "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/order/success",
+      "style": {
+        "navigationBarTitleText": "订单结果"
       }
     },
     {
@@ -61,9 +74,10 @@
       }
     },
     {
-      "path": "pages/user/bind-phone",
+      "path": "pages/user/login",
       "style": {
-        "navigationBarTitleText": "绑定手机号"
+        "navigationBarTitleText": "登录",
+        "navigationBarBackgroundColor": "#f5f5f7"
       }
     },
     {

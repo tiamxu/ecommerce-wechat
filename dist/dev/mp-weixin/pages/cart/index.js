@@ -3,8 +3,13 @@ const common_vendor = require("../../common/vendor.js");
 require("../../utils/env.js");
 const api_cart = require("../../api/cart.js");
 const theme_config = require("../../theme/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons.js";
 if (!Math) {
-  TabBar();
+  (TabBar + _easycom_uni_icons)();
 }
 const TabBar = () => "../../components/TabBar.js";
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
@@ -12,6 +17,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   setup(__props) {
     const cartItems = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
+    const updatingIds = common_vendor.ref(/* @__PURE__ */ new Set());
     common_vendor.onMounted(() => {
       loadCart();
     });
@@ -52,19 +58,35 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         item.selected = !item.selected;
       }
     }
-    function updateQuantity(productId, delta) {
+    async function updateQuantity(productId, delta) {
       const item = cartItems.value.find((i) => i.productId === productId);
       if (!item) return;
+      if (updatingIds.value.has(productId)) return;
+      updatingIds.value.add(productId);
       const newQty = item.quantity + delta;
       if (newQty < 1) {
-        removeItem(productId);
+        updatingIds.value.delete(productId);
+        await removeItem(productId);
         return;
       }
       item.quantity = newQty;
+      try {
+        await api_cart.cartApi.update(productId, newQty);
+      } catch (error) {
+        item.quantity -= delta;
+        common_vendor.index.showToast({ title: "更新失败", icon: "none" });
+      } finally {
+        updatingIds.value.delete(productId);
+      }
     }
-    function removeItem(productId) {
-      cartItems.value = cartItems.value.filter((item) => item.productId !== productId);
-      common_vendor.index.showToast({ title: "已删除", icon: "success" });
+    async function removeItem(productId) {
+      try {
+        await api_cart.cartApi.remove(productId);
+        cartItems.value = cartItems.value.filter((item) => item.productId !== productId);
+        common_vendor.index.showToast({ title: "已删除", icon: "success" });
+      } catch (error) {
+        common_vendor.index.showToast({ title: "删除失败", icon: "none" });
+      }
     }
     function checkout() {
       if (selectedCount.value === 0) {
@@ -84,9 +106,14 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       return common_vendor.e({
         a: !loading.value && cartItems.value.length === 0
       }, !loading.value && cartItems.value.length === 0 ? {
-        b: common_vendor.o(goToShop)
+        b: common_vendor.p({
+          type: "cart",
+          size: "80",
+          color: "var(--text-placeholder)"
+        }),
+        c: common_vendor.o(goToShop)
       } : {
-        c: common_vendor.f(cartItems.value, (item, k0, i0) => {
+        d: common_vendor.f(cartItems.value, (item, k0, i0) => {
           var _a;
           return common_vendor.e({
             a: item.selected ? 1 : "",
@@ -106,12 +133,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             l: item.id
           });
         }),
-        d: allSelected.value ? 1 : "",
-        e: common_vendor.o(toggleAll),
-        f: common_vendor.t(totalPrice.value),
-        g: common_vendor.o(checkout)
+        e: allSelected.value ? 1 : "",
+        f: common_vendor.o(toggleAll),
+        g: common_vendor.t(totalPrice.value),
+        h: common_vendor.o(checkout)
       }, {
-        h: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        i: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

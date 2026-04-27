@@ -2,6 +2,10 @@
 const common_vendor = require("../common/vendor.js");
 const utils_env = require("../utils/env.js");
 function getSessionId() {
+  const token = common_vendor.index.getStorageSync("token");
+  if (!token) {
+    return "";
+  }
   let sessionId = common_vendor.index.getStorageSync("cart_session");
   if (!sessionId) {
     sessionId = "cart_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);

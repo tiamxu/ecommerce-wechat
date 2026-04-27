@@ -3,51 +3,73 @@ const common_vendor = require("../../common/vendor.js");
 const api_product = require("../../api/product.js");
 require("../../utils/env.js");
 const theme_config = require("../../theme/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons.js";
 if (!Math) {
-  TabBar();
+  (TabBar + _easycom_uni_icons + Skeleton)();
 }
 const TabBar = () => "../../components/TabBar.js";
+const Skeleton = () => "../../components/Skeleton.js";
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "index",
   setup(__props) {
-    const categories = common_vendor.ref([]);
     const hotProducts = common_vendor.ref([]);
+    const banners = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
-    const searchKeyword = common_vendor.ref("");
+    const hasLoaded = common_vendor.ref(false);
     common_vendor.onMounted(() => {
       loadData();
+    });
+    common_vendor.onShow(() => {
+      if (hasLoaded.value) {
+        loadData();
+      }
     });
     async function loadData() {
       loading.value = true;
       try {
-        const [catRes, hotRes] = await Promise.all([
-          api_product.productApi.getCategories(),
-          api_product.productApi.getHotProducts(8)
+        const [hotRes, bannerRes] = await Promise.all([
+          api_product.productApi.getHotProducts(8),
+          api_product.productApi.getContents("banner")
         ]);
-        if (catRes.code === 200) {
-          categories.value = catRes.data.pageData || [];
-        }
         if (hotRes.code === 200) {
           hotProducts.value = hotRes.data.pageData || [];
+        }
+        if (bannerRes.code === 200 && bannerRes.data) {
+          banners.value = bannerRes.data.filter((b) => b.status === 1);
         }
       } catch (error) {
         console.error("加载数据失败", error);
       } finally {
         loading.value = false;
+        hasLoaded.value = true;
+      }
+    }
+    function getBannerBg(banner) {
+      try {
+        const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {};
+        return extra.image || "";
+      } catch {
+        return "";
+      }
+    }
+    function getBannerTitle(banner) {
+      return banner.zhValue || banner.enValue || "";
+    }
+    function getBannerDesc(banner) {
+      try {
+        const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {};
+        return extra.desc || "";
+      } catch {
+        return "";
       }
     }
     function goToSearch() {
-      if (searchKeyword.value.trim()) {
-        common_vendor.index.navigateTo({
-          url: `/pages/product/list?keyword=${encodeURIComponent(searchKeyword.value.trim())}`
-        });
-      } else {
-        common_vendor.index.navigateTo({ url: "/pages/product/list" });
-      }
-    }
-    function goToCategoryProducts(categoryId) {
       common_vendor.index.navigateTo({
-        url: `/pages/product/list?categoryId=${categoryId}`
+        url: "/pages/search/index"
       });
     }
     function goToProductDetail(id) {
@@ -70,43 +92,67 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
       return "";
     }
-    function getOriginalPrice(product) {
-      return product.originalPrice || Math.round(product.price * 1.3);
+    function handleBannerClick(banner) {
+      try {
+        const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {};
+        if (extra.productId) {
+          common_vendor.index.navigateTo({
+            url: `/pages/product/detail?id=${extra.productId}`
+          });
+        }
+      } catch (e) {
+        console.error("解析banner数据失败", e);
+      }
     }
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: searchKeyword.value,
-        b: common_vendor.o(($event) => searchKeyword.value = $event.detail.value),
-        c: common_vendor.o(goToSearch),
-        d: common_vendor.f(categories.value.slice(0, 8), (cat, k0, i0) => {
-          var _a, _b;
+        a: common_vendor.p({
+          type: "search",
+          size: "16",
+          color: "var(--text-placeholder)"
+        }),
+        b: common_vendor.o(goToSearch),
+        c: banners.value.length > 0
+      }, banners.value.length > 0 ? {
+        d: common_vendor.f(banners.value, (banner, k0, i0) => {
+          return common_vendor.e({
+            a: common_vendor.t(getBannerTitle(banner)),
+            b: getBannerDesc(banner)
+          }, getBannerDesc(banner) ? {
+            c: common_vendor.t(getBannerDesc(banner))
+          } : {}, {
+            d: `url('${getBannerBg(banner)}')`,
+            e: banner.id,
+            f: common_vendor.o(($event) => handleBannerClick(banner), banner.id)
+          });
+        })
+      } : {}, {
+        e: common_vendor.o(goToAllProducts),
+        f: loading.value && hotProducts.value.length === 0
+      }, loading.value && hotProducts.value.length === 0 ? {
+        g: common_vendor.f(4, (i, k0, i0) => {
           return {
-            a: common_vendor.t(cat.icon || "📦"),
-            b: cat.id % 2 === 0 ? "var(--primary-light)" : "var(--accent-light)",
-            c: common_vendor.t(((_a = cat.name) == null ? void 0 : _a.zh) || ((_b = cat.name) == null ? void 0 : _b.en) || "分类"),
-            d: cat.id,
-            e: common_vendor.o(($event) => goToCategoryProducts(cat.id), cat.id)
+            a: "83a5a03c-2-" + i0,
+            b: "83a5a03c-3-" + i0,
+            c: "83a5a03c-4-" + i0,
+            d: i
           };
         }),
-        e: common_vendor.f(hotProducts.value.slice(0, 4), (item, k0, i0) => {
-          return common_vendor.e({
-            a: getCoverImage(item)
-          }, getCoverImage(item) ? {
-            b: getCoverImage(item)
-          } : {
-            c: common_vendor.t(getProductName(item).charAt(0))
-          }, {
-            d: common_vendor.t(item.price),
-            e: getOriginalPrice(item) > item.price
-          }, getOriginalPrice(item) > item.price ? {
-            f: common_vendor.t(getOriginalPrice(item))
-          } : {}, {
-            g: item.id,
-            h: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
-          });
+        h: common_vendor.p({
+          width: "100%",
+          height: "320rpx",
+          borderRadius: "0"
         }),
-        f: common_vendor.o(goToAllProducts),
-        g: common_vendor.f(hotProducts.value, (item, k0, i0) => {
+        i: common_vendor.p({
+          width: "80%",
+          height: "32rpx"
+        }),
+        j: common_vendor.p({
+          width: "50%",
+          height: "28rpx"
+        })
+      } : {
+        k: common_vendor.f(hotProducts.value, (item, k0, i0) => {
           return common_vendor.e({
             a: getCoverImage(item)
           }, getCoverImage(item) ? {
@@ -124,10 +170,11 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             i: item.id,
             j: common_vendor.o(($event) => goToProductDetail(item.id), item.id)
           });
-        }),
-        h: hotProducts.value.length === 0 && !loading.value
+        })
+      }, {
+        l: hotProducts.value.length === 0 && !loading.value
       }, hotProducts.value.length === 0 && !loading.value ? {} : {}, {
-        i: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        m: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

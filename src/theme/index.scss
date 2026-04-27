@@ -72,6 +72,30 @@
   --tab-bar-active: #007aff;
 }
 
+/* 优雅紫主题 */
+.theme-purple {
+  --primary: #667eea;
+  --primary-hover: #8595f3;
+  --primary-light: #ede7ff;
+  --accent: #e8917a;
+  --accent-hover: #f0a898;
+  --accent-light: #fdf2ef;
+  --price: #667eea;
+  --bg-page: #f5f5f7;
+  --bg-card: #ffffff;
+  --bg-header: #ffffff;
+  --bg-input: #f5f5f7;
+  --text-main: #1a1a1a;
+  --text-sub: #666666;
+  --text-placeholder: #999999;
+  --text-inverse: #ffffff;
+  --border: #e5e5ea;
+  --shadow: rgba(102, 126, 234, 0.08);
+  --tab-bar-bg: #ffffff;
+  --tab-bar-color: #999999;
+  --tab-bar-active: #667eea;
+}
+
 /* 轻奢主题 */
 .theme-luxury {
   --primary: #c9a961;

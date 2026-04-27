@@ -25,6 +25,24 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       "3": "已完成",
       "4": "已取消"
     };
+    const statusColorMap = {
+      "0": "var(--accent)",
+      // 待付款
+      "1": "var(--primary)",
+      // 已支付
+      "2": "var(--primary)",
+      // 已发货
+      "3": "var(--text-sub)",
+      // 已完成
+      "4": "var(--text-placeholder)"
+      // 已取消
+    };
+    function isPending(status) {
+      return String(status) === "0";
+    }
+    function getStatusColor(status) {
+      return statusColorMap[String(status)] || "var(--text-sub)";
+    }
     function changeTab(tab) {
       activeTab.value = tab;
     }
@@ -32,17 +50,25 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       if (activeTab.value === "all") {
         return orders.value;
       }
-      return orders.value.filter((o) => String(o.status) === activeTab.value);
+      const statusNum = Number(activeTab.value);
+      return orders.value.filter((o) => Number(o.status) === statusNum);
     });
     common_vendor.onMounted(() => {
       loadOrders();
+    });
+    common_vendor.onPullDownRefresh(() => {
+      loadOrders().finally(() => {
+        common_vendor.index.stopPullDownRefresh();
+      });
+    });
+    common_vendor.onReachBottom(() => {
     });
     async function loadOrders() {
       loading.value = true;
       try {
         const res = await api_order.orderApi.getMyOrders();
         if (res.code === 200 && res.data) {
-          orders.value = res.data.list || [];
+          orders.value = Array.isArray(res.data) ? res.data : res.data.list || [];
         }
       } catch (error) {
         console.error("加载订单失败", error);
@@ -52,6 +78,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     }
     function goToDetail(orderId) {
       common_vendor.index.navigateTo({ url: `/pages/order/detail?id=${orderId}` });
+    }
+    function goToShop() {
+      common_vendor.index.switchTab({ url: "/pages/index/index" });
     }
     async function payOrder(orderId) {
       try {
@@ -89,31 +118,38 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           };
         }),
         b: loading.value
-      }, loading.value ? {} : filteredOrders.value.length === 0 ? {} : {
-        d: common_vendor.f(filteredOrders.value, (order, k0, i0) => {
+      }, loading.value ? {} : filteredOrders.value.length === 0 ? {
+        d: common_vendor.o(goToShop)
+      } : {
+        e: common_vendor.f(filteredOrders.value, (order, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(order.orderNo),
             b: common_vendor.t(statusMap[order.status] || order.status),
-            c: common_vendor.n(order.status),
+            c: getStatusColor(order.status),
             d: common_vendor.f(order.items.slice(0, 3), (item, index, i1) => {
               var _a;
-              return {
-                a: common_vendor.t(((_a = item.productName) == null ? void 0 : _a.charAt(0)) || "P"),
-                b: index
-              };
+              return common_vendor.e({
+                a: item.coverImage
+              }, item.coverImage ? {
+                b: item.coverImage
+              } : {
+                c: common_vendor.t(((_a = item.productName) == null ? void 0 : _a.charAt(0)) || "P")
+              }, {
+                d: index
+              });
             }),
             e: order.items.length > 3
           }, order.items.length > 3 ? {
             f: common_vendor.t(order.items.length - 3)
           } : {}, {
             g: common_vendor.t(order.createTime),
-            h: common_vendor.t(order.totalAmount + order.freight),
-            i: order.status === "pending"
-          }, order.status === "pending" ? {
+            h: common_vendor.t(order.totalAmount),
+            i: isPending(order.status)
+          }, isPending(order.status) ? {
             j: common_vendor.o(($event) => payOrder(order.id), order.id)
           } : {}, {
-            k: order.status === "pending"
-          }, order.status === "pending" ? {
+            k: isPending(order.status)
+          }, isPending(order.status) ? {
             l: common_vendor.o(($event) => cancelOrder(order.id), order.id)
           } : {}, {
             m: common_vendor.o(() => {
@@ -124,7 +160,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         })
       }, {
         c: filteredOrders.value.length === 0,
-        e: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
+        f: common_vendor.n(common_vendor.unref(theme_config.THEME_CLASS))
       });
     };
   }

@@ -26,11 +26,11 @@
 .product-detail.data-v-8216645a {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 140rpx;
+  padding-bottom: 180rpx;
 }
 .detail-swiper.data-v-8216645a {
   width: 100%;
-  height: 750rpx;
+  height: 500rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 .image-swiper.data-v-8216645a {
@@ -69,9 +69,22 @@
   font-weight: 700;
   color: var(--price);
 }
-.product-stock.data-v-8216645a {
+.stock-status.data-v-8216645a {
   font-size: 24rpx;
-  color: var(--text-sub);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+.stock-status.normal.data-v-8216645a {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.stock-status.low.data-v-8216645a {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.stock-status.out.data-v-8216645a {
+  background: var(--bg-page);
+  color: var(--text-placeholder);
 }
 .product-name.data-v-8216645a {
   display: block;
@@ -107,14 +120,14 @@
   bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   border-top: 1rpx solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 100;
+  z-index: 998;
 }
 .quantity.data-v-8216645a {
   display: flex;

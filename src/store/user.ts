@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { BASE_URL } from '../utils/env'
-import { getSessionId } from '../api/request'
 
 interface UserInfo {
   id: number
@@ -14,83 +13,24 @@ interface UserInfo {
 interface UserState {
   token: string | null
   userInfo: UserInfo | null
-  email: string | null
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     token: uni.getStorageSync('token') || null,
     userInfo: null,
-    email: uni.getStorageSync('user_email') || null
   }),
 
   getters: {
-    isLoggedIn: (state) => !!state.token,
-    // 是否可以设置密码（微信用户没有密码）
-    canSetPassword: (state) => !state.userInfo?.phone
+    isLoggedIn: (state) => !!state.token && !!state.userInfo,
   },
 
   actions: {
-    async login() {
-      try {
-        // 获取微信登录凭证
-        const loginRes = await new Promise<WechatMiniprogram.LoginSuccessCallbackResult>((resolve, reject) => {
-          uni.login({
-            provider: 'weixin',
-            success: resolve,
-            fail: reject
-          })
-        })
-
-        if (!loginRes.code) {
-          throw new Error('获取登录凭证失败')
-        }
-
-        // 调用后端微信登录接口，传递sessionId用于合并购物车
-        const sessionId = getSessionId()
-        const res = await uni.request({
-          url: `${BASE_URL}/public/wechat/login`,
-          method: 'POST',
-          data: { code: loginRes.code, sessionId }
-        })
-
-        const data = res.data as any
-
-        if (data.code === 200) {
-          this.token = data.data.token
-          this.userInfo = data.data.userInfo
-          uni.setStorageSync('token', this.token)
-          uni.showToast({ title: '登录成功', icon: 'success' })
-        } else {
-          throw new Error(data.message || '登录失败')
-        }
-      } catch (error: any) {
-        uni.showToast({ title: error.message || '登录失败', icon: 'none' })
+    // 验证 token 有效性
+    async verifyToken() {
+      if (!this.token) {
+        return false
       }
-    },
-
-    logout() {
-      this.token = null
-      this.userInfo = null
-      this.email = null
-      uni.removeStorageSync('token')
-      uni.removeStorageSync('user_email')
-      uni.showToast({ title: '已退出登录', icon: 'success' })
-    },
-
-    setEmail(email: string) {
-      this.email = email
-      uni.setStorageSync('user_email', email)
-    },
-
-    updateUserInfo(info: Partial<UserInfo>) {
-      if (this.userInfo) {
-        this.userInfo = { ...this.userInfo, ...info }
-      }
-    },
-
-    async fetchUserInfo() {
-      if (!this.token) return
 
       try {
         const res = await uni.request({
@@ -102,37 +42,69 @@ export const useUserStore = defineStore('user', {
         const data = res.data as any
         if (data.code === 200) {
           this.userInfo = data.data
+          return true
         }
       } catch (error) {
-        console.error('获取用户信息失败', error)
+        console.error('Token验证失败', error)
       }
+
+      // token 无效，清除
+      this.clearAuth()
+      return false
     },
 
-    async bindPhone(phone: string, password: string) {
+    // 微信一键登录（获取手机号）
+    async loginWithWechat(code: string, encryptedData: string, iv: string, sessionId: string) {
       try {
         const res = await uni.request({
-          url: `${BASE_URL}/api/users/bind-phone`,
+          url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          header: { Authorization: `Bearer ${this.token}` },
-          data: { phone, password }
+          data: { code, encryptedData, iv, sessionId }
         })
 
         const data = res.data as any
-        if (data.code === 200) {
-          // 更新本地用户信息
-          if (this.userInfo) {
-            this.userInfo.phone = phone
+        if (data.code === 200 && data.data.token) {
+          // 保存 token 和用户信息
+          this.token = data.data.token
+          this.userInfo = data.data.userInfo
+          uni.setStorageSync('token', this.token)
+          // 缓存 openid（仅用于用户识别，不用于登录判断）
+          if (data.data.userInfo?.openid) {
+            uni.setStorageSync('wechat_openid', data.data.userInfo.openid)
           }
-          uni.showToast({ title: '绑定成功', icon: 'success' })
           return { success: true }
         } else {
-          uni.showToast({ title: data.message || '绑定失败', icon: 'none' })
-          return { success: false, message: data.message }
+          return { success: false, message: data.message || '登录失败' }
         }
       } catch (error: any) {
-        console.error('绑定手机号失败', error)
-        uni.showToast({ title: '绑定失败', icon: 'none' })
-        return { success: false, message: error.message }
+        console.error('微信登录失败', error)
+        return { success: false, message: error.message || '网络错误' }
+      }
+    },
+
+    // 登出
+    logout() {
+      this.clearAuth()
+      uni.showToast({ title: '已退出登录', icon: 'success' })
+    },
+
+    clearAuth() {
+      this.token = null
+      this.userInfo = null
+      uni.removeStorageSync('token')
+      uni.removeStorageSync('cart_session')
+    },
+
+    updateUserInfo(info: Partial<UserInfo>) {
+      if (this.userInfo) {
+        this.userInfo = { ...this.userInfo, ...info }
+      }
+    },
+
+    // 初始化：验证已有 token
+    async init() {
+      if (this.token) {
+        await this.verifyToken()
       }
     }
   }

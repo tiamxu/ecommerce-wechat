@@ -23,6 +23,20 @@
     "total": "Total",
     "checkout": "Checkout"
   },
+  "order": {
+    "createSuccess": "Order Created",
+    "createFailed": "Failed to Create Order",
+    "payNow": "Pay Now",
+    "paying": "Processing...",
+    "paySuccess": "Payment Successful",
+    "payFailed": "Payment Failed",
+    "pendingPayment": "Pending Payment",
+    "paid": "Paid",
+    "shipped": "Shipped",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "orderNo": "Order Number"
+  },
   "user": {
     "login": "Login",
     "order": "My Orders",

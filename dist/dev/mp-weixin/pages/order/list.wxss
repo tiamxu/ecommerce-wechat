@@ -75,6 +75,19 @@
 .empty-text.data-v-80f8e5f8 {
   font-size: 28rpx;
   color: var(--text-sub);
+  margin-bottom: 32rpx;
+  display: block;
+}
+.empty-actions.data-v-80f8e5f8 {
+  display: flex;
+  justify-content: center;
+}
+.empty-btn.data-v-80f8e5f8 {
+  padding: 20rpx 48rpx;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-radius: 40rpx;
+  font-size: 28rpx;
 }
 .order-cards.data-v-80f8e5f8 {
   display: flex;
@@ -99,21 +112,6 @@
 .order-status.data-v-80f8e5f8 {
   font-size: 26rpx;
   font-weight: 600;
-}
-.order-status.pending.data-v-80f8e5f8 {
-  color: var(--accent);
-}
-.order-status.paid.data-v-80f8e5f8 {
-  color: var(--primary);
-}
-.order-status.shipped.data-v-80f8e5f8 {
-  color: var(--primary);
-}
-.order-status.completed.data-v-80f8e5f8 {
-  color: var(--text-sub);
-}
-.order-status.cancelled.data-v-80f8e5f8 {
-  color: var(--text-placeholder);
 }
 .order-goods.data-v-80f8e5f8 {
   display: flex;

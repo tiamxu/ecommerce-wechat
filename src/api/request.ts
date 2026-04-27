@@ -17,8 +17,13 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
-// 获取或创建sessionId
+// 获取或创建sessionId（仅登录用户）
 function getSessionId(): string {
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    return ''  // 未登录不创建 session
+  }
+
   let sessionId = uni.getStorageSync('cart_session')
   if (!sessionId) {
     sessionId = 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)

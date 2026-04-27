@@ -1,5 +1,5 @@
 export { productApi, type Product, type Category } from './product'
 export { cartApi, type CartItem } from './cart'
 export { orderApi, type OrderItem, type Address, type CreateOrderParams } from './order'
-export { userApi, type UserInfo, type UpdateProfileParams, type UpdatePasswordParams, type BindPhoneParams } from './user'
+export { userApi, type UserInfo, type UpdateProfileParams, type UpdatePasswordParams } from './user'
 export { request, type ApiResponse } from './request'

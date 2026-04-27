@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { orderApi } from '../../api'
 import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
@@ -25,6 +26,25 @@ const statusMap: Record<string, string> = {
   '4': '已取消'
 }
 
+// 状态颜色映射
+const statusColorMap: Record<string, string> = {
+  '0': 'var(--accent)',   // 待付款
+  '1': 'var(--primary)',  // 已支付
+  '2': 'var(--primary)',   // 已发货
+  '3': 'var(--text-sub)',  // 已完成
+  '4': 'var(--text-placeholder)' // 已取消
+}
+
+// 判断是否是待付款状态
+function isPending(status: any): boolean {
+  return String(status) === '0'
+}
+
+// 获取状态颜色
+function getStatusColor(status: any): string {
+  return statusColorMap[String(status)] || 'var(--text-sub)'
+}
+
 function changeTab(tab: string) {
   activeTab.value = tab
 }
@@ -33,11 +53,24 @@ const filteredOrders = computed(() => {
   if (activeTab.value === 'all') {
     return orders.value
   }
-  return orders.value.filter(o => String(o.status) === activeTab.value)
+  const statusNum = Number(activeTab.value)
+  return orders.value.filter(o => Number(o.status) === statusNum)
 })
 
 onMounted(() => {
   loadOrders()
+})
+
+// 下拉刷新
+onPullDownRefresh(() => {
+  loadOrders().finally(() => {
+    uni.stopPullDownRefresh()
+  })
+})
+
+// 触底加载
+onReachBottom(() => {
+  // TODO: 实现分页加载
 })
 
 async function loadOrders() {
@@ -45,7 +78,8 @@ async function loadOrders() {
   try {
     const res = await orderApi.getMyOrders()
     if (res.code === 200 && res.data) {
-      orders.value = res.data.list || []
+      // 后端返回数组，前端期望 {list, total} 结构
+      orders.value = Array.isArray(res.data) ? res.data : (res.data.list || [])
     }
   } catch (error) {
     console.error('加载订单失败', error)
@@ -56,6 +90,10 @@ async function loadOrders() {
 
 function goToDetail(orderId: number) {
   uni.navigateTo({ url: `/pages/order/detail?id=${orderId}` })
+}
+
+function goToShop() {
+  uni.switchTab({ url: '/pages/index/index' })
 }
 
 async function payOrder(orderId: number) {
@@ -111,18 +149,22 @@ async function cancelOrder(orderId: number) {
       </view>
       <view v-else-if="filteredOrders.length === 0" class="empty-tip">
         <text class="empty-text">暂无订单</text>
+        <view class="empty-actions">
+          <text class="empty-btn" @click="goToShop">去购物</text>
+        </view>
       </view>
 
       <view v-else class="order-cards">
         <view v-for="order in filteredOrders" :key="order.id" class="order-card" @click="goToDetail(order.id)">
           <view class="order-header">
             <text class="order-no">订单号: {{ order.orderNo }}</text>
-            <text class="order-status" :class="order.status">{{ statusMap[order.status] || order.status }}</text>
+            <text class="order-status" :style="{ color: getStatusColor(order.status) }">{{ statusMap[order.status] || order.status }}</text>
           </view>
 
           <view class="order-goods">
             <view v-for="(item, index) in order.items.slice(0, 3)" :key="index" class="goods-item">
-              <view class="goods-img">
+              <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+              <view v-else class="goods-img">
                 <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
               </view>
             </view>
@@ -135,18 +177,18 @@ async function cancelOrder(orderId: number) {
             <text class="order-time">{{ order.createTime }}</text>
             <view class="order-amount">
               <text class="amount-label">合计:</text>
-              <text class="amount-value">¥{{ order.totalAmount + order.freight }}</text>
+              <text class="amount-value">¥{{ order.totalAmount }}</text>
             </view>
           </view>
 
           <view class="order-actions" @click.stop>
             <text
-              v-if="order.status === 'pending'"
+              v-if="isPending(order.status)"
               class="action-btn pay"
               @click="payOrder(order.id)"
             >去付款</text>
             <text
-              v-if="order.status === 'pending'"
+              v-if="isPending(order.status)"
               class="action-btn cancel"
               @click="cancelOrder(order.id)"
             >取消订单</text>
@@ -222,6 +264,21 @@ async function cancelOrder(orderId: number) {
 .empty-text {
   font-size: 28rpx;
   color: var(--text-sub);
+  margin-bottom: 32rpx;
+  display: block;
+}
+
+.empty-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.empty-btn {
+  padding: 20rpx 48rpx;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-radius: 40rpx;
+  font-size: 28rpx;
 }
 
 .order-cards {
@@ -251,12 +308,6 @@ async function cancelOrder(orderId: number) {
 .order-status {
   font-size: 26rpx;
   font-weight: 600;
-
-  &.pending { color: var(--accent); }
-  &.paid { color: var(--primary); }
-  &.shipped { color: var(--primary); }
-  &.completed { color: var(--text-sub); }
-  &.cancelled { color: var(--text-placeholder); }
 }
 
 .order-goods {

@@ -18,6 +18,20 @@ export interface Category {
   id: number
   name: { zh?: string; en?: string }
   icon?: string
+  parentId?: number
+  sortOrder?: number
+  status?: number
+}
+
+export interface ContentBlock {
+  id: number
+  category: string
+  blockKey: string
+  zhValue: string
+  enValue: string
+  extraJSON: string
+  sortOrder: number
+  status: number
 }
 
 interface ProductListResponse {
@@ -87,6 +101,16 @@ export const productApi = {
       url: '/public/categories',
       method: 'GET',
       data: { lang: 'zh' },
+      showLoading: false
+    })
+  },
+
+  // 获取内容块（如 Banner）
+  getContents(category: string): Promise<ApiResponse<ContentBlock[]>> {
+    return request({
+      url: '/public/contents',
+      method: 'GET',
+      data: { category },
       showLoading: false
     })
   }

@@ -35,9 +35,9 @@ const orderApi = {
     });
   },
   // 支付订单
-  pay(orderId) {
+  pay(orderId, mode = "wechat") {
     return api_request.request({
-      url: `/order/${orderId}/pay`,
+      url: `/order/${orderId}/pay?mode=${mode}`,
       method: "POST",
       showLoading: true
     });

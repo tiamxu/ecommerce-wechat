@@ -1,52 +1,82 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { productApi, type Product, type Category } from '../../api'
+import { onShow } from '@dcloudio/uni-app'
+import { productApi, type Product, type ContentBlock } from '../../api'
 import TabBar from '../../components/TabBar.vue'
+import Skeleton from '../../components/Skeleton.vue'
 import { THEME_CLASS } from '../../theme/config'
 
-const categories = ref<Category[]>([])
 const hotProducts = ref<Product[]>([])
+const banners = ref<ContentBlock[]>([])
 const loading = ref(false)
-const searchKeyword = ref('')
+const hasLoaded = ref(false)
 
 onMounted(() => {
   loadData()
 })
 
+onShow(() => {
+  if (hasLoaded.value) {
+    loadData()
+  }
+})
+
 async function loadData() {
   loading.value = true
   try {
-    const [catRes, hotRes] = await Promise.all([
-      productApi.getCategories(),
-      productApi.getHotProducts(8)
+    const [hotRes, bannerRes] = await Promise.all([
+      productApi.getHotProducts(8),
+      productApi.getContents('banner')
     ])
 
-    if (catRes.code === 200) {
-      categories.value = catRes.data.pageData || []
-    }
     if (hotRes.code === 200) {
       hotProducts.value = hotRes.data.pageData || []
+    }
+    if (bannerRes.code === 200 && bannerRes.data) {
+      banners.value = bannerRes.data.filter((b: ContentBlock) => b.status === 1)
     }
   } catch (error) {
     console.error('加载数据失败', error)
   } finally {
     loading.value = false
+    hasLoaded.value = true
+  }
+}
+
+function getBannerBg(banner: ContentBlock): string {
+  try {
+    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
+    return extra.image || ''
+  } catch {
+    return ''
+  }
+}
+
+function getBannerTitle(banner: ContentBlock): string {
+  return banner.zhValue || banner.enValue || ''
+}
+
+function getBannerSubtitle(banner: ContentBlock): string {
+  try {
+    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
+    return extra.subtitle || ''
+  } catch {
+    return ''
+  }
+}
+
+function getBannerDesc(banner: ContentBlock): string {
+  try {
+    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
+    return extra.desc || ''
+  } catch {
+    return ''
   }
 }
 
 function goToSearch() {
-  if (searchKeyword.value.trim()) {
-    uni.navigateTo({
-      url: `/pages/product/list?keyword=${encodeURIComponent(searchKeyword.value.trim())}`
-    })
-  } else {
-    uni.navigateTo({ url: '/pages/product/list' })
-  }
-}
-
-function goToCategoryProducts(categoryId: number) {
   uni.navigateTo({
-    url: `/pages/product/list?categoryId=${categoryId}`
+    url: '/pages/search/index'
   })
 }
 
@@ -73,8 +103,17 @@ function getCoverImage(product: Product): string {
   return ''
 }
 
-function getOriginalPrice(product: Product): number {
-  return product.originalPrice || Math.round(product.price * 1.3)
+function handleBannerClick(banner: ContentBlock) {
+  try {
+    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
+    if (extra.productId) {
+      uni.navigateTo({
+        url: `/pages/product/detail?id=${extra.productId}`
+      })
+    }
+  } catch (e) {
+    console.error('解析banner数据失败', e)
+  }
 }
 </script>
 
@@ -85,20 +124,25 @@ function getOriginalPrice(product: Product): number {
     <!-- 顶部搜索栏 -->
     <view class="search-bar">
       <view class="search-input-wrap" @click="goToSearch">
-        <text class="search-icon">🔍</text>
-        <input
-          v-model="searchKeyword"
-          class="search-input"
-          placeholder="搜索商品"
-          disabled
-        />
+        <uni-icons type="search" size="16" color="var(--text-placeholder)" />
+        <text class="search-placeholder">搜索商品</text>
       </view>
-      <view class="search-tip">搜索</view>
     </view>
 
     <!-- Banner -->
     <view class="banner">
-      <swiper class="banner-swiper" indicator-dots autoplay circular>
+      <swiper v-if="banners.length > 0" class="banner-swiper" indicator-dots :autoplay="true" :circular="true">
+        <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
+          <view class="banner-item" :style="{ backgroundImage: `url('${getBannerBg(banner)}')` }">
+            <view class="banner-overlay"></view>
+            <view class="banner-content">
+              <text class="banner-title">{{ getBannerTitle(banner) }}</text>
+              <text v-if="getBannerDesc(banner)" class="banner-desc">{{ getBannerDesc(banner) }}</text>
+            </view>
+          </view>
+        </swiper-item>
+      </swiper>
+      <swiper v-else class="banner-swiper" indicator-dots :autoplay="true" :circular="true">
         <swiper-item>
           <view class="banner-item banner-1">
             <view class="banner-content">
@@ -118,55 +162,6 @@ function getOriginalPrice(product: Product): number {
       </swiper>
     </view>
 
-    <!-- 分类入口 -->
-    <view class="section category-section">
-      <view class="category-grid">
-        <view
-          v-for="cat in categories.slice(0, 8)"
-          :key="cat.id"
-          class="category-item"
-          @click="goToCategoryProducts(cat.id)"
-        >
-          <view class="category-icon" :style="{ background: cat.id % 2 === 0 ? 'var(--primary-light)' : 'var(--accent-light)' }">
-            <text>{{ cat.icon || '📦' }}</text>
-          </view>
-          <text class="category-name">{{ cat.name?.zh || cat.name?.en || '分类' }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 热门推荐 -->
-    <view class="section seckill-section">
-      <view class="seckill-header">
-        <view class="seckill-title">
-          <text class="seckill-icon">🔥</text>
-          <text class="seckill-text">热门推荐</text>
-        </view>
-      </view>
-      <scroll-view class="seckill-scroll" scroll-x>
-        <view class="seckill-list">
-          <view
-            v-for="item in hotProducts.slice(0, 4)"
-            :key="item.id"
-            class="seckill-item"
-            @click="goToProductDetail(item.id)"
-          >
-            <image
-              v-if="getCoverImage(item)"
-              class="seckill-img"
-              :src="getCoverImage(item)"
-              mode="aspectFill"
-            />
-            <view v-else class="seckill-img-placeholder">
-              <text>{{ getProductName(item).charAt(0) }}</text>
-            </view>
-            <text class="seckill-price">¥{{ item.price }}</text>
-            <text v-if="getOriginalPrice(item) > item.price" class="seckill-original">¥{{ getOriginalPrice(item) }}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
     <!-- 热门推荐 -->
     <view class="section">
       <view class="section-header">
@@ -180,34 +175,49 @@ function getOriginalPrice(product: Product): number {
         </view>
       </view>
       <view class="product-grid">
-        <view
-          v-for="item in hotProducts"
-          :key="item.id"
-          class="product-card"
-          @click="goToProductDetail(item.id)"
-        >
-          <view class="card-img-wrap">
-            <image
-              v-if="getCoverImage(item)"
-              class="card-img"
-              :src="getCoverImage(item)"
-              mode="aspectFill"
-            />
-            <view v-else class="card-img-placeholder">
-              <text class="placeholder-text">{{ getProductName(item).charAt(0) }}</text>
+        <!-- 骨架屏 -->
+        <template v-if="loading && hotProducts.length === 0">
+          <view v-for="i in 4" :key="i" class="product-card">
+            <view class="card-img-wrap">
+              <Skeleton width="100%" height="320rpx" borderRadius="0" />
             </view>
-            <view v-if="item.primaryTag" class="card-tag">
-              {{ item.primaryTag.name }}
+            <view class="card-info">
+              <Skeleton width="80%" height="32rpx" />
+              <Skeleton width="50%" height="28rpx" />
             </view>
           </view>
-          <view class="card-info">
-            <text class="card-name">{{ getProductName(item) }}</text>
-            <view class="card-bottom">
-              <text class="card-price">¥{{ item.price }}</text>
-              <text class="card-sales">已售{{ item.sales || 0 }}件</text>
+        </template>
+        <!-- 商品列表 -->
+        <template v-else>
+          <view
+            v-for="item in hotProducts"
+            :key="item.id"
+            class="product-card"
+            @click="goToProductDetail(item.id)"
+          >
+            <view class="card-img-wrap">
+              <image
+                v-if="getCoverImage(item)"
+                class="card-img"
+                :src="getCoverImage(item)"
+                mode="aspectFill"
+              />
+              <view v-else class="card-img-placeholder">
+                <text class="placeholder-text">{{ getProductName(item).charAt(0) }}</text>
+              </view>
+              <view v-if="item.primaryTag" class="card-tag">
+                {{ item.primaryTag.name }}
+              </view>
+            </view>
+            <view class="card-info">
+              <text class="card-name">{{ getProductName(item) }}</text>
+              <view class="card-bottom">
+                <text class="card-price">¥{{ item.price }}</text>
+                <text class="card-sales">已售{{ item.sales || 0 }}件</text>
+              </view>
             </view>
           </view>
-        </view>
+        </template>
       </view>
       <view v-if="hotProducts.length === 0 && !loading" class="empty-tip">
         <text>暂无推荐商品</text>
@@ -232,55 +242,52 @@ function getOriginalPrice(product: Product): number {
   z-index: 100;
   display: flex;
   align-items: center;
-  padding: 16rpx 24rpx;
-  padding-top: calc(16rpx + env(safe-area-inset-top));
-  background: var(--primary);
+  padding: 12rpx 32rpx;
+  padding-top: calc(12rpx + env(safe-area-inset-top));
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
 .search-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  height: 72rpx;
+  height: 64rpx;
   padding: 0 24rpx;
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 36rpx;
+  border-radius: 32rpx;
 }
 
-.search-icon {
+.search-placeholder {
   font-size: 28rpx;
-  margin-right: 12rpx;
-}
-
-.search-input {
-  flex: 1;
-  font-size: 28rpx;
-  color: var(--text-main);
-}
-
-.search-tip {
-  margin-left: 20rpx;
-  font-size: 28rpx;
-  color: var(--text-inverse);
-  font-weight: 500;
+  color: var(--text-placeholder);
+  margin-left: 8rpx;
 }
 
 /* Banner */
 .banner {
-  padding-top: calc(104rpx + env(safe-area-inset-top));
+  padding-top: calc(88rpx + env(safe-area-inset-top));
 }
 
 .banner-swiper {
   width: 100%;
-  height: 320rpx;
+  height: 380rpx;
 }
 
 .banner-item {
   width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 380rpx;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.banner-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 200rpx;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
 }
 
 .banner-1 {
@@ -292,173 +299,28 @@ function getOriginalPrice(product: Product): number {
 }
 
 .banner-content {
-  text-align: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 32rpx;
+  padding: 0 32rpx;
+  z-index: 1;
 }
 
 .banner-title {
   display: block;
-  font-size: 48rpx;
+  font-size: 40rpx;
   font-weight: 700;
-  color: var(--text-inverse);
-  margin-bottom: 12rpx;
+  color: #ffffff;
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.3);
 }
 
-.banner-subtitle {
+.banner-desc {
   display: block;
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.9);
-}
-
-/* 分类 */
-.category-section {
-  margin-top: -40rpx;
-  position: relative;
-  z-index: 10;
-  border-radius: 24rpx 24rpx 0 0;
-}
-
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24rpx;
-}
-
-.category-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.category-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
-  margin-bottom: 12rpx;
-  box-shadow: 0 4rpx 12rpx var(--shadow);
-}
-
-.category-name {
-  font-size: 24rpx;
-  color: var(--text-main);
-  text-align: center;
-}
-
-/* 秒杀 */
-.seckill-section {
-  background: linear-gradient(180deg, var(--accent-light) 0%, var(--bg-card) 100%);
-}
-
-.seckill-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.seckill-title {
-  display: flex;
-  align-items: center;
-}
-
-.seckill-icon {
-  font-size: 36rpx;
-  margin-right: 8rpx;
-}
-
-.seckill-text {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.seckill-countdown {
-  display: flex;
-  align-items: center;
-}
-
-.countdown-label {
-  font-size: 24rpx;
-  color: var(--text-sub);
-  margin-right: 12rpx;
-}
-
-.countdown-time {
-  display: flex;
-  align-items: center;
-}
-
-.time-block {
-  min-width: 40rpx;
-  height: 40rpx;
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 24rpx;
-  font-weight: 600;
-  border-radius: 8rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.time-sep {
-  margin: 0 6rpx;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.seckill-scroll {
-  white-space: nowrap;
-}
-
-.seckill-list {
-  display: inline-flex;
-  gap: 20rpx;
-}
-
-.seckill-item {
-  width: 200rpx;
-  background: var(--bg-card);
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 4rpx 16rpx var(--shadow);
-}
-
-.seckill-img {
-  width: 100%;
-  height: 200rpx;
-}
-
-.seckill-img-placeholder {
-  width: 100%;
-  height: 200rpx;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.seckill-price {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 700;
-  color: var(--accent);
-  padding: 12rpx 12rpx 4rpx;
-}
-
-.seckill-original {
-  display: block;
-  font-size: 22rpx;
-  color: var(--text-placeholder);
-  text-decoration: line-through;
-  padding: 0 12rpx 12rpx;
+  text-shadow: 0 2rpx 6rpx rgba(0,0,0,0.25);
 }
 
 /* 热门推荐 */
@@ -555,6 +417,10 @@ function getOriginalPrice(product: Product): number {
 
 .card-info {
   padding: 16rpx;
+
+  :deep(.skeleton) {
+    margin-bottom: 12rpx;
+  }
 }
 
 .card-name {

@@ -2,20 +2,32 @@
 import { ref, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
 import { THEME_CLASS } from '../../theme/config'
+import regionData from '../../static/china_address.json'
 
+// 表单字段
 const form = ref({
-  name: '',
+  receiverName: '',
   phone: '',
   province: '',
   city: '',
-  district: '',
-  detail: '',
+  address: '',
   isDefault: false
 })
 
 const isEdit = ref(false)
 const addressId = ref<number | null>(null)
 const loading = ref(false)
+const showProvincePicker = ref(false)
+const showCityPicker = ref(false)
+
+// 省份列表
+const provinces = regionData.map(p => ({ label: p.name, value: p.code }))
+
+// 当前选中的省份对象
+const currentProvince = ref<any>(null)
+
+// 城市列表
+const cities = ref<Array<{ label: string, value: string }>>([])
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -26,6 +38,9 @@ onMounted(() => {
     isEdit.value = true
     addressId.value = Number(id)
     loadAddressDetail(addressId.value)
+    uni.setNavigationBarTitle({ title: '编辑地址' })
+  } else {
+    uni.setNavigationBarTitle({ title: '新增地址' })
   }
 })
 
@@ -36,13 +51,18 @@ async function loadAddressDetail(id: number) {
       const addr = res.data.find((a: Address) => a.id === id)
       if (addr) {
         form.value = {
-          name: addr.name,
+          receiverName: addr.receiverName,
           phone: addr.phone,
           province: addr.province,
           city: addr.city,
-          district: addr.district,
-          detail: addr.detail,
-          isDefault: addr.isDefault
+          address: addr.address,
+          isDefault: addr.isDefault === 1
+        }
+        // 根据省名设置省份对象和城市列表
+        const province = regionData.find(p => p.name === addr.province)
+        if (province) {
+          currentProvince.value = province
+          cities.value = province.children.map(c => ({ label: c.name, value: c.code }))
         }
       }
     }
@@ -51,8 +71,49 @@ async function loadAddressDetail(id: number) {
   }
 }
 
+function updateCities(provinceName: string) {
+  const province = regionData.find(p => p.name === provinceName)
+  if (province) {
+    currentProvince.value = province
+    cities.value = province.children.map(c => ({ label: c.name, value: c.code }))
+    // 如果当前城市不在新城市列表中，清空选择
+    const cityNames = cities.value.map(c => c.label)
+    if (!cityNames.includes(form.value.city)) {
+      form.value.city = ''
+    }
+  } else {
+    currentProvince.value = null
+    cities.value = []
+  }
+}
+
+function openProvincePicker() {
+  showProvincePicker.value = true
+}
+
+function openCityPicker() {
+  if (!form.value.province) {
+    uni.showToast({ title: '请先选择省份', icon: 'none' })
+    return
+  }
+  showCityPicker.value = true
+}
+
+function onProvinceConfirm(e: any) {
+  const selected = e.value[0]
+  form.value.province = selected.label
+  updateCities(selected.label)
+  showProvincePicker.value = false
+}
+
+function onCityConfirm(e: any) {
+  const selected = e.value[0]
+  form.value.city = selected.label
+  showCityPicker.value = false
+}
+
 async function saveAddress() {
-  if (!form.value.name) {
+  if (!form.value.receiverName) {
     uni.showToast({ title: '请输入收货人姓名', icon: 'none' })
     return
   }
@@ -60,17 +121,26 @@ async function saveAddress() {
     uni.showToast({ title: '请输入手机号码', icon: 'none' })
     return
   }
-  if (!form.value.province || !form.value.city || !form.value.district || !form.value.detail) {
-    uni.showToast({ title: '请输入完整地址', icon: 'none' })
+  if (!form.value.province || !form.value.city || !form.value.address) {
+    uni.showToast({ title: '请选择完整地区', icon: 'none' })
     return
   }
 
   loading.value = true
   try {
+    const params = {
+      receiverName: form.value.receiverName,
+      phone: form.value.phone,
+      province: form.value.province,
+      city: form.value.city,
+      address: form.value.address,
+      isDefault: form.value.isDefault ? 1 : 0
+    }
+
     if (isEdit.value && addressId.value) {
-      await orderApi.updateAddress(addressId.value, form.value)
+      await orderApi.updateAddress(addressId.value, params as any)
     } else {
-      await orderApi.addAddress(form.value)
+      await orderApi.addAddress(params as any)
     }
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
@@ -90,24 +160,35 @@ async function saveAddress() {
     <view class="form-section">
       <view class="form-item">
         <text class="form-label">收货人</text>
-        <input v-model="form.name" class="form-input" placeholder="请输入收货人姓名" />
+        <input v-model="form.receiverName" class="form-input" placeholder="请输入收货人姓名" />
       </view>
 
       <view class="form-item">
         <text class="form-label">手机号码</text>
-        <input v-model="form.phone" class="form-input" type="number" placeholder="请输入手机号码" maxlength="11" />
+        <input v-model="form.phone" class="form-input" type="text" placeholder="请输入手机号码" maxlength="11" />
       </view>
 
-      <view class="form-item">
+      <view class="form-item" @click="openProvincePicker">
         <text class="form-label">所在地区</text>
-        <input v-model="form.province" class="form-input" placeholder="省" />
-        <input v-model="form.city" class="form-input" placeholder="市" />
-        <input v-model="form.district" class="form-input" placeholder="区/县" />
+        <view class="region-display">
+          <text v-if="form.province" class="region-text">{{ form.province }}</text>
+          <text v-else class="region-placeholder">请选择省份</text>
+          <text class="arrow">></text>
+        </view>
+      </view>
+
+      <view class="form-item" @click="openCityPicker">
+        <text class="form-label">城市</text>
+        <view class="region-display">
+          <text v-if="form.city" class="region-text">{{ form.city }}</text>
+          <text v-else class="region-placeholder">请选择城市</text>
+          <text class="arrow">></text>
+        </view>
       </view>
 
       <view class="form-item">
         <text class="form-label">详细地址</text>
-        <input v-model="form.detail" class="form-input" placeholder="街道、楼栋、门牌号" />
+        <input v-model="form.address" class="form-input" placeholder="街道、楼栋、门牌号" />
       </view>
 
       <view class="form-item switch-item">
@@ -123,6 +204,24 @@ async function saveAddress() {
     <view class="save-btn-wrap">
       <text class="save-btn" @click="saveAddress">保存</text>
     </view>
+
+    <!-- 省份选择器 -->
+    <up-picker
+      :show="showProvincePicker"
+      :columns="[provinces]"
+      keyName="label"
+      @confirm="onProvinceConfirm"
+      @cancel="showProvincePicker = false"
+    ></up-picker>
+
+    <!-- 城市选择器 -->
+    <up-picker
+      :show="showCityPicker"
+      :columns="[cities]"
+      keyName="label"
+      @confirm="onCityConfirm"
+      @cancel="showCityPicker = false"
+    ></up-picker>
   </view>
 </template>
 
@@ -165,6 +264,31 @@ async function saveAddress() {
   &::placeholder {
     color: var(--text-placeholder);
   }
+}
+
+.region-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: var(--bg-page);
+  border-radius: 12rpx;
+}
+
+.region-text {
+  font-size: 28rpx;
+  color: var(--text-main);
+}
+
+.region-placeholder {
+  font-size: 28rpx;
+  color: var(--text-placeholder);
+}
+
+.arrow {
+  color: var(--text-placeholder);
+  font-size: 28rpx;
 }
 
 .switch-item {

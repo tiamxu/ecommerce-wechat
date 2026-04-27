@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '../../store/user'
 import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
@@ -8,27 +8,6 @@ import { THEME_CLASS } from '../../theme/config'
 const userStore = useUserStore()
 const loading = ref(false)
 const userInfo = ref<UserInfo | null>(null)
-
-// 是否有手机号（决定了是否能修改密码）
-const hasPhone = computed(() => !!userInfo.value?.phone)
-
-// 菜单项（根据是否有手机号动态显示）
-const menuItems = computed(() => {
-  const items = [
-    { id: 1, icon: '📋', text: '我的订单', path: '/pages/order/list' },
-    { id: 2, icon: '❤️', text: '我的收藏', path: '' },
-    { id: 3, icon: '📍', text: '收货地址', path: '/pages/address/list' },
-    { id: 4, icon: '✏️', text: '编辑资料', path: '/pages/user/edit' }
-  ]
-  // 如果没有手机号，显示绑定手机号；否则显示修改密码
-  if (!hasPhone.value) {
-    items.push({ id: 5, icon: '📱', text: '绑定手机号', path: '/pages/user/bind-phone' })
-  } else {
-    items.push({ id: 5, icon: '🔑', text: '修改密码', path: '/pages/user/password' })
-  }
-  items.push({ id: 6, icon: '⚙️', text: '设置', path: '' })
-  return items
-})
 
 onMounted(() => {
   if (userStore.isLoggedIn) {
@@ -51,17 +30,17 @@ async function loadUserInfo() {
   }
 }
 
-function handleMenuClick(item: typeof menuItems.value[0]) {
-  if (item.path) {
-    uni.navigateTo({ url: item.path })
-  } else if (item.text === '我的收藏' || item.text === '设置') {
-    uni.showToast({ title: '功能开发中', icon: 'none' })
+function goTo(path: string) {
+  if (path) {
+    uni.navigateTo({ url: path })
   }
 }
 
 function handleLogin() {
   if (!userStore.isLoggedIn) {
-    userStore.login()
+    // 跳转到登录页面，而不是直接调用 login()
+    // 因为 login() 会用缓存的 openid，跳过获取手机号
+    uni.navigateTo({ url: '/pages/user/login' })
   }
 }
 
@@ -77,11 +56,30 @@ function handleLogout() {
     }
   })
 }
+
+const orderTabs = [
+  { id: 'pending', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=pending' },
+  { id: 'paid', text: '待发货', icon: 'box', path: '/pages/order/list?status=paid' },
+  { id: 'shipped', text: '待收货', icon: 'car', path: '/pages/order/list?status=shipped' },
+  { id: 'completed', text: '已完成', icon: 'check', path: '/pages/order/list?status=completed' }
+]
+
+const menuItems = [
+  { id: 1, icon: 'location', text: '收货地址', path: '/pages/address/list' },
+  { id: 2, icon: 'heart', text: '我的收藏', path: '' },
+  { id: 3, icon: 'star', text: '关于我们', path: '/pages/about/index' }
+]
+
+const accountItems = [
+  { id: 4, icon: 'locked', text: '修改密码', path: '/pages/user/password' },
+  { id: 5, icon: 'gear', text: '设置', path: '' }
+]
 </script>
 
 <template>
   <view :class="['user-page', THEME_CLASS]">
     <TabBar />
+
     <!-- 用户头部 -->
     <view class="user-header">
       <view v-if="userStore.isLoggedIn" class="user-info">
@@ -91,41 +89,100 @@ function handleLogout() {
         </view>
         <view class="user-detail">
           <text class="nickname">{{ userInfo?.nickname || userInfo?.username || '微信用户' }}</text>
-          <text v-if="userInfo?.phone" class="phone">{{ userInfo.phone }}</text>
-          <text v-else class="phone bind-tip">未绑定手机号</text>
         </view>
       </view>
       <view v-else class="login-prompt" @click="handleLogin">
         <view class="avatar login-avatar">
-          <text class="avatar-text">?</text>
+          <uni-icons type="person" size="40" color="var(--text-placeholder)" />
         </view>
-        <text class="login-text">点击登录</text>
+        <view class="login-content">
+          <text class="login-title">登录后可享受更多服务</text>
+          <view class="login-btn">
+            <text>登录/注册</text>
+          </view>
+        </view>
+        <uni-icons type="right" size="16" color="var(--text-placeholder)" />
       </view>
     </view>
 
-    <!-- 用户信息卡片 -->
-    <view v-if="userStore.isLoggedIn && userInfo" class="info-card">
-      <view class="info-row">
-        <text class="info-label">用户ID</text>
-        <text class="info-value">{{ userInfo.id }}</text>
+    <!-- 订单入口 -->
+    <view class="order-section" v-if="userStore.isLoggedIn">
+      <view class="section-header" @click="goTo('/pages/order/list')">
+        <text class="section-title">我的订单</text>
+        <view class="section-more">
+          <text>全部订单</text>
+          <uni-icons type="right" size="12" color="var(--text-placeholder)" />
+        </view>
       </view>
-      <view v-if="userInfo.createdAt" class="info-row">
-        <text class="info-label">注册时间</text>
-        <text class="info-value">{{ userInfo.createdAt }}</text>
+      <view class="order-tabs">
+        <view
+          v-for="tab in orderTabs"
+          :key="tab.id"
+          class="order-tab"
+          @click="goTo(tab.path)"
+        >
+          <view class="tab-icon-wrap">
+            <uni-icons :type="tab.icon" size="28" color="var(--text-main)" />
+          </view>
+          <text class="tab-text">{{ tab.text }}</text>
+        </view>
       </view>
     </view>
 
-    <!-- 菜单列表 -->
+    <!-- 登录提示订单入口 -->
+    <view class="order-section" v-else>
+      <view class="section-header">
+        <text class="section-title">我的订单</text>
+      </view>
+      <view class="order-tabs">
+        <view v-for="tab in orderTabs" :key="tab.id" class="order-tab disabled">
+          <view class="tab-icon-wrap">
+            <uni-icons :type="tab.icon" size="28" color="var(--text-placeholder)" />
+          </view>
+          <text class="tab-text">{{ tab.text }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 常用功能 -->
     <view class="menu-section">
+      <view class="section-header">
+        <text class="section-title">常用服务</text>
+      </view>
       <view
-        v-for="item in menuItems"
+        v-for="(item, index) in menuItems"
         :key="item.id"
         class="menu-item"
-        @click="handleMenuClick(item)"
+        @click="item.path ? goTo(item.path) : uni.showToast({ title: '功能开发中', icon: 'none' })"
       >
-        <text class="menu-icon">{{ item.icon }}</text>
-        <text class="menu-text">{{ item.text }}</text>
-        <text class="menu-arrow">›</text>
+        <view class="menu-left">
+          <view class="menu-icon-wrap">
+            <uni-icons :type="item.icon" size="22" color="var(--primary)" />
+          </view>
+          <text class="menu-text">{{ item.text }}</text>
+        </view>
+        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
+      </view>
+    </view>
+
+    <!-- 账户安全 -->
+    <view class="menu-section">
+      <view class="section-header">
+        <text class="section-title">账户安全</text>
+      </view>
+      <view
+        v-for="item in accountItems"
+        :key="item.id"
+        class="menu-item"
+        @click="item.path ? goTo(item.path) : uni.showToast({ title: '功能开发中', icon: 'none' })"
+      >
+        <view class="menu-left">
+          <view class="menu-icon-wrap">
+            <uni-icons :type="item.icon" size="22" color="var(--primary)" />
+          </view>
+          <text class="menu-text">{{ item.text }}</text>
+        </view>
+        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
       </view>
     </view>
 
@@ -140,15 +197,16 @@ function handleLogout() {
 .user-page {
   min-height: 100vh;
   background: var(--bg-page);
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
+/* 用户头部 */
 .user-header {
-  padding: 60rpx 32rpx;
-  background: var(--bg-card);
-  margin-bottom: 24rpx;
+  padding: 48rpx 32rpx;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
-.user-info, .login-prompt {
+.user-info {
   display: flex;
   align-items: center;
 }
@@ -156,13 +214,14 @@ function handleLogout() {
 .avatar {
   width: 120rpx;
   height: 120rpx;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 24rpx;
   overflow: hidden;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
 }
 
 .avatar-img {
@@ -170,14 +229,10 @@ function handleLogout() {
   height: 100%;
 }
 
-.login-avatar {
-  background: var(--border);
-}
-
 .avatar-text {
   font-size: 48rpx;
   font-weight: 600;
-  color: var(--text-inverse);
+  color: #ffffff;
 }
 
 .user-detail {
@@ -188,56 +243,146 @@ function handleLogout() {
 .nickname {
   font-size: 36rpx;
   font-weight: 600;
-  color: var(--text-main);
+  color: #ffffff;
   margin-bottom: 8rpx;
 }
 
-.phone, .email {
+.member-badge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20rpx;
+  margin-bottom: 8rpx;
+  width: fit-content;
+}
+
+.member-text {
+  font-size: 20rpx;
+  color: #ffffff;
+}
+
+.phone {
   font-size: 24rpx;
-  color: var(--text-sub);
-  margin-top: 4rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .bind-tip {
-  color: var(--accent);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.login-prompt {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+}
+
+.login-avatar {
+  background: rgba(255, 255, 255, 0.2);
+  margin-right: 20rpx;
+}
+
+.login-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.login-title {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.login-btn {
+  display: inline-block;
+  padding: 12rpx 32rpx;
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 26rpx;
+  font-weight: 600;
+  border-radius: 40rpx;
+  width: fit-content;
 }
 
 .login-text {
-  font-size: 32rpx;
-  color: var(--primary);
+  font-size: 28rpx;
+  color: #ffffff;
 }
 
-.info-card {
+/* 订单入口 */
+.order-section {
   background: var(--bg-card);
-  padding: 24rpx 32rpx;
-  margin-bottom: 24rpx;
+  margin: 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
 }
 
-.info-row {
+.section-header {
   display: flex;
   justify-content: space-between;
-  padding: 12rpx 0;
+  align-items: center;
+  padding: 24rpx 24rpx 16rpx;
 }
 
-.info-label {
-  font-size: 26rpx;
-  color: var(--text-sub);
-}
-
-.info-value {
-  font-size: 26rpx;
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
   color: var(--text-main);
 }
 
+.section-more {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 24rpx;
+  color: var(--text-sub);
+}
+
+.order-tabs {
+  display: flex;
+  padding: 16rpx 0 24rpx;
+}
+
+.order-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
+.tab-icon-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  border-radius: 16rpx;
+}
+
+.tab-text {
+  font-size: 24rpx;
+  color: var(--text-main);
+}
+
+/* 菜单区块 */
 .menu-section {
   background: var(--bg-card);
-  margin-bottom: 24rpx;
+  margin: 0 24rpx 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 32rpx;
+  justify-content: space-between;
+  padding: 28rpx 24rpx;
   border-bottom: 1rpx solid var(--border);
 
   &:last-child {
@@ -249,35 +394,42 @@ function handleLogout() {
   }
 }
 
-.menu-icon {
-  font-size: 40rpx;
+.menu-left {
+  display: flex;
+  align-items: center;
+}
+
+.menu-icon-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  border-radius: 12rpx;
   margin-right: 20rpx;
 }
 
 .menu-text {
-  flex: 1;
   font-size: 28rpx;
   color: var(--text-main);
 }
 
-.menu-arrow {
-  font-size: 28rpx;
-  color: var(--text-placeholder);
-}
-
+/* 退出登录 */
 .logout-section {
-  padding: 32rpx;
+  padding: 0 24rpx;
 }
 
 .logout-btn {
   display: block;
   width: 100%;
-  padding: 24rpx;
+  padding: 28rpx;
   background: var(--bg-card);
   color: var(--accent);
   text-align: center;
   border-radius: 16rpx;
   font-size: 28rpx;
+  font-weight: 500;
 
   &:active {
     opacity: 0.8;

@@ -21,11 +21,6 @@ export interface UpdatePasswordParams {
   newPassword: string
 }
 
-export interface BindPhoneParams {
-  phone: string
-  password: string
-}
-
 export const userApi = {
   // 获取用户个人信息
   getProfile(): Promise<ApiResponse<UserInfo>> {
@@ -51,16 +46,6 @@ export const userApi = {
     return request({
       url: '/api/users/password',
       method: 'PUT',
-      data: params,
-      showLoading: true
-    })
-  },
-
-  // 绑定手机号（微信用户设置密码）
-  bindPhone(params: BindPhoneParams): Promise<ApiResponse<void>> {
-    return request({
-      url: '/api/users/bind-phone',
-      method: 'POST',
       data: params,
       showLoading: true
     })
