@@ -16,6 +16,7 @@ const Skeleton = () => "../../components/Skeleton.js";
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "index",
   setup(__props) {
+    const { locale } = common_vendor.useI18n();
     const hotProducts = common_vendor.ref([]);
     const banners = common_vendor.ref([]);
     const loading = common_vendor.ref(false);
@@ -57,12 +58,17 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
     }
     function getBannerTitle(banner) {
-      return banner.zhValue || banner.enValue || "";
+      return locale.value === "zh" ? banner.zhValue || "" : banner.enValue || "";
     }
     function getBannerDesc(banner) {
       try {
         const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {};
-        return extra.desc || "";
+        const val = extra.desc;
+        if (!val) return "";
+        if (typeof val === "object" && val !== null) {
+          return locale.value === "zh" ? val.zh || "" : val.en || "";
+        }
+        return val;
       } catch {
         return "";
       }

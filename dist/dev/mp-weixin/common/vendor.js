@@ -12380,3 +12380,4 @@ exports.s = s;
 exports.storeToRefs = storeToRefs;
 exports.t = t;
 exports.unref = unref;
+exports.useI18n = useI18n;

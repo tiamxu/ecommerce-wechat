@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { useI18n } from 'vue-i18n'
 import { productApi, type Product, type ContentBlock } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import Skeleton from '../../components/Skeleton.vue'
 import { THEME_CLASS } from '../../theme/config'
+
+const { locale } = useI18n()
 
 const hotProducts = ref<Product[]>([])
 const banners = ref<ContentBlock[]>([])
@@ -53,13 +56,18 @@ function getBannerBg(banner: ContentBlock): string {
 }
 
 function getBannerTitle(banner: ContentBlock): string {
-  return banner.zhValue || banner.enValue || ''
+  return locale.value === 'zh' ? (banner.zhValue || '') : (banner.enValue || '')
 }
 
 function getBannerSubtitle(banner: ContentBlock): string {
   try {
     const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    return extra.subtitle || ''
+    const val = extra.subtitle
+    if (!val) return ''
+    if (typeof val === 'object' && val !== null) {
+      return locale.value === 'zh' ? (val.zh || '') : (val.en || '')
+    }
+    return val
   } catch {
     return ''
   }
@@ -68,7 +76,12 @@ function getBannerSubtitle(banner: ContentBlock): string {
 function getBannerDesc(banner: ContentBlock): string {
   try {
     const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    return extra.desc || ''
+    const val = extra.desc
+    if (!val) return ''
+    if (typeof val === 'object' && val !== null) {
+      return locale.value === 'zh' ? (val.zh || '') : (val.en || '')
+    }
+    return val
   } catch {
     return ''
   }

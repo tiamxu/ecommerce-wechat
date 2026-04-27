@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useCartStore } from '../store/cart'
 import { storeToRefs } from 'pinia'
 
@@ -13,11 +14,30 @@ const tabs = [
 const cartStore = useCartStore()
 const { totalCount } = storeToRefs(cartStore)
 
-// 使用 index 判断当前选中 tab，更简洁
 const currentIndex = ref(0)
 
+// 根据当前页面路径同步 currentIndex
+function syncCurrentIndex() {
+  const pages = getCurrentPages()
+  if (pages.length === 0) return
+  const currentPage = pages[pages.length - 1]
+  const currentPath = '/' + currentPage.route
+  const idx = tabs.findIndex(tab => tab.pagePath === currentPath)
+  if (idx !== -1) {
+    currentIndex.value = idx
+  }
+}
+
+onShow(() => {
+  syncCurrentIndex()
+})
+
 function goTo(tab: typeof tabs[0], index: number) {
-  if (currentIndex.value === index) return
+  if (currentIndex.value === index) {
+    // 已选中，刷新当前页
+    uni.reLaunch({ url: tab.pagePath })
+    return
+  }
   currentIndex.value = index
   uni.switchTab({ url: tab.pagePath })
 }
@@ -30,7 +50,7 @@ function goTo(tab: typeof tabs[0], index: number) {
       :key="tab.pagePath"
       class="tab-item"
       :class="{ active: currentIndex === index }"
-      @click="goTo(tab, index)"
+      @tap.stop="goTo(tab, index)"
     >
       <view class="icon-wrap">
         <uni-icons
