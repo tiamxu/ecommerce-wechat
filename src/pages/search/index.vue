@@ -122,7 +122,7 @@ function onCancel() {
         >
           <image
             class="result-image"
-            :src="item.metaImage || item.images?.[0]?.url || '/static/placeholder.png'"
+            :src="item.coverImage || '/static/placeholder.png'"
             mode="aspectFill"
           />
           <view class="result-info">

@@ -10,6 +10,7 @@ interface Product {
   metaImage?: string
   name?: { zh?: string; en?: string }
   images?: { url: string; isCover?: number }[]
+  coverImages?: string[]
   tags?: { name: string }[]
   primaryTag?: { name: string }
 }
@@ -32,10 +33,8 @@ const productName = computed(() => {
 })
 
 const coverImage = computed(() => {
-  if (props.product.metaImage) return props.product.metaImage
-  if (props.product.images && props.product.images.length > 0) {
-    const cover = props.product.images.find(img => img.isCover === 1)
-    return cover?.url || props.product.images[0].url
+  if (props.product.coverImages && props.product.coverImages.length > 0) {
+    return props.product.coverImages[0]
   }
   return ''
 })

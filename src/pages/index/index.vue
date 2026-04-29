@@ -108,10 +108,8 @@ function getProductName(product: Product): string {
 }
 
 function getCoverImage(product: Product): string {
-  if (product.metaImage) return product.metaImage
-  if (product.images && product.images.length > 0) {
-    const cover = product.images.find(img => img.isCover === 1)
-    return cover?.url || product.images[0].url
+  if (product.coverImages && product.coverImages.length > 0) {
+    return product.coverImages[0]
   }
   return ''
 }

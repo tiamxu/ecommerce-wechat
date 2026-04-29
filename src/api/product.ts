@@ -10,6 +10,7 @@ export interface Product {
   name: { zh?: string; en?: string }
   description?: { zh?: string; en?: string }
   images?: { url: string; isCover?: number }[]
+  coverImages?: string[]
   primaryTag?: { name: string }
   tags?: { name: string }[]
 }

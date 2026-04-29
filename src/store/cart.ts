@@ -7,6 +7,7 @@ interface CartState {
   totalPrice: number
   loading: boolean
   initialized: boolean
+  fetching: boolean // 防止重复请求
 }
 
 export const useCartStore = defineStore('cart', {
@@ -15,7 +16,8 @@ export const useCartStore = defineStore('cart', {
     totalCount: 0,
     totalPrice: 0,
     loading: false,
-    initialized: false
+    initialized: false,
+    fetching: false
   }),
 
   getters: {
@@ -38,6 +40,9 @@ export const useCartStore = defineStore('cart', {
   actions: {
     // 加载购物车
     async loadCart() {
+      // 防止重复请求
+      if (this.fetching) return
+      this.fetching = true
       this.loading = true
       try {
         const res = await cartApi.getList()
@@ -54,6 +59,7 @@ export const useCartStore = defineStore('cart', {
         console.error('加载购物车失败', error)
       } finally {
         this.loading = false
+        this.fetching = false
       }
     },
 
