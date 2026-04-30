@@ -81,6 +81,12 @@
       }
     },
     {
+      "path": "pages/user/bind-account",
+      "style": {
+        "navigationBarTitleText": "完善账号信息"
+      }
+    },
+    {
       "path": "pages/address/list",
       "style": {
         "navigationBarTitleText": "收货地址"

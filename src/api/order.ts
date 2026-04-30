@@ -2,14 +2,14 @@ import { request, type ApiResponse } from './request'
 
 export interface Address {
   id: number
-  receiverName: string  // 后端字段
+  receiverName: string
   phone: string
   province: string
   city: string
   country: string
-  address: string  // 后端字段 (不是 detail)
+  address: string
   postalCode: string
-  isDefault: number  // 后端是 int (0/1)
+  isDefault: number
 }
 
 export interface OrderItem {

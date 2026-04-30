@@ -53,7 +53,36 @@ export const useUserStore = defineStore('user', {
       return false
     },
 
-    // 微信一键登录（获取手机号）
+    // 微信登录（openid方式，通过code获取）
+    async loginWithWechatCode(code: string, sessionId: string) {
+      try {
+        const res = await uni.request({
+          url: `${BASE_URL}/public/wechat/login`,
+          method: 'POST',
+          data: { code, sessionId }
+        })
+
+        const data = res.data as any
+        if (data.code === 200 && data.data.token) {
+          this.token = data.data.token
+          this.userInfo = data.data.userInfo
+          uni.setStorageSync('token', this.token)
+          if (data.data.userInfo?.openid) {
+            uni.setStorageSync('wechat_openid', data.data.userInfo.openid)
+          }
+          return { success: true, need_bind: data.data.need_bind || false }
+        } else {
+          return { success: false, message: data.message || '登录失败' }
+        }
+      } catch (error: any) {
+        console.error('微信登录失败', error)
+        return { success: false, message: error.message || '网络错误' }
+      }
+    },
+
+    // 微信一键登录（企业版，获取手机号）
+    // 企业版小程序使用：通过 button open-type="getPhoneNumber" 获取 encryptedData 和 iv
+    // 解密后直接获取手机号，无需绑定流程（need_bind 始终为 false）
     async loginWithWechat(code: string, encryptedData: string, iv: string, sessionId: string) {
       try {
         const res = await uni.request({
@@ -72,12 +101,37 @@ export const useUserStore = defineStore('user', {
           if (data.data.userInfo?.openid) {
             uni.setStorageSync('wechat_openid', data.data.userInfo.openid)
           }
-          return { success: true }
+          // 返回是否需要绑定账号
+          return { success: true, need_bind: data.data.need_bind || false }
         } else {
           return { success: false, message: data.message || '登录失败' }
         }
       } catch (error: any) {
         console.error('微信登录失败', error)
+        return { success: false, message: error.message || '网络错误' }
+      }
+    },
+
+    // 账号密码登录
+    async loginWithAccount(account: string, password: string, sessionId: string) {
+      try {
+        const res = await uni.request({
+          url: `${BASE_URL}/auth/login`,
+          method: 'POST',
+          data: { account, password, sessionId }
+        })
+
+        const data = res.data as any
+        if (data.code === 200 && data.data.token) {
+          this.token = data.data.token
+          this.userInfo = data.data.user
+          uni.setStorageSync('token', this.token)
+          return { success: true }
+        } else {
+          return { success: false, message: data.message || '登录失败' }
+        }
+      } catch (error: any) {
+        console.error('账号登录失败', error)
         return { success: false, message: error.message || '网络错误' }
       }
     },

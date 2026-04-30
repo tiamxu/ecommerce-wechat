@@ -7,16 +7,7 @@ import { THEME_CLASS } from '../../theme/config'
 const userStore = useUserStore()
 const loading = ref(false)
 
-async function handleLogin(e: any) {
-  if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-    uni.showModal({
-      title: '提示',
-      content: '获取手机号失败，请在微信中授权后重试',
-      showCancel: false
-    })
-    return
-  }
-
+async function handleLogin() {
   loading.value = true
   try {
     const loginRes = await new Promise<WechatMiniprogram.LoginSuccessCallbackResult>((resolve, reject) => {
@@ -27,14 +18,17 @@ async function handleLogin(e: any) {
       throw new Error('获取登录凭证失败')
     }
 
-    // 开发者工具环境下，encryptedData可能为空，使用模拟数据
-    const encryptedData = e.detail.encryptedData || 'mock_encrypted_data_for_dev'
-    const iv = e.detail.iv || 'mock_iv_for_dev'
     const sessionId = getSessionId()
-
-    const result = await userStore.loginWithWechat(loginRes.code, encryptedData, iv, sessionId)
+    const result = await userStore.loginWithWechatCode(loginRes.code, sessionId)
 
     if (result.success) {
+      if (result.need_bind) {
+        uni.showToast({ title: '请先完善账号信息', icon: 'none' })
+        setTimeout(() => {
+          uni.navigateTo({ url: '/pages/user/bind-account' })
+        }, 1500)
+        return
+      }
       uni.showToast({ title: '登录成功', icon: 'success' })
       setTimeout(() => {
         const pages = getCurrentPages()
@@ -89,11 +83,10 @@ function goShopping() {
           class="login-btn"
           :class="{ loading }"
           :disabled="loading"
-          open-type="getPhoneNumber"
-          @getphonenumber="handleLogin"
+          @click="handleLogin"
         >
           <text v-if="loading">登录中...</text>
-          <text v-else>微信一键登录</text>
+          <text v-else>微信登录</text>
         </button>
         <text class="btn-tip">点击上述按钮即表示同意《用户协议》和《隐私政策》</text>
       </view>

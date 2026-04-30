@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+
+// uni-app 页面生命周期
+uni.$on('refreshUserInfo', () => {
+  if (userStore.isLoggedIn) {
+    loadUserInfo()
+  }
+})
 import { useUserStore } from '../../store/user'
 import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
@@ -66,14 +73,18 @@ const orderTabs = [
 
 const menuItems = [
   { id: 1, icon: 'location', text: '收货地址', path: '/pages/address/list' },
-  { id: 2, icon: 'heart', text: '我的收藏', path: '' },
-  { id: 3, icon: 'star', text: '关于我们', path: '/pages/about/index' }
+  { id: 2, icon: 'star', text: '关于我们', path: '/pages/about/index' }
 ]
 
 const accountItems = [
-  { id: 4, icon: 'locked', text: '修改密码', path: '/pages/user/password' },
-  { id: 5, icon: 'gear', text: '设置', path: '' }
+  { id: 3, icon: 'locked', text: '修改密码', path: '/pages/user/password' },
+  { id: 4, icon: 'gear', text: '设置', path: '' }
 ]
+
+// 检查是否需要完善资料（没有手机号）
+const needBind = computed(() => {
+  return !userInfo.value?.phone && !userInfo.value?.email
+})
 </script>
 
 <template>
@@ -83,12 +94,15 @@ const accountItems = [
     <!-- 用户头部 -->
     <view class="user-header">
       <view v-if="userStore.isLoggedIn" class="user-info">
-        <view class="avatar">
+        <view class="avatar" @click="needBind && goTo('/pages/user/bind-account')">
           <image v-if="userInfo?.avatar" :src="userInfo.avatar" class="avatar-img" />
           <text v-else class="avatar-text">{{ (userInfo?.nickname || userInfo?.username || 'U').charAt(0).toUpperCase() }}</text>
         </view>
         <view class="user-detail">
           <text class="nickname">{{ userInfo?.nickname || userInfo?.username || '微信用户' }}</text>
+          <view v-if="needBind" class="bind-tip" @click="goTo('/pages/user/bind-account')">
+            <text>点击绑定手机号</text>
+          </view>
         </view>
       </view>
       <view v-else class="login-prompt" @click="handleLogin">
@@ -268,6 +282,8 @@ const accountItems = [
 
 .bind-tip {
   color: rgba(255, 255, 255, 0.6);
+  font-size: 24rpx;
+  margin-top: 8rpx;
 }
 
 .login-prompt {
