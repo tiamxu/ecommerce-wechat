@@ -1,25 +1,39 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
-// uni-app 页面生命周期
-uni.$on('refreshUserInfo', () => {
-  if (userStore.isLoggedIn) {
-    loadUserInfo()
-  }
-})
 import { useUserStore } from '../../store/user'
+import { useCartStore } from '../../store/cart'
 import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
+const cartStore = useCartStore()
 const loading = ref(false)
 const userInfo = ref<UserInfo | null>(null)
+
+// uni-app 页面生命周期
+let refreshTimer: number | null = null
 
 onMounted(() => {
   if (userStore.isLoggedIn) {
     loadUserInfo()
   }
+
+  // 监听刷新事件
+  uni.$on('refreshUserInfo', () => {
+    if (userStore.isLoggedIn) {
+      loadUserInfo()
+    }
+  })
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
+  uni.$off('refreshUserInfo')
 })
 
 async function loadUserInfo() {
@@ -58,6 +72,7 @@ function handleLogout() {
     success: (res) => {
       if (res.confirm) {
         userStore.logout()
+        cartStore.resetCart()
         userInfo.value = null
       }
     }
@@ -65,10 +80,10 @@ function handleLogout() {
 }
 
 const orderTabs = [
-  { id: 'pending', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=pending' },
-  { id: 'paid', text: '待发货', icon: 'box', path: '/pages/order/list?status=paid' },
-  { id: 'shipped', text: '待收货', icon: 'car', path: '/pages/order/list?status=shipped' },
-  { id: 'completed', text: '已完成', icon: 'check', path: '/pages/order/list?status=completed' }
+  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
+  { id: '1', text: '待发货', icon: 'box', path: '/pages/order/list?status=1' },
+  { id: '2', text: '待收货', icon: 'car', path: '/pages/order/list?status=2' },
+  { id: '3', text: '已完成', icon: 'check', path: '/pages/order/list?status=3' }
 ]
 
 const menuItems = [

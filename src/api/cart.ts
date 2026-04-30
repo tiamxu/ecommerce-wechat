@@ -25,7 +25,7 @@ export const cartApi = {
   // 获取购物车列表
   getList(): Promise<ApiResponse<CartResponse>> {
     return request({
-      url: '/cart',
+      url: '/api/cart',
       method: 'GET',
       showLoading: true
     })
@@ -34,7 +34,7 @@ export const cartApi = {
   // 添加到购物车
   add(params: { productId: number; quantity: number }): Promise<ApiResponse<void>> {
     return request({
-      url: '/cart/items',
+      url: '/api/cart/items',
       method: 'POST',
       data: params,
       showLoading: true
@@ -44,7 +44,7 @@ export const cartApi = {
   // 更新购物车数量
   update(productId: number, quantity: number): Promise<ApiResponse<void>> {
     return request({
-      url: `/cart/items/${productId}`,
+      url: `/api/cart/items/${productId}`,
       method: 'PUT',
       data: { quantity }
     })
@@ -53,7 +53,7 @@ export const cartApi = {
   // 删除购物车商品
   remove(productId: number): Promise<ApiResponse<void>> {
     return request({
-      url: `/cart/items/${productId}`,
+      url: `/api/cart/items/${productId}`,
       method: 'DELETE',
       showLoading: true
     })
@@ -62,7 +62,7 @@ export const cartApi = {
   // 清空购物车
   clear(): Promise<ApiResponse<void>> {
     return request({
-      url: '/cart',
+      url: '/api/cart',
       method: 'DELETE',
       showLoading: true
     })

@@ -68,7 +68,7 @@ async function deleteAddress(id: number) {
 
 async function setDefault(id: number) {
   try {
-    await orderApi.updateAddress(id, { isDefault: true } as any)
+    await orderApi.updateAddress(id, { isDefault: 1 } as any)
     addresses.value.forEach(a => a.isDefault = a.id === id ? 1 : 0)
     uni.showToast({ title: '设置成功', icon: 'success' })
   } catch (error) {
@@ -79,35 +79,49 @@ async function setDefault(id: number) {
 
 <template>
   <view :class="['address-list', THEME_CLASS]">
-    <view v-if="loading" class="loading-tip">
-      <text>加载中...</text>
+    <view v-if="loading" class="loading-section">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
     </view>
-    <view v-else-if="addresses.length === 0" class="empty-tip">
-      <text class="empty-text">暂无收货地址</text>
-      <text class="add-first" @click="goToAdd">添加地址</text>
+
+    <view v-else-if="addresses.length === 0" class="empty-section">
+      <view class="empty-icon">
+        <text>📍</text>
+      </view>
+      <text class="empty-title">暂无收货地址</text>
+      <text class="empty-desc">添加收货地址以便快速下单</text>
+      <view class="empty-btn" @click="goToAdd">
+        <text>添加地址</text>
+      </view>
     </view>
 
     <view v-else class="address-cards">
       <view v-for="addr in addresses" :key="addr.id" class="address-card">
-        <view class="card-main" @click="selectAddress(addr.id)">
-          <view class="address-info">
-            <view class="info-header">
-              <text class="name">{{ addr.receiverName }}</text>
+        <view class="card-left" @click="selectAddress(addr.id)">
+          <view class="address-main">
+            <view class="address-header">
+              <text class="receiver-name">{{ addr.receiverName }}</text>
               <text class="phone">{{ addr.phone }}</text>
-              <view v-if="addr.isDefault === 1" class="default-tag">默认</view>
             </view>
-            <text class="address-detail">{{ addr.province }} {{ addr.city }} {{ addr.address }}</text>
+            <text class="address-text">
+              <text v-if="addr.province" class="region-tag">{{ addr.province }}</text>
+              {{ addr.city }} {{ addr.address }}
+            </text>
+          </view>
+          <view class="edit-icon" @click.stop="goToEdit(addr.id)">
+            <uni-icons type="compose" size="18" color="var(--text-sub)" />
           </view>
         </view>
 
-        <view class="card-actions">
-          <view class="action-item" @click="goToEdit(addr.id)">
-            <text>编辑</text>
+        <view class="card-bottom">
+          <view v-if="addr.isDefault === 1" class="default-badge">
+            <text>默认</text>
           </view>
-          <view v-if="addr.isDefault !== 1" class="action-item" @click="setDefault(addr.id)">
+          <view v-else class="set-default" @click="setDefault(addr.id)">
             <text>设为默认</text>
           </view>
-          <view class="action-item delete" @click="deleteAddress(addr.id)">
+          <view class="delete-btn" @click="deleteAddress(addr.id)">
+            <uni-icons type="trash" size="16" color="var(--accent)" />
             <text>删除</text>
           </view>
         </view>
@@ -115,7 +129,10 @@ async function setDefault(id: number) {
     </view>
 
     <view class="add-btn-wrap">
-      <text class="add-btn" @click="goToAdd">+ 添加新地址</text>
+      <view class="add-btn" @click="goToAdd">
+        <uni-icons type="plus" size="20" color="var(--primary)" />
+        <text>添加新地址</text>
+      </view>
     </view>
   </view>
 </template>
@@ -125,130 +142,191 @@ async function setDefault(id: number) {
   min-height: 100vh;
   background: var(--bg-page);
   padding: 24rpx;
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
 }
 
-.loading-tip {
-  padding: 120rpx 0;
-  text-align: center;
-  color: var(--text-sub);
-}
-
-.empty-tip {
+.loading-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 120rpx 0;
+  padding: 160rpx 0;
+  gap: 24rpx;
 }
 
-.empty-text {
+.loading-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
   font-size: 28rpx;
   color: var(--text-sub);
+}
+
+.empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 160rpx 0 80rpx;
+}
+
+.empty-icon {
+  width: 160rpx;
+  height: 160rpx;
+  background: var(--bg-card);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80rpx;
   margin-bottom: 32rpx;
 }
 
-.add-first {
-  padding: 20rpx 48rpx;
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: var(--text-sub);
+  margin-bottom: 48rpx;
+}
+
+.empty-btn {
+  padding: 20rpx 64rpx;
   background: var(--primary);
   color: var(--text-inverse);
-  border-radius: 40rpx;
+  border-radius: 44rpx;
   font-size: 28rpx;
+  font-weight: 500;
 }
 
 .address-cards {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 20rpx;
 }
 
 .address-card {
   background: var(--bg-card);
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
-.card-main {
+.card-left {
+  display: flex;
   padding: 32rpx;
+  align-items: flex-start;
 }
 
-.address-info {
+.address-main {
   flex: 1;
 }
 
-.info-header {
+.address-header {
   display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
 }
 
-.name {
+.receiver-name {
   font-size: 32rpx;
   font-weight: 600;
   color: var(--text-main);
-  margin-right: 16rpx;
 }
 
 .phone {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
 }
 
-.default-tag {
-  margin-left: 16rpx;
-  padding: 4rpx 16rpx;
-  background: var(--primary);
-  color: var(--text-inverse);
-  font-size: 20rpx;
-  border-radius: 20rpx;
-}
-
-.address-detail {
-  font-size: 28rpx;
+.address-text {
+  font-size: 26rpx;
   color: var(--text-sub);
   line-height: 1.6;
 }
 
-.card-actions {
+.region-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
+}
+
+.edit-icon {
+  width: 64rpx;
+  height: 64rpx;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -8rpx -8rpx 0 0;
+}
+
+.card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  background: var(--bg-page);
   border-top: 1rpx solid var(--border);
 }
 
-.action-item {
-  flex: 1;
-  padding: 24rpx;
-  text-align: center;
-  font-size: 28rpx;
-  color: var(--text-main);
+.default-badge {
+  padding: 8rpx 20rpx;
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: 22rpx;
+  border-radius: 20rpx;
+}
 
-  &:active {
-    background: var(--bg-page);
-  }
+.set-default {
+  font-size: 26rpx;
+  color: var(--primary);
+  padding: 8rpx 0;
+}
 
-  &.delete {
-    color: var(--accent);
-  }
-
-  &:not(:last-child) {
-    border-right: 1rpx solid var(--border);
-  }
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 26rpx;
+  color: var(--accent);
+  padding: 8rpx 0;
 }
 
 .add-btn-wrap {
-  margin-top: 32rpx;
+  position: fixed;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  left: 24rpx;
+  right: 24rpx;
 }
 
 .add-btn {
-  display: block;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
   padding: 28rpx;
   background: var(--bg-card);
-  color: var(--primary);
-  text-align: center;
-  border-radius: 16rpx;
-  font-size: 32rpx;
+  border: 2rpx dashed var(--primary);
+  border-radius: 20rpx;
+  font-size: 30rpx;
   font-weight: 600;
-
-  &:active {
-    opacity: 0.8;
-  }
+  color: var(--primary);
 }
 </style>

@@ -81,6 +81,14 @@
       }
     },
     {
+      "path": "pages/user/login-modal",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/user/bind-account",
       "style": {
         "navigationBarTitleText": "完善账号信息"

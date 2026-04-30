@@ -87,100 +87,125 @@ function goBack() {
 <template>
   <view :class="['order-detail', THEME_CLASS]">
     <!-- 加载状态 -->
-    <view v-if="loading" class="loading-tip">
-      <text>加载中...</text>
+    <view v-if="loading" class="loading-section">
+      <view class="loading-icon"></view>
+      <text class="loading-text">加载中...</text>
     </view>
 
     <!-- 订单不存在 -->
-    <view v-else-if="!order" class="empty-tip">
-      <text class="empty-text">订单不存在</text>
-      <text class="back-btn" @click="goBack">返回</text>
+    <view v-else-if="!order" class="empty-section">
+      <view class="empty-icon">📋</view>
+      <text class="empty-title">订单不存在</text>
+      <view class="back-btn" @click="goBack">
+        <text>返回</text>
+      </view>
     </view>
 
     <!-- 订单详情 -->
     <view v-else class="detail-content">
       <!-- 订单状态 -->
-      <view class="status-section">
-        <view class="status-icon" :style="{ background: statusInfo.color }">
-          <text>{{ statusInfo.label.charAt(0) }}</text>
-        </view>
-        <view class="status-info">
+      <view class="status-card">
+        <view class="status-header">
+          <view class="status-dot" :style="{ background: statusInfo.color }"></view>
           <text class="status-text" :style="{ color: statusInfo.color }">{{ statusInfo.label }}</text>
-          <text class="order-time">下单时间: {{ order.createTime }}</text>
         </view>
+        <text class="order-time">下单时间: {{ order.createTime }}</text>
       </view>
 
       <!-- 收货地址 -->
-      <view v-if="order.address" class="address-section">
-        <view class="address-icon">📍</view>
+      <view v-if="order.address" class="address-card">
+        <view class="address-icon">
+          <uni-icons type="location" size="20" color="var(--primary)" />
+        </view>
         <view class="address-content">
           <view class="address-header">
-            <text class="name">{{ order.address.name }}</text>
+            <text class="name">{{ order.address.receiverName }}</text>
             <text class="phone">{{ order.address.phone }}</text>
           </view>
           <text class="detail">
-            {{ order.address.province }} {{ order.address.city }}
-            {{ order.address.district }} {{ order.address.detail }}
+            <text v-if="order.address.province" class="region-tag">{{ order.address.province }}</text>
+            {{ order.address.city }} {{ order.address.address }}
           </text>
         </view>
       </view>
 
       <!-- 商品列表 -->
-      <view class="goods-section">
-        <view class="section-title">商品信息</view>
+      <view class="card goods-card">
+        <view class="card-header">
+          <text class="card-title">商品信息</text>
+          <text class="goods-count">{{ order.items?.length || 0 }}件</text>
+        </view>
         <view v-for="(item, index) in order.items" :key="index" class="goods-item">
-          <view class="goods-img">
-            <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
+          <view class="goods-img-wrap">
+            <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+            <view v-else class="goods-placeholder">
+              <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
+            </view>
           </view>
-          <view class="goods-info">
+          <view class="goods-detail">
             <text class="goods-name">{{ item.productName }}</text>
-            <text class="goods-price">¥{{ item.price }} × {{ item.quantity }}</text>
+            <view class="goods-price-row">
+              <text class="price">¥{{ item.productPrice || item.price }}</text>
+              <text class="quantity">x{{ item.quantity }}</text>
+            </view>
           </view>
         </view>
       </view>
 
       <!-- 订单信息 -->
-      <view class="info-section">
-        <view class="section-title">订单信息</view>
-        <view class="info-row">
-          <text class="label">订单编号</text>
-          <text class="value">{{ order.orderNo }}</text>
+      <view class="card info-card">
+        <view class="card-header">
+          <text class="card-title">订单信息</text>
         </view>
-        <view class="info-row">
-          <text class="label">下单时间</text>
-          <text class="value">{{ order.createTime }}</text>
+        <view class="info-grid">
+          <view class="info-row">
+            <text class="label">订单编号</text>
+            <text class="value">{{ order.orderNo }}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">下单时间</text>
+            <text class="value">{{ order.createTime }}</text>
+          </view>
         </view>
       </view>
 
       <!-- 金额汇总 -->
-      <view class="summary-section">
+      <view class="card summary-card">
         <view class="summary-row">
           <text class="label">商品金额</text>
           <text class="value">¥{{ order.totalAmount }}</text>
         </view>
         <view class="summary-row">
           <text class="label">运费</text>
-          <text class="value">{{ order.freight === 0 ? '免运费' : '¥' + order.freight }}</text>
+          <text class="value" :class="{ highlight: order.freight === 0 }">
+            {{ order.freight === 0 ? '免运费' : '¥' + order.freight }}
+          </text>
         </view>
-        <view class="summary-row total">
-          <text class="label">合计</text>
-          <text class="value price">¥{{ order.totalAmount + order.freight }}</text>
+        <view class="summary-row total-row">
+          <text class="total-label">实付款</text>
+          <text class="total-value">¥{{ order.totalAmount + order.freight }}</text>
         </view>
       </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-section">
-        <text
-          v-if="isPending(order.status)"
-          class="action-btn pay"
-          @click="payOrder"
-        >去付款</text>
-        <text
-          v-if="isPending(order.status)"
-          class="action-btn cancel"
-          @click="cancelOrder"
-        >取消订单</text>
-        <text class="action-btn back" @click="goBack">返回</text>
+      <!-- 底部操作栏 -->
+      <view class="action-bar">
+        <view class="action-left">
+          <text class="pay-amount">¥{{ order.totalAmount + order.freight }}</text>
+          <text class="pay-label">实付款</text>
+        </view>
+        <view class="action-btns">
+          <text
+            v-if="isPending(order.status)"
+            class="action-btn cancel"
+            @click="cancelOrder"
+          >取消订单</text>
+          <text
+            v-if="isPending(order.status)"
+            class="action-btn pay"
+            @click="payOrder"
+          >去付款</text>
+          <text class="action-btn back" @click="goBack">返回</text>
+        </view>
       </view>
     </view>
   </view>
@@ -190,28 +215,59 @@ function goBack() {
 .order-detail {
   min-height: 100vh;
   background: var(--bg-page);
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
-.loading-tip {
-  padding: 120rpx 0;
-  text-align: center;
-  color: var(--text-sub);
+.loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 160rpx 0;
+  gap: 24rpx;
 }
 
-.empty-tip {
-  padding: 120rpx 0;
-  text-align: center;
+.loading-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.empty-text {
-  display: block;
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
   font-size: 28rpx;
   color: var(--text-sub);
-  margin-bottom: 24rpx;
+}
+
+.empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 160rpx 0 80rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 32rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 48rpx;
 }
 
 .back-btn {
-  color: var(--primary);
+  padding: 20rpx 64rpx;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-radius: 44rpx;
   font-size: 28rpx;
 }
 
@@ -219,40 +275,30 @@ function goBack() {
   padding: 24rpx;
 }
 
-.status-section {
-  display: flex;
-  align-items: center;
-  padding: 32rpx;
+/* 订单状态卡片 */
+.status-card {
   background: var(--bg-card);
-  border-radius: 16rpx;
-  margin-bottom: 24rpx;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
 }
 
-.status-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
+.status-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-right: 24rpx;
-
-  text {
-    font-size: 40rpx;
-    font-weight: 700;
-    color: #fff;
-  }
+  gap: 16rpx;
+  margin-bottom: 12rpx;
 }
 
-.status-info {
-  display: flex;
-  flex-direction: column;
+.status-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
 }
 
 .status-text {
   font-size: 36rpx;
   font-weight: 700;
-  margin-bottom: 8rpx;
 }
 
 .order-time {
@@ -260,18 +306,25 @@ function goBack() {
   color: var(--text-sub);
 }
 
-.address-section {
+/* 收货地址卡片 */
+.address-card {
   display: flex;
   align-items: flex-start;
-  padding: 32rpx;
+  gap: 20rpx;
   background: var(--bg-card);
-  border-radius: 16rpx;
-  margin-bottom: 24rpx;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
 }
 
 .address-icon {
-  font-size: 48rpx;
-  margin-right: 20rpx;
+  width: 64rpx;
+  height: 64rpx;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .address-content {
@@ -280,8 +333,9 @@ function goBack() {
 
 .address-header {
   display: flex;
-  gap: 24rpx;
-  margin-bottom: 12rpx;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
 }
 
 .name {
@@ -291,32 +345,52 @@ function goBack() {
 }
 
 .phone {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
 }
 
 .detail {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
   line-height: 1.5;
 }
 
-.goods-section,
-.info-section,
-.summary-section {
+.region-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
+}
+
+/* 通用卡片 */
+.card {
   background: var(--bg-card);
-  border-radius: 16rpx;
-  padding: 24rpx 32rpx;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24rpx;
 }
 
-.section-title {
+.card-title {
   font-size: 28rpx;
   font-weight: 600;
   color: var(--text-main);
-  margin-bottom: 24rpx;
 }
 
+.goods-count {
+  font-size: 24rpx;
+  color: var(--text-sub);
+}
+
+/* 商品列表 */
 .goods-item {
   display: flex;
   align-items: center;
@@ -328,25 +402,35 @@ function goBack() {
   }
 }
 
+.goods-img-wrap {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-right: 24rpx;
+}
+
 .goods-img {
-  width: 120rpx;
-  height: 120rpx;
+  width: 100%;
+  height: 100%;
+}
+
+.goods-placeholder {
+  width: 100%;
+  height: 100%;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
-  overflow: hidden;
 }
 
 .placeholder-text {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.goods-info {
+.goods-detail {
   flex: 1;
 }
 
@@ -354,22 +438,39 @@ function goBack() {
   display: block;
   font-size: 28rpx;
   color: var(--text-main);
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.goods-price {
-  display: block;
+.goods-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
   font-size: 28rpx;
+  color: var(--price);
+  font-weight: 600;
+}
+
+.quantity {
+  font-size: 26rpx;
   color: var(--text-sub);
+}
+
+/* 订单信息 */
+.info-grid {
+  display: flex;
+  flex-direction: column;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  padding: 16rpx 0;
+  padding: 14rpx 0;
   border-bottom: 1rpx solid var(--border);
 
   &:last-child {
@@ -378,58 +479,93 @@ function goBack() {
 }
 
 .label {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
 }
 
 .value {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-main);
 }
 
+/* 金额汇总 */
 .summary-row {
   display: flex;
   justify-content: space-between;
-  padding: 16rpx 0;
-
-  &.total {
-    border-top: 1rpx solid var(--border);
-    padding-top: 24rpx;
-    margin-top: 8rpx;
-  }
+  align-items: center;
+  padding: 14rpx 0;
 }
 
-.label {
-  font-size: 28rpx;
-  color: var(--text-sub);
+.total-row {
+  margin-top: 12rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid var(--border);
 }
 
-.value {
+.highlight {
+  color: var(--primary);
+}
+
+.total-label {
   font-size: 28rpx;
+  font-weight: 600;
   color: var(--text-main);
-
-  &.price {
-    font-size: 36rpx;
-    font-weight: 700;
-    color: var(--price);
-  }
 }
 
-.action-section {
+.total-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+
+/* 底部操作栏 */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--bg-card);
+  border-top: 1rpx solid var(--border);
+  z-index: 100;
+}
+
+.action-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.pay-amount {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+
+.pay-label {
+  font-size: 22rpx;
+  color: var(--text-sub);
+  margin-top: 4rpx;
+}
+
+.action-btns {
+  display: flex;
   gap: 16rpx;
-  padding: 24rpx 0;
 }
 
 .action-btn {
-  padding: 20rpx 40rpx;
+  padding: 18rpx 40rpx;
   border-radius: 44rpx;
   font-size: 28rpx;
+  font-weight: 500;
 
   &.pay {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
     color: var(--text-inverse);
+    box-shadow: 0 4rpx 16rpx var(--primary-light);
   }
 
   &.cancel {

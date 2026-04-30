@@ -50,22 +50,13 @@ const originalPrice = computed(() => {
   return Math.round(props.product.price * 1.3)
 })
 
-const stockStatus = computed(() => {
-  const stock = props.product.stock
-  if (stock === undefined || stock === null) return ''
-  if (stock === 0) return { text: '补货中', type: 'out' }
-  if (stock <= 10) return { text: `仅剩${stock}件`, type: 'low' }
-  return ''
-})
-
 function handleClick() {
-  if (props.product.stock === 0) return
   emit('click', props.product.id)
 }
 </script>
 
 <template>
-  <view class="product-card" :class="{ 'stock-out': product.stock === 0 }" @click="handleClick">
+  <view class="product-card" @click="handleClick">
     <view class="card-img">
       <image
         v-if="coverImage"
@@ -88,12 +79,6 @@ function handleClick() {
           ¥{{ originalPrice }}
         </text>
       </view>
-      <view class="info-bottom">
-        <text class="sales-count">已售{{ product.sales || 0 }}件</text>
-        <view v-if="stockStatus" class="stock-tip" :class="stockStatus.type">
-          {{ stockStatus.text }}
-        </view>
-      </view>
     </view>
   </view>
 </template>
@@ -113,8 +98,7 @@ function handleClick() {
 }
 
 .card-img {
-  position: relative;
-  height: 340rpx;
+  aspect-ratio: 1 / 1;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
@@ -172,7 +156,6 @@ function handleClick() {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  margin-bottom: 12rpx;
 }
 
 .product-price {
@@ -185,38 +168,5 @@ function handleClick() {
   font-size: 24rpx;
   color: var(--text-placeholder);
   text-decoration: line-through;
-}
-
-.info-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sales-count {
-  font-size: 22rpx;
-  color: var(--text-sub);
-}
-
-.stock-tip {
-  font-size: 20rpx;
-  font-weight: 500;
-
-  &.low {
-    color: var(--accent);
-  }
-
-  &.out {
-    color: var(--text-placeholder);
-    background: var(--bg-page);
-    padding: 4rpx 12rpx;
-    border-radius: 8rpx;
-  }
-}
-
-.product-card.stock-out {
-  .cover-img {
-    opacity: 0.6;
-  }
 }
 </style>

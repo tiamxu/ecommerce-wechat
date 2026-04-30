@@ -67,13 +67,15 @@ async function handleBind() {
           password: form.value.password
         }
       }).then((res: any) => {
-        if (res.data.code === 200) {
+        const data = res.data as any
+        if (data.code === 200) {
           resolve({ success: true })
         } else {
-          resolve({ success: false, message: res.data.message || '绑定失败' })
+          resolve({ success: false, message: data.message || '绑定失败' })
         }
       }).catch((err: any) => {
-        resolve({ success: false, message: err.message || '网络错误' })
+        const message = err?.message || err?.errMsg || '网络错误'
+        resolve({ success: false, message })
       })
     })
 
@@ -89,7 +91,8 @@ async function handleBind() {
     }
   } catch (error: any) {
     console.error('绑定失败', error)
-    uni.showToast({ title: error.message || '绑定失败', icon: 'none' })
+    const message = error?.message || error?.errMsg || '绑定失败'
+    uni.showToast({ title: message, icon: 'none' })
   } finally {
     loading.value = false
   }

@@ -10,6 +10,7 @@ const form = ref({
   phone: '',
   province: '',
   city: '',
+  district: '',
   address: '',
   isDefault: false
 })
@@ -17,17 +18,13 @@ const form = ref({
 const isEdit = ref(false)
 const addressId = ref<number | null>(null)
 const loading = ref(false)
-const showProvincePicker = ref(false)
-const showCityPicker = ref(false)
 
-// 省份列表
-const provinces = regionData.map(p => ({ label: p.name, value: p.code }))
-
-// 当前选中的省份对象
-const currentProvince = ref<any>(null)
-
-// 城市列表
-const cities = ref<Array<{ label: string, value: string }>>([])
+// 地区选择器相关
+const showRegionPicker = ref(false)
+const regionValues = ref([0, 0, 0])
+const provinces = regionData.map(p => p.name)
+const cities = ref<string[]>([])
+const districts = ref<string[]>([])
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -44,6 +41,34 @@ onMounted(() => {
   }
 })
 
+function updateCitiesAndDistricts(provinceIndex: number) {
+  // 更新城市列表
+  cities.value = regionData[provinceIndex].children.map(c => c.name)
+
+  // 更新区县列表
+  if (regionData[provinceIndex].children[0]) {
+    districts.value = regionData[provinceIndex].children[0].children.map(d => d.name)
+  } else {
+    districts.value = []
+  }
+}
+
+function initRegionSelect(provinceName: string, cityName: string, districtName: string) {
+  const provinceIndex = regionData.findIndex(p => p.name === provinceName)
+  if (provinceIndex === -1) return
+
+  const province = regionData[provinceIndex]
+  const cityIndex = province.children.findIndex(c => c.name === cityName)
+  if (cityIndex === -1) return
+
+  const districtIndex = province.children[cityIndex].children.findIndex(d => d.name === districtName)
+  if (districtIndex === -1) return
+
+  regionValues.value = [provinceIndex, cityIndex, districtIndex]
+  cities.value = province.children.map(c => c.name)
+  districts.value = province.children[cityIndex].children.map(d => d.name)
+}
+
 async function loadAddressDetail(id: number) {
   try {
     const res = await orderApi.getAddresses()
@@ -55,15 +80,11 @@ async function loadAddressDetail(id: number) {
           phone: addr.phone,
           province: addr.province,
           city: addr.city,
+          district: addr.district || '',
           address: addr.address,
           isDefault: addr.isDefault === 1
         }
-        // 根据省名设置省份对象和城市列表
-        const province = regionData.find(p => p.name === addr.province)
-        if (province) {
-          currentProvince.value = province
-          cities.value = province.children.map(c => ({ label: c.name, value: c.code }))
-        }
+        initRegionSelect(addr.province, addr.city, addr.district || '')
       }
     }
   } catch (error) {
@@ -71,45 +92,54 @@ async function loadAddressDetail(id: number) {
   }
 }
 
-function updateCities(provinceName: string) {
-  const province = regionData.find(p => p.name === provinceName)
-  if (province) {
-    currentProvince.value = province
-    cities.value = province.children.map(c => ({ label: c.name, value: c.code }))
-    // 如果当前城市不在新城市列表中，清空选择
-    const cityNames = cities.value.map(c => c.label)
-    if (!cityNames.includes(form.value.city)) {
-      form.value.city = ''
-    }
+function openRegionPicker() {
+  // 初始化选择器数据
+  if (form.value.province && form.value.city && form.value.district) {
+    initRegionSelect(form.value.province, form.value.city, form.value.district)
   } else {
-    currentProvince.value = null
-    cities.value = []
+    // 默认选中第一个
+    regionValues.value = [0, 0, 0]
+    updateCitiesAndDistricts(0)
+  }
+  showRegionPicker.value = true
+}
+
+function onRegionChange(e: any) {
+  const values = e.detail.value
+  const oldValues = regionValues.value
+  regionValues.value = values
+
+  // 省份变化时，重置城市和区县
+  if (values[0] !== oldValues[0]) {
+    updateCitiesAndDistricts(values[0])
+    // 重置城市和区县索引
+    values[1] = 0
+    values[2] = 0
+    regionValues.value = values
+  }
+  // 城市变化时，只重置区县
+  else if (values[1] !== oldValues[1]) {
+    // 更新区县列表
+    const province = regionData[values[0]]
+    if (province && province.children[values[1]]) {
+      districts.value = province.children[values[1]].children.map(d => d.name)
+    } else {
+      districts.value = []
+    }
+    // 重置区县索引
+    if (values[2] >= districts.value.length) {
+      values[2] = 0
+    }
+    regionValues.value = values
   }
 }
 
-function openProvincePicker() {
-  showProvincePicker.value = true
-}
-
-function openCityPicker() {
-  if (!form.value.province) {
-    uni.showToast({ title: '请先选择省份', icon: 'none' })
-    return
-  }
-  showCityPicker.value = true
-}
-
-function onProvinceConfirm(e: any) {
-  const selected = e.value[0]
-  form.value.province = selected.label
-  updateCities(selected.label)
-  showProvincePicker.value = false
-}
-
-function onCityConfirm(e: any) {
-  const selected = e.value[0]
-  form.value.city = selected.label
-  showCityPicker.value = false
+function onRegionConfirm() {
+  const [pIdx, cIdx, dIdx] = regionValues.value
+  form.value.province = provinces[pIdx]
+  form.value.city = cities.value[cIdx] || ''
+  form.value.district = districts.value[dIdx] || ''
+  showRegionPicker.value = false
 }
 
 async function saveAddress() {
@@ -133,6 +163,7 @@ async function saveAddress() {
       phone: form.value.phone,
       province: form.value.province,
       city: form.value.city,
+      district: form.value.district,
       address: form.value.address,
       isDefault: form.value.isDefault ? 1 : 0
     }
@@ -168,20 +199,13 @@ async function saveAddress() {
         <input v-model="form.phone" class="form-input" type="text" placeholder="请输入手机号码" maxlength="11" />
       </view>
 
-      <view class="form-item" @click="openProvincePicker">
+      <view class="form-item" @click="openRegionPicker">
         <text class="form-label">所在地区</text>
         <view class="region-display">
-          <text v-if="form.province" class="region-text">{{ form.province }}</text>
-          <text v-else class="region-placeholder">请选择省份</text>
-          <text class="arrow">></text>
-        </view>
-      </view>
-
-      <view class="form-item" @click="openCityPicker">
-        <text class="form-label">城市</text>
-        <view class="region-display">
-          <text v-if="form.city" class="region-text">{{ form.city }}</text>
-          <text v-else class="region-placeholder">请选择城市</text>
+          <text v-if="form.province" class="region-text">
+            {{ form.province }} {{ form.city }} {{ form.district }}
+          </text>
+          <text v-else class="region-placeholder">请选择省市区</text>
           <text class="arrow">></text>
         </view>
       </view>
@@ -205,23 +229,38 @@ async function saveAddress() {
       <text class="save-btn" @click="saveAddress">保存</text>
     </view>
 
-    <!-- 省份选择器 -->
-    <up-picker
-      :show="showProvincePicker"
-      :columns="[provinces]"
-      keyName="label"
-      @confirm="onProvinceConfirm"
-      @cancel="showProvincePicker = false"
-    ></up-picker>
-
-    <!-- 城市选择器 -->
-    <up-picker
-      :show="showCityPicker"
-      :columns="[cities]"
-      keyName="label"
-      @confirm="onCityConfirm"
-      @cancel="showCityPicker = false"
-    ></up-picker>
+    <!-- 地区选择器 -->
+    <view class="region-mask" v-if="showRegionPicker" @click="showRegionPicker = false">
+      <view class="region-picker" @click.stop>
+        <view class="picker-header">
+          <text class="cancel-btn" @click="showRegionPicker = false">取消</text>
+          <text class="title">选择地区</text>
+          <text class="confirm-btn" @click="onRegionConfirm">确定</text>
+        </view>
+        <picker-view
+          class="picker-view"
+          :value="regionValues"
+          @change="onRegionChange"
+          indicator-style="height: 80rpx;"
+        >
+          <picker-view-column>
+            <view class="picker-item" v-for="(item, index) in provinces" :key="index">
+              {{ item }}
+            </view>
+          </picker-view-column>
+          <picker-view-column>
+            <view class="picker-item" v-for="(item, index) in cities" :key="index">
+              {{ item }}
+            </view>
+          </picker-view-column>
+          <picker-view-column>
+            <view class="picker-item" v-for="(item, index) in districts" :key="index">
+              {{ item }}
+            </view>
+          </picker-view-column>
+        </picker-view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -319,5 +358,61 @@ async function saveAddress() {
   &:active {
     opacity: 0.9;
   }
+}
+
+/* 地区选择器 */
+.region-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  align-items: flex-end;
+}
+
+.region-picker {
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: 24rpx 24rpx 0 0;
+  overflow: hidden;
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.cancel-btn {
+  font-size: 28rpx;
+  color: var(--text-placeholder);
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.confirm-btn {
+  font-size: 28rpx;
+  color: var(--primary);
+}
+
+.picker-view {
+  height: 400rpx;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: var(--text-main);
 }
 </style>

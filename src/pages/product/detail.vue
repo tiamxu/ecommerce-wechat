@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { productApi, cartApi, type Product } from '../../api'
+import { onShow } from '@dcloudio/uni-app'
+import { productApi, type Product } from '../../api'
 import { useUserStore } from '../../store/user'
+import { useCartStore } from '../../store/cart'
 import { THEME_CLASS } from '../../theme/config'
 import TabBar from '../../components/TabBar.vue'
 
@@ -9,6 +11,7 @@ const product = ref<Product | null>(null)
 const loading = ref(false)
 const quantity = ref(1)
 const userStore = useUserStore()
+const cartStore = useCartStore()
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -17,6 +20,22 @@ onMounted(() => {
 
   if (id) {
     loadProduct(Number(id))
+  }
+})
+
+// 登录后返回时检查是否有待执行动作
+onShow(() => {
+  const pendingAction = userStore.getAndClearPendingAction()
+  if (pendingAction && pendingAction.type === 'addToCart' && pendingAction.productId) {
+    // 延迟一点执行，确保页面已完全返回
+    setTimeout(async () => {
+      const result = await cartStore.addItem(pendingAction.productId!, pendingAction.quantity || 1)
+      if (result.success) {
+        uni.showToast({ title: '已加入购物车', icon: 'success' })
+      } else {
+        uni.showToast({ title: result.message || '添加失败', icon: 'none' })
+      }
+    }, 100)
   }
 })
 
@@ -55,16 +74,23 @@ async function addToCart() {
   }
 
   if (!userStore.isLoggedIn) {
-    uni.navigateTo({ url: '/pages/user/login' })
+    // 设置待执行动作，登录成功后自动加购
+    userStore.setPendingAction({
+      type: 'addToCart',
+      productId: product.value.id,
+      quantity: quantity.value
+    })
+    uni.navigateTo({ url: '/pages/user/login-modal' })
     return
   }
 
   try {
-    await cartApi.add({
-      productId: product.value.id,
-      quantity: quantity.value
-    })
-    uni.showToast({ title: '已加入购物车', icon: 'success' })
+    const result = await cartStore.addItem(product.value.id, quantity.value)
+    if (result.success) {
+      uni.showToast({ title: '已加入购物车', icon: 'success' })
+    } else {
+      uni.showToast({ title: result.message || '添加失败', icon: 'none' })
+    }
   } catch (error) {
     console.error('添加购物车失败', error)
     uni.showToast({ title: '添加失败，请重试', icon: 'none' })
@@ -100,20 +126,6 @@ function getProductName(): string {
 function getProductDesc(): string {
   if (!product.value?.description) return ''
   return product.value.description?.zh || product.value.description?.en || ''
-}
-
-function getStockText(): string {
-  if (!product.value?.stock) return ''
-  if (product.value.stock === 0) return '缺货'
-  if (product.value.stock <= 10) return `仅剩${product.value.stock}件`
-  return `库存${product.value.stock}件`
-}
-
-function getStockClass(): string {
-  if (!product.value?.stock) return ''
-  if (product.value.stock === 0) return 'out'
-  if (product.value.stock <= 10) return 'low'
-  return 'normal'
 }
 
 function getCoverImages(): string[] {
@@ -161,7 +173,6 @@ function getCoverImages(): string[] {
     <view v-if="product" class="detail-info">
       <view class="info-header">
         <text class="product-price">¥{{ product.price }}</text>
-        <text class="stock-status" :class="getStockClass()">{{ getStockText() }}</text>
       </view>
       <text class="product-name">{{ getProductName() }}</text>
       <text v-if="getProductDesc()" class="product-desc">{{ getProductDesc() }}</text>
@@ -244,27 +255,6 @@ function getCoverImages(): string[] {
   font-size: 56rpx;
   font-weight: 700;
   color: var(--price);
-}
-
-.stock-status {
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
-
-  &.normal {
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-
-  &.low {
-    background: var(--accent-light);
-    color: var(--accent);
-  }
-
-  &.out {
-    background: var(--bg-page);
-    color: var(--text-placeholder);
-  }
 }
 
 .product-name {

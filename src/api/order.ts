@@ -48,7 +48,7 @@ export const orderApi = {
   // 创建订单
   create(params: CreateOrderParams): Promise<ApiResponse<{ id: number; orderNo: string }>> {
     return request({
-      url: '/orders',
+      url: '/api/orders',
       method: 'POST',
       data: params,
       showLoading: true
@@ -58,7 +58,7 @@ export const orderApi = {
   // 获取我的订单列表（通过 JWT 自动识别用户，可带 ?status=xxx）
   getMyOrders(params?: { status?: string }): Promise<ApiResponse<{ list: OrderItem[]; total: number }>> {
     return request({
-      url: '/orders',
+      url: '/api/orders',
       method: 'GET',
       data: params,
       showLoading: true
@@ -68,7 +68,7 @@ export const orderApi = {
   // 获取订单详情
   getDetail(orderId: number): Promise<ApiResponse<OrderItem>> {
     return request({
-      url: `/orders/${orderId}`,
+      url: `/api/orders/${orderId}`,
       method: 'GET',
       showLoading: true
     })
@@ -77,7 +77,7 @@ export const orderApi = {
   // 取消订单
   cancel(orderId: number): Promise<ApiResponse<void>> {
     return request({
-      url: `/orders/${orderId}/cancel`,
+      url: `/api/orders/${orderId}/cancel`,
       method: 'PUT',
       showLoading: true
     })
@@ -86,7 +86,7 @@ export const orderApi = {
   // 支付订单
   pay(orderId: number, mode: string = 'wechat'): Promise<ApiResponse<{ approval_url?: string; qrcode_url?: string }>> {
     return request({
-      url: `/orders/${orderId}/pay?mode=${mode}`,
+      url: `/api/orders/${orderId}/pay?mode=${mode}`,
       method: 'POST',
       showLoading: true
     })

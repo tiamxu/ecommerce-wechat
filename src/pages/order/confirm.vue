@@ -173,66 +173,87 @@ async function submitOrder() {
 <template>
   <view :class="['order-confirm', THEME_CLASS]">
     <!-- 收货地址 -->
-    <view class="address-section" @click="goToAddressList">
+    <view class="section address-section" @click="goToAddressList">
       <view v-if="selectedAddress" class="address-content">
-        <view class="address-icon">📍</view>
+        <view class="address-icon">
+          <uni-icons type="location" size="24" color="var(--primary)" />
+        </view>
         <view class="address-info">
-          <view class="address-header">
+          <view class="address-row">
             <text class="name">{{ selectedAddress.receiverName }}</text>
             <text class="phone">{{ selectedAddress.phone }}</text>
           </view>
-          <text class="detail">{{ selectedAddress.province }} {{ selectedAddress.city }} {{ selectedAddress.address }}</text>
+          <text class="address-detail">
+            <text v-if="selectedAddress.province" class="region-tag">{{ selectedAddress.province }}</text>
+            {{ selectedAddress.city }} {{ selectedAddress.address }}
+          </text>
         </view>
       </view>
       <view v-else class="address-empty">
-        <text class="add-icon">+</text>
+        <uni-icons type="plus" size="24" color="var(--text-placeholder)" />
         <text class="add-text">添加收货地址</text>
       </view>
-      <text class="arrow">></text>
+      <view class="arrow-wrap">
+        <uni-icons type="right" size="16" color="var(--text-placeholder)" />
+      </view>
     </view>
 
     <!-- 商品信息 -->
-    <view class="goods-section">
-      <view class="section-title">商品信息</view>
+    <view class="section goods-section">
+      <view class="section-header">
+        <text class="section-title">商品信息</text>
+        <text class="goods-count">{{ checkoutItems.length }}件商品</text>
+      </view>
       <view v-for="item in checkoutItems" :key="item.id" class="goods-item">
-        <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
-        <view v-else class="goods-img">
-          <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
+        <view class="goods-img-wrap">
+          <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+          <view v-else class="goods-img-placeholder">
+            <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
+          </view>
         </view>
-        <view class="goods-info">
+        <view class="goods-detail">
           <text class="goods-name">{{ item.productName }}</text>
-          <text class="goods-price">¥{{ item.productPrice || item.price }} × {{ item.quantity }}</text>
+          <view class="goods-price-row">
+            <text class="price">¥{{ item.productPrice || item.price }}</text>
+            <text class="quantity">x{{ item.quantity }}</text>
+          </view>
         </view>
       </view>
     </view>
 
     <!-- 金额汇总 -->
-    <view class="summary-section">
+    <view class="section summary-section">
       <view class="summary-row">
         <text class="label">商品金额</text>
         <text class="value">¥{{ totalAmount.toFixed(2) }}</text>
       </view>
       <view class="summary-row">
         <text class="label">运费</text>
-        <text class="value" :class="{ discount: freight === 0 }">
+        <text class="value" :class="{ highlight: freight === 0 }">
           {{ freight === 0 ? '免运费' : '¥' + freight.toFixed(2) }}
         </text>
       </view>
-      <view class="summary-row total">
-        <text class="label">合计</text>
-        <text class="value price">¥{{ orderTotal.toFixed(2) }}</text>
+      <view class="summary-row total-row">
+        <text class="total-label">合计</text>
+        <text class="total-value">¥{{ orderTotal.toFixed(2) }}</text>
       </view>
     </view>
 
     <!-- 去支付按钮 -->
-    <view class="pay-section">
-      <text
+    <view class="pay-bar">
+      <view class="pay-amount">
+        <text class="amount-label">实付款</text>
+        <text class="amount-value">¥{{ orderTotal.toFixed(2) }}</text>
+      </view>
+      <view
         class="pay-btn"
         :class="{ loading: loading, disabled: loading || !selectedAddress }"
         @click="loading || !selectedAddress ? null : submitOrder()"
       >
-        {{ loading ? '支付中...' : (!selectedAddress ? '请选择收货地址' : '去支付 ¥' + orderTotal) }}
-      </text>
+        <text v-if="loading">支付中...</text>
+        <text v-else-if="!selectedAddress">请选择收货地址</text>
+        <text v-else>去支付</text>
+      </view>
     </view>
   </view>
 </template>
@@ -241,36 +262,47 @@ async function submitOrder() {
 .order-confirm {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 140rpx;
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
+.section {
+  background: var(--bg-card);
+  margin-bottom: 20rpx;
+}
+
+/* 收货地址 */
 .address-section {
   display: flex;
   align-items: center;
   padding: 32rpx;
-  background: var(--bg-card);
-  margin-bottom: 24rpx;
 }
 
 .address-content {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 20rpx;
 }
 
 .address-icon {
-  font-size: 48rpx;
-  margin-right: 20rpx;
+  width: 72rpx;
+  height: 72rpx;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .address-info {
   flex: 1;
 }
 
-.address-header {
+.address-row {
   display: flex;
-  gap: 24rpx;
-  margin-bottom: 12rpx;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
 }
 
 .name {
@@ -280,38 +312,39 @@ async function submitOrder() {
 }
 
 .phone {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
 }
 
-.detail {
-  font-size: 28rpx;
+.address-detail {
+  font-size: 26rpx;
   color: var(--text-sub);
   line-height: 1.5;
 }
 
-.arrow {
-  font-size: 32rpx;
-  color: var(--text-placeholder);
+.region-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  margin-right: 8rpx;
 }
 
-.address-empty {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  flex: 1;
-}
-
-.add-icon {
-  width: 64rpx;
-  height: 64rpx;
-  border: 2rpx dashed var(--text-placeholder);
-  border-radius: 50%;
+.arrow-wrap {
+  width: 48rpx;
+  height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36rpx;
-  color: var(--text-placeholder);
+}
+
+.address-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
 }
 
 .add-text {
@@ -319,9 +352,15 @@ async function submitOrder() {
   color: var(--text-sub);
 }
 
+/* 商品信息 */
 .goods-section {
-  background: var(--bg-card);
-  padding: 24rpx 32rpx;
+  padding: 28rpx 32rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24rpx;
 }
 
@@ -329,7 +368,11 @@ async function submitOrder() {
   font-size: 28rpx;
   font-weight: 600;
   color: var(--text-main);
-  margin-bottom: 24rpx;
+}
+
+.goods-count {
+  font-size: 24rpx;
+  color: var(--text-sub);
 }
 
 .goods-item {
@@ -338,25 +381,35 @@ async function submitOrder() {
   padding: 16rpx 0;
 }
 
+.goods-img-wrap {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-right: 24rpx;
+}
+
 .goods-img {
-  width: 120rpx;
-  height: 120rpx;
+  width: 100%;
+  height: 100%;
+}
+
+.goods-img-placeholder {
+  width: 100%;
+  height: 100%;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
-  overflow: hidden;
 }
 
 .placeholder-text {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.goods-info {
+.goods-detail {
   flex: 1;
 }
 
@@ -364,33 +417,39 @@ async function submitOrder() {
   display: block;
   font-size: 28rpx;
   color: var(--text-main);
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.goods-price {
-  display: block;
+.goods-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
   font-size: 28rpx;
+  color: var(--price);
+  font-weight: 600;
+}
+
+.quantity {
+  font-size: 26rpx;
   color: var(--text-sub);
 }
 
+/* 金额汇总 */
 .summary-section {
-  background: var(--bg-card);
-  padding: 24rpx 32rpx;
+  padding: 28rpx 32rpx;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
-  padding: 16rpx 0;
-
-  &.total {
-    border-top: 1rpx solid var(--border);
-    padding-top: 24rpx;
-    margin-top: 8rpx;
-  }
+  align-items: center;
+  padding: 14rpx 0;
 }
 
 .label {
@@ -402,43 +461,78 @@ async function submitOrder() {
   font-size: 28rpx;
   color: var(--text-main);
 
-  &.discount {
+  &.highlight {
     color: var(--primary);
-  }
-
-  &.price {
-    font-size: 36rpx;
-    font-weight: 700;
-    color: var(--price);
   }
 }
 
-.pay-section {
+.total-row {
+  margin-top: 12rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid var(--border);
+}
+
+.total-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.total-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+
+/* 底部支付栏 */
+.pay-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   border-top: 1rpx solid var(--border);
   z-index: 100;
 }
 
+.pay-amount {
+  display: flex;
+  flex-direction: column;
+}
+
+.amount-label {
+  font-size: 24rpx;
+  color: var(--text-sub);
+  margin-bottom: 4rpx;
+}
+
+.amount-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+
 .pay-btn {
-  display: block;
-  width: 100%;
-  padding: 28rpx;
-  background: var(--primary);
+  padding: 24rpx 64rpx;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: var(--text-inverse);
-  text-align: center;
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
+  box-shadow: 0 8rpx 32rpx var(--shadow);
 
   &.disabled {
     background: var(--text-placeholder);
-    opacity: 0.6;
+    box-shadow: none;
+  }
+
+  &.loading {
+    opacity: 0.8;
   }
 }
 </style>

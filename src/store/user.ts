@@ -10,15 +10,24 @@ interface UserInfo {
   email?: string
 }
 
+interface PendingAction {
+  type: 'addToCart' | 'checkout'
+  productId?: number
+  quantity?: number
+  data?: any
+}
+
 interface UserState {
   token: string | null
   userInfo: UserInfo | null
+  pendingAction: PendingAction | null
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     token: uni.getStorageSync('token') || null,
     userInfo: null,
+    pendingAction: null,
   }),
 
   getters: {
@@ -53,13 +62,35 @@ export const useUserStore = defineStore('user', {
       return false
     },
 
+    // 设置登录后的待执行动作
+    setPendingAction(action: PendingAction) {
+      this.pendingAction = action
+      uni.setStorageSync('pendingLoginAction', JSON.stringify(action))
+    },
+
+    // 获取并清除待执行动作
+    getAndClearPendingAction(): PendingAction | null {
+      const action = this.pendingAction || uni.getStorageSync('pendingLoginAction')
+      if (action) {
+        this.pendingAction = null
+        uni.removeStorageSync('pendingLoginAction')
+      }
+      return action ? (typeof action === 'string' ? JSON.parse(action) : action) : null
+    },
+
+    // 清除待执行动作
+    clearPendingAction() {
+      this.pendingAction = null
+      uni.removeStorageSync('pendingLoginAction')
+    },
+
     // 微信登录（openid方式，通过code获取）
-    async loginWithWechatCode(code: string, sessionId: string) {
+    async loginWithWechatCode(code: string) {
       try {
         const res = await uni.request({
           url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          data: { code, sessionId }
+          data: { code }
         })
 
         const data = res.data as any
@@ -83,12 +114,12 @@ export const useUserStore = defineStore('user', {
     // 微信一键登录（企业版，获取手机号）
     // 企业版小程序使用：通过 button open-type="getPhoneNumber" 获取 encryptedData 和 iv
     // 解密后直接获取手机号，无需绑定流程（need_bind 始终为 false）
-    async loginWithWechat(code: string, encryptedData: string, iv: string, sessionId: string) {
+    async loginWithWechat(code: string, encryptedData: string, iv: string) {
       try {
         const res = await uni.request({
           url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          data: { code, encryptedData, iv, sessionId }
+          data: { code, encryptedData, iv }
         })
 
         const data = res.data as any
@@ -113,12 +144,12 @@ export const useUserStore = defineStore('user', {
     },
 
     // 账号密码登录
-    async loginWithAccount(account: string, password: string, sessionId: string) {
+    async loginWithAccount(account: string, password: string) {
       try {
         const res = await uni.request({
           url: `${BASE_URL}/auth/login`,
           method: 'POST',
-          data: { account, password, sessionId }
+          data: { account, password }
         })
 
         const data = res.data as any
@@ -146,7 +177,6 @@ export const useUserStore = defineStore('user', {
       this.token = null
       this.userInfo = null
       uni.removeStorageSync('token')
-      uni.removeStorageSync('cart_session')
     },
 
     updateUserInfo(info: Partial<UserInfo>) {

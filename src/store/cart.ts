@@ -132,7 +132,14 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    // 清空购物车
+    // 清空购物车（本地数据，不调用 API）
+    resetCart() {
+      this.items = []
+      this.totalCount = 0
+      this.totalPrice = 0
+    },
+
+    // 清空购物车（调用 API）
     async clearCart() {
       try {
         const res = await cartApi.clear()
