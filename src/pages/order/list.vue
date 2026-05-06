@@ -15,11 +15,11 @@ const pageSize = ref(10)
 const hasMore = ref(true)
 
 const tabs = [
-  { key: 'all', label: '全部' },
-  { key: '0', label: '待付款' },
-  { key: '1', label: '待发货' },
-  { key: '2', label: '待收货' },
-  { key: '3', label: '已完成' }
+  { key: 'all', label: '全部', icon: 'bars' },
+  { key: '0', label: '待付款', icon: 'wallet' },
+  { key: '1', label: '待发货', icon: 'box' },
+  { key: '2', label: '待收货', icon: 'car' },
+  { key: '3', label: '已完成', icon: 'check' }
 ]
 
 const statusMap: Record<string, string> = {
@@ -182,6 +182,7 @@ async function cancelOrder(orderId: number) {
           :class="['tab-item', { active: activeTab === tab.key }]"
           @click="changeTab(tab.key)"
         >
+          <uni-icons :type="tab.icon" size="18" :color="activeTab === tab.key ? 'var(--primary)' : 'var(--text-sub)'" />
           <text class="tab-text">{{ tab.label }}</text>
         </view>
       </view>
@@ -279,7 +280,10 @@ async function cancelOrder(orderId: number) {
 .tab-item {
   flex: 1;
   padding: 28rpx 16rpx;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
   position: relative;
 
   &.active {

@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
-import { userApi, type UserInfo } from '../../api'
+import { userApi, orderApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
 const cartStore = useCartStore()
-const loading = ref(false)
 const userInfo = ref<UserInfo | null>(null)
+
+// 订单数量统计
+const orderCounts = ref({
+  pending: 0,
+  paid: 0,
+  shipped: 0,
+  completed: 0
+})
 
 // uni-app 页面生命周期
 let refreshTimer: number | null = null
@@ -18,13 +26,29 @@ let refreshTimer: number | null = null
 onMounted(() => {
   if (userStore.isLoggedIn) {
     loadUserInfo()
+    loadOrderCounts()
   }
 
   // 监听刷新事件
   uni.$on('refreshUserInfo', () => {
     if (userStore.isLoggedIn) {
       loadUserInfo()
+      loadOrderCounts()
     }
+  })
+})
+
+onShow(() => {
+  if (userStore.isLoggedIn) {
+    loadUserInfo()
+    loadOrderCounts()
+  }
+})
+
+// 下拉刷新
+onPullDownRefresh(() => {
+  Promise.all([loadUserInfo(), loadOrderCounts()]).finally(() => {
+    uni.stopPullDownRefresh()
   })
 })
 
@@ -37,7 +61,6 @@ onUnmounted(() => {
 })
 
 async function loadUserInfo() {
-  loading.value = true
   try {
     const res = await userApi.getProfile()
     if (res.code === 200 && res.data) {
@@ -46,8 +69,17 @@ async function loadUserInfo() {
     }
   } catch (error) {
     console.error('加载用户信息失败', error)
-  } finally {
-    loading.value = false
+  }
+}
+
+async function loadOrderCounts() {
+  try {
+    const res = await orderApi.getOrderCounts()
+    if (res.code === 200 && res.data) {
+      orderCounts.value = res.data
+    }
+  } catch (error) {
+    console.error('加载订单数量失败', error)
   }
 }
 
@@ -79,21 +111,22 @@ function handleLogout() {
   })
 }
 
-const orderTabs = [
-  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
-  { id: '1', text: '待发货', icon: 'box', path: '/pages/order/list?status=1' },
-  { id: '2', text: '待收货', icon: 'car', path: '/pages/order/list?status=2' },
-  { id: '3', text: '已完成', icon: 'check', path: '/pages/order/list?status=3' }
-]
+const orderTabs = computed(() => [
+  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0', count: orderCounts.value.pending },
+  { id: '1', text: '待发货', icon: 'box', path: '/pages/order/list?status=1', count: orderCounts.value.paid },
+  { id: '2', text: '待收货', icon: 'car', path: '/pages/order/list?status=2', count: orderCounts.value.shipped },
+  { id: '3', text: '已完成', icon: 'check', path: '/pages/order/list?status=3', count: orderCounts.value.completed }
+])
 
 const menuItems = [
   { id: 1, icon: 'location', text: '收货地址', path: '/pages/address/list' },
-  { id: 2, icon: 'star', text: '关于我们', path: '/pages/about/index' }
+  { id: 2, icon: 'help', text: '帮助中心', path: '/pages/user/help' },
+  { id: 3, icon: 'chat', text: '意见反馈', path: '/pages/user/feedback' },
+  { id: 4, icon: 'star', text: '关于我们', path: '/pages/about/index' }
 ]
 
 const accountItems = [
-  { id: 3, icon: 'locked', text: '修改密码', path: '/pages/user/password' },
-  { id: 4, icon: 'gear', text: '设置', path: '' }
+  { id: 5, icon: 'locked', text: '修改密码', path: '/pages/user/password' }
 ]
 
 // 检查是否需要完善资料（没有手机号）
@@ -147,11 +180,12 @@ const needBind = computed(() => {
         <view
           v-for="tab in orderTabs"
           :key="tab.id"
-          class="order-tab"
+          class="order-tab active"
           @click="goTo(tab.path)"
         >
           <view class="tab-icon-wrap">
-            <uni-icons :type="tab.icon" size="28" color="var(--text-main)" />
+            <uni-icons :type="tab.icon" size="28" />
+            <view v-if="tab.count > 0" class="tab-badge">{{ tab.count > 99 ? '99+' : tab.count }}</view>
           </view>
           <text class="tab-text">{{ tab.text }}</text>
         </view>
@@ -166,7 +200,7 @@ const needBind = computed(() => {
       <view class="order-tabs">
         <view v-for="tab in orderTabs" :key="tab.id" class="order-tab disabled">
           <view class="tab-icon-wrap">
-            <uni-icons :type="tab.icon" size="28" color="var(--text-placeholder)" />
+            <uni-icons :type="tab.icon" size="28" />
           </view>
           <text class="tab-text">{{ tab.text }}</text>
         </view>
@@ -276,25 +310,6 @@ const needBind = computed(() => {
   margin-bottom: 8rpx;
 }
 
-.member-badge {
-  display: inline-block;
-  padding: 4rpx 16rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 20rpx;
-  margin-bottom: 8rpx;
-  width: fit-content;
-}
-
-.member-text {
-  font-size: 20rpx;
-  color: #ffffff;
-}
-
-.phone {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
-}
-
 .bind-tip {
   color: rgba(255, 255, 255, 0.6);
   font-size: 24rpx;
@@ -333,11 +348,6 @@ const needBind = computed(() => {
   font-weight: 600;
   border-radius: 40rpx;
   width: fit-content;
-}
-
-.login-text {
-  font-size: 28rpx;
-  color: #ffffff;
 }
 
 /* 订单入口 */
@@ -394,6 +404,32 @@ const needBind = computed(() => {
   justify-content: center;
   background: var(--bg-page);
   border-radius: 16rpx;
+  position: relative;
+}
+
+.tab-icon-wrap .uni-icons {
+  color: var(--text-placeholder) !important;
+}
+
+.order-tab:not(.disabled) .tab-icon-wrap .uni-icons {
+  color: var(--text-main) !important;
+}
+
+.tab-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  background: var(--accent);
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 600;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-text {

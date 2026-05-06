@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { cartApi, type CartItem } from '../../api'
+import { useUserStore } from '../../store/user'
+import { useCartStore } from '../../store/cart'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
+const userStore = useUserStore()
+const cartStore = useCartStore()
 const cartItems = ref<CartItem[]>([])
 const loading = ref(false)
 const updatingIds = ref<Set<number>>(new Set())
@@ -12,7 +17,18 @@ onMounted(() => {
   loadCart()
 })
 
+// 每次显示页面时刷新（切换 tab 时触发）
+onShow(() => {
+  loadCart()
+})
+
 async function loadCart() {
+  // 游客不加载购物车
+  if (!userStore.isLoggedIn) {
+    loading.value = false
+    return
+  }
+
   loading.value = true
   try {
     const res = await cartApi.getList()
@@ -93,6 +109,8 @@ async function removeItem(productId: number) {
   try {
     await cartApi.remove(productId)
     cartItems.value = cartItems.value.filter(item => item.productId !== productId)
+    // 刷新 cartStore（更新 tabbar 数量）
+    cartStore.loadCart()
     uni.showToast({ title: '已删除', icon: 'success' })
   } catch (error) {
     uni.showToast({ title: '删除失败', icon: 'none' })
@@ -100,6 +118,15 @@ async function removeItem(productId: number) {
 }
 
 function checkout() {
+  // 检查登录状态，游客无法结算
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+
   if (selectedCount.value === 0) {
     uni.showToast({ title: '请选择商品', icon: 'none' })
     return

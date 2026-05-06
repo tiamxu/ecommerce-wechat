@@ -3,8 +3,10 @@ import { request, type ApiResponse } from './request'
 export interface Product {
   id: number
   price: number
+  originalPrice?: number
   stock: number
   status: number
+  sales?: number
   categoryId: number
   metaImage?: string
   name: { zh?: string; en?: string }
@@ -13,6 +15,17 @@ export interface Product {
   coverImages?: string[]
   primaryTag?: { name: string }
   tags?: { name: string }[]
+  services?: ServicePolicy[]
+}
+
+export interface ServicePolicy {
+  id: number
+  code: string
+  name: string
+  icon: string
+  description: string
+  policyType: number
+  sortOrder: number
 }
 
 export interface Category {
@@ -112,6 +125,16 @@ export const productApi = {
       url: '/public/contents',
       method: 'GET',
       data: { category },
+      showLoading: false
+    })
+  },
+
+  // 获取商品服务政策
+  getProductServices(ids: string | number, lang = 'zh'): Promise<ApiResponse<Record<string, ServicePolicy[]>>> {
+    return request({
+      url: '/public/products/services',
+      method: 'GET',
+      data: { ids, lang },
       showLoading: false
     })
   }

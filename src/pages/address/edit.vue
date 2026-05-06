@@ -12,6 +12,7 @@ const form = ref({
   city: '',
   district: '',
   address: '',
+  postalCode: '',
   isDefault: false
 })
 
@@ -161,10 +162,12 @@ async function saveAddress() {
     const params = {
       receiverName: form.value.receiverName,
       phone: form.value.phone,
+      country: '中国',
       province: form.value.province,
       city: form.value.city,
-      district: form.value.district,
+      district: form.value.district || '',
       address: form.value.address,
+      postalCode: form.value.postalCode || '',
       isDefault: form.value.isDefault ? 1 : 0
     }
 

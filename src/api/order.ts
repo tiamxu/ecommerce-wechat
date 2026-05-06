@@ -65,6 +65,14 @@ export const orderApi = {
     })
   },
 
+  // 获取订单数量统计
+  getOrderCounts(): Promise<ApiResponse<{ pending: number; paid: number; shipped: number; completed: number }>> {
+    return request({
+      url: '/api/orders/counts',
+      method: 'GET'
+    })
+  },
+
   // 获取订单详情
   getDetail(orderId: number): Promise<ApiResponse<OrderItem>> {
     return request({

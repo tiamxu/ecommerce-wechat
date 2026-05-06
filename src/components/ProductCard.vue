@@ -85,6 +85,9 @@ function handleClick() {
 
 <style scoped lang="scss">
 .product-card {
+  display: flex;
+  flex-direction: column;
+  height: 500rpx;
   background: var(--bg-card);
   border-radius: 16rpx;
   overflow: hidden;
@@ -98,7 +101,10 @@ function handleClick() {
 }
 
 .card-img {
-  aspect-ratio: 1 / 1;
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  height: 340rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
@@ -135,7 +141,11 @@ function handleClick() {
 }
 
 .card-info {
-  padding: 20rpx;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16rpx;
+  min-height: 0;
 }
 
 .product-name {
@@ -143,19 +153,19 @@ function handleClick() {
   font-size: 28rpx;
   color: var(--text-main);
   line-height: 1.4;
-  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  min-height: 78rpx;
+  height: 72rpx;
 }
 
 .price-row {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
+  margin-top: auto;
 }
 
 .product-price {

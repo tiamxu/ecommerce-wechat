@@ -4,6 +4,10 @@ import { onShow } from '@dcloudio/uni-app'
 import { useCartStore } from '../store/cart'
 import { storeToRefs } from 'pinia'
 
+const props = defineProps<{
+  hidden?: boolean
+}>()
+
 const tabs = [
   { pagePath: '/pages/index/index', text: '首页', icon: 'home-filled' },
   { pagePath: '/pages/product/list', text: '商品', icon: 'shop' },
@@ -44,7 +48,7 @@ function goTo(tab: typeof tabs[0], index: number) {
 </script>
 
 <template>
-  <view class="custom-tabbar">
+  <view v-if="!hidden" class="custom-tabbar">
     <view
       v-for="(tab, index) in tabs"
       :key="tab.pagePath"

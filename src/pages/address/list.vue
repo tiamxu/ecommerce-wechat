@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { orderApi, type Address } from '../../api'
 import { THEME_CLASS } from '../../theme/config'
 
@@ -8,6 +9,11 @@ const loading = ref(false)
 const selectedId = ref<number | null>(null)
 
 onMounted(() => {
+  loadAddresses()
+})
+
+// 每次页面显示时刷新地址列表（从编辑页返回时需要更新）
+onShow(() => {
   loadAddresses()
 })
 

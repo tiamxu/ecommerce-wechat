@@ -385,14 +385,19 @@ function handleBannerClick(banner: ContentBlock) {
 }
 
 .product-card {
-  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  height: 500rpx;
+  background: var(--bg-card);
   border-radius: 16rpx;
   overflow: hidden;
 }
 
 .card-img-wrap {
   position: relative;
-  height: 320rpx;
+  flex-shrink: 0;
+  width: 100%;
+  height: 340rpx;
 }
 
 .card-img {
@@ -427,7 +432,11 @@ function handleBannerClick(banner: ContentBlock) {
 }
 
 .card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16rpx;
+  min-height: 0;
 
   :deep(.skeleton) {
     margin-bottom: 12rpx;
@@ -438,10 +447,20 @@ function handleBannerClick(banner: ContentBlock) {
   display: block;
   font-size: 28rpx;
   color: var(--text-main);
-  margin-bottom: 12rpx;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  height: 72rpx;
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
 }
 
 .card-bottom {

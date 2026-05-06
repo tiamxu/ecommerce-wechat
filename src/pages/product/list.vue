@@ -32,6 +32,7 @@ async function loadCategories() {
     }
   } catch (error) {
     console.error('加载分类失败', error)
+    uni.showToast({ title: '加载分类失败', icon: 'none' })
   }
 }
 
@@ -63,15 +64,17 @@ async function loadProducts(reset = false) {
     }
   } catch (error) {
     console.error('加载商品失败', error)
+    uni.showToast({ title: '加载商品失败', icon: 'none' })
   } finally {
     loading.value = false
   }
 }
 
 function selectCategory(id: number | null) {
+  if (selectedCategoryId.value === id) return
   selectedCategoryId.value = id
-  // 持久化保存用户选择
   uni.setStorageSync('selectedCategoryId', id)
+  products.value = []
   loadProducts(true)
 }
 
@@ -85,6 +88,10 @@ function goToSearch() {
   uni.navigateTo({
     url: '/pages/search/index'
   })
+}
+
+function goToShop() {
+  selectCategory(null)
 }
 
 // 下拉刷新
@@ -162,7 +169,10 @@ function onReachBottom() {
       <view class="loading-tip">
         <text v-if="loading && products.length > 0">加载中...</text>
         <text v-else-if="!hasMore && products.length > 0">没有更多了</text>
-        <text v-else-if="products.length === 0 && !loading">暂无商品</text>
+        <view v-else-if="products.length === 0 && !loading" class="empty-tip">
+          <text class="empty-text">暂无商品</text>
+          <text class="go-shop-btn" @click="goToShop">去逛逛</text>
+        </view>
       </view>
     </scroll-view>
   </view>
@@ -204,6 +214,7 @@ function onReachBottom() {
   border-bottom: 1rpx solid var(--border);
   white-space: nowrap;
   flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .category-list {
@@ -252,6 +263,26 @@ function onReachBottom() {
   text-align: center;
   color: var(--text-sub);
   font-size: 26rpx;
+}
+
+.empty-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.empty-text {
+  color: var(--text-sub);
+  font-size: 28rpx;
+}
+
+.go-shop-btn {
+  padding: 16rpx 48rpx;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-radius: 40rpx;
+  font-size: 28rpx;
 }
 
 .skeleton-grid {

@@ -87,6 +87,15 @@ function goToAddressList() {
 }
 
 async function submitOrder() {
+  // 检查登录状态，游客无法下单
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+
   if (!selectedAddress.value) {
     uni.showToast({ title: '请选择收货地址', icon: 'none' })
     return
