@@ -358,7 +358,6 @@ function selectSpec(spec: string) {
 .product-detail {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 120rpx;
 }
 
 .detail-swiper {
@@ -488,7 +487,6 @@ function selectSpec(spec: string) {
 .detail-content {
   background: var(--bg-card);
   margin-bottom: 24rpx;
-  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .content-tabs {
