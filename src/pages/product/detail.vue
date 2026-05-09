@@ -194,22 +194,34 @@ function getServiceIcon(icon: string): string {
 function getCoverImages(): string[] {
   if (!product.value) return []
   const images: string[] = []
-  // 优先使用 images 数组（全部商品图片）
+  const seenUrls = new Set<string>()
+
+  // 优先添加封面图（is_cover=1）
   if (product.value.images && product.value.images.length > 0) {
-    product.value.images.forEach(img => {
-      if (img.url && !images.includes(img.url)) {
+    const coverImages = product.value.images.filter(img => img.isCover === 1)
+    coverImages.forEach(img => {
+      if (img.url) {
         images.push(img.url)
+        seenUrls.add(img.url)
       }
     })
   }
+
+  // 添加其他图片（非封面）
+  if (product.value.images && product.value.images.length > 0) {
+    product.value.images.forEach(img => {
+      if (img.url && !seenUrls.has(img.url)) {
+        images.push(img.url)
+        seenUrls.add(img.url)
+      }
+    })
+  }
+
   // 兜底用 metaImage
   if (images.length === 0 && product.value.metaImage) {
     images.push(product.value.metaImage)
   }
-  // 最后才用 coverImages（封面图，最多3张）
-  if (images.length === 0 && product.value.coverImages && product.value.coverImages.length > 0) {
-    images.push(...product.value.coverImages)
-  }
+
   return images
 }
 </script>
