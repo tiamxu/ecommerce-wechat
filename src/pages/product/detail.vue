@@ -12,8 +12,6 @@ const product = ref<Product | null>(null)
 const loading = ref(false)
 const quantity = ref(1)
 const activeTab = ref('detail')
-const showSpecPopup = ref(false)
-const selectedSpec = ref<string>('')
 const userStore = useUserStore()
 const cartStore = useCartStore()
 
@@ -178,44 +176,41 @@ function getServiceIcon(icon: string): string {
   const iconMap: Record<string, string> = {
     'return': 'undo',
     'exchange': 'refresh',
-    'warranty': 'locked',
-    'shield': 'locked',
+    'warranty': 'star',
+    'shield': 'star',
     'truck': 'location',
     'headset': 'phone',
-    'credit-card': 'cart',
-    'gift': 'star'
+    'credit-card': 'wallet',
+    'gift': 'gift',
+    'check': 'check',
+    'clock': 'clock',
+    'phone': 'phone',
+    'mail': 'mail',
+    'shop': 'shop'
   }
-  return iconMap[icon] || 'right'
+  return iconMap[icon] || 'star'
 }
 
 function getCoverImages(): string[] {
   if (!product.value) return []
   const images: string[] = []
-  if (product.value.coverImages && product.value.coverImages.length > 0) {
-    images.push(...product.value.coverImages)
-  } else if (product.value.metaImage) {
-    images.push(product.value.metaImage)
-  } else if (product.value.images && product.value.images.length > 0) {
+  // 优先使用 images 数组（全部商品图片）
+  if (product.value.images && product.value.images.length > 0) {
     product.value.images.forEach(img => {
       if (img.url && !images.includes(img.url)) {
         images.push(img.url)
       }
     })
   }
+  // 兜底用 metaImage
+  if (images.length === 0 && product.value.metaImage) {
+    images.push(product.value.metaImage)
+  }
+  // 最后才用 coverImages（封面图，最多3张）
+  if (images.length === 0 && product.value.coverImages && product.value.coverImages.length > 0) {
+    images.push(...product.value.coverImages)
+  }
   return images
-}
-
-function showSpecPicker() {
-  showSpecPopup.value = true
-}
-
-function closeSpecPopup() {
-  showSpecPopup.value = false
-}
-
-function selectSpec(spec: string) {
-  selectedSpec.value = spec
-  closeSpecPopup()
 }
 </script>
 
@@ -249,10 +244,6 @@ function selectSpec(spec: string) {
         <view class="price-section">
           <text class="product-price">¥{{ product.price }}</text>
           <text v-if="product.price < originalPrice" class="original-price">¥{{ originalPrice }}</text>
-        </view>
-        <view class="spec-selector" @click="showSpecPicker">
-          <text class="spec-text">{{ selectedSpec || '选择规格' }}</text>
-          <text class="spec-arrow">▼</text>
         </view>
       </view>
       <view class="info-meta">
@@ -332,25 +323,6 @@ function selectSpec(spec: string) {
         <text class="btn-buy" @click="buyNow">立即购买</text>
       </view>
     </view>
-
-    <!-- 规格选择弹窗 -->
-    <view v-if="showSpecPopup" class="spec-popup">
-      <view class="popup-mask" @click="closeSpecPopup"></view>
-      <view class="popup-content">
-        <view class="popup-header">
-          <text class="popup-title">选择规格</text>
-          <text class="popup-close" @click="closeSpecPopup">×</text>
-        </view>
-        <view class="popup-body">
-          <view class="spec-placeholder">
-            <text>该商品暂无规格选择</text>
-          </view>
-        </view>
-        <view class="popup-footer">
-          <text class="popup-confirm" @click="closeSpecPopup">确定</text>
-        </view>
-      </view>
-    </view>
   </view>
 </template>
 
@@ -421,26 +393,6 @@ function selectSpec(spec: string) {
   text-decoration: line-through;
 }
 
-.spec-selector {
-  display: flex;
-  align-items: center;
-  padding: 12rpx 24rpx;
-  background: var(--bg-page);
-  border: 1rpx solid var(--border);
-  border-radius: 40rpx;
-}
-
-.spec-text {
-  font-size: 26rpx;
-  color: var(--text-main);
-  margin-right: 8rpx;
-}
-
-.spec-arrow {
-  font-size: 20rpx;
-  color: var(--text-sub);
-}
-
 .info-meta {
   display: flex;
   align-items: center;
@@ -456,9 +408,12 @@ function selectSpec(spec: string) {
   flex: 1;
   font-size: 28rpx;
   color: var(--text-main);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .detail-services {
@@ -470,7 +425,7 @@ function selectSpec(spec: string) {
 .services-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 32rpx;
+  gap: 16rpx 32rpx;
 }
 
 .service-item {
@@ -584,7 +539,7 @@ function selectSpec(spec: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 998;
+  z-index: 1000;
 }
 
 .quantity {
@@ -653,79 +608,5 @@ function selectSpec(spec: string) {
   padding: 20rpx 0;
   background: var(--primary);
   color: var(--text-inverse);
-}
-
-.spec-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999;
-}
-
-.popup-mask {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.popup-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--bg-card);
-  border-radius: 24rpx 24rpx 0 0;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 32rpx;
-  border-bottom: 1rpx solid var(--border);
-}
-
-.popup-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.popup-close {
-  font-size: 48rpx;
-  color: var(--text-placeholder);
-}
-
-.popup-body {
-  padding: 32rpx;
-  min-height: 200rpx;
-}
-
-.spec-placeholder {
-  text-align: center;
-  color: var(--text-placeholder);
-  font-size: 28rpx;
-}
-
-.popup-footer {
-  padding: 24rpx 32rpx;
-  border-top: 1rpx solid var(--border);
-}
-
-.popup-confirm {
-  display: block;
-  text-align: center;
-  padding: 24rpx;
-  background: var(--primary);
-  color: var(--text-inverse);
-  border-radius: 44rpx;
-  font-size: 28rpx;
-  font-weight: 600;
 }
 </style>

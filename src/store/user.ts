@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { BASE_URL } from '../utils/env'
+import { request } from '../api/request'
 
 interface UserInfo {
   id: number
@@ -42,15 +43,13 @@ export const useUserStore = defineStore('user', {
       }
 
       try {
-        const res = await uni.request({
-          url: `${BASE_URL}/api/users/profile`,
-          method: 'GET',
-          header: { Authorization: `Bearer ${this.token}` }
+        const res = await request<{ id: number; username: string; openid?: string; nickname?: string; avatar?: string; phone?: string; email?: string }>({
+          url: '/api/users/profile',
+          method: 'GET'
         })
 
-        const data = res.data as any
-        if (data.code === 200) {
-          this.userInfo = data.data
+        if (res.code === 200 && res.data) {
+          this.userInfo = res.data
           return true
         }
       } catch (error) {

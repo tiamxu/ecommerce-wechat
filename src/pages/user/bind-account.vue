@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '../../store/user'
-import { BASE_URL } from '../../utils/env'
+import { request } from '../../api/request'
 import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
@@ -57,29 +57,17 @@ async function handleBind() {
 
   loading.value = true
   try {
-    const result = await new Promise<{ success: boolean; message?: string }>((resolve) => {
-      uni.request({
-        url: `${BASE_URL}/api/users/bind-account`,
-        method: 'POST',
-        header: { Authorization: `Bearer ${userStore.token}` },
-        data: {
-          account: form.value.phone,
-          password: form.value.password
-        }
-      }).then((res: any) => {
-        const data = res.data as any
-        if (data.code === 200) {
-          resolve({ success: true })
-        } else {
-          resolve({ success: false, message: data.message || '绑定失败' })
-        }
-      }).catch((err: any) => {
-        const message = err?.message || err?.errMsg || '网络错误'
-        resolve({ success: false, message })
-      })
+    const res = await request<{ success: boolean; message?: string }>({
+      url: '/api/users/bind-account',
+      method: 'POST',
+      header: { Authorization: `Bearer ${userStore.token}` },
+      data: {
+        account: form.value.phone,
+        password: form.value.password
+      }
     })
 
-    if (result.success) {
+    if (res.code === 200) {
       uni.showToast({ title: '绑定成功', icon: 'success' })
       // 通知刷新用户信息
       uni.$emit('refreshUserInfo')
@@ -87,7 +75,7 @@ async function handleBind() {
         uni.navigateBack()
       }, 1500)
     } else {
-      uni.showToast({ title: result.message || '绑定失败', icon: 'none' })
+      uni.showToast({ title: res.message || '绑定失败', icon: 'none' })
     }
   } catch (error: any) {
     console.error('绑定失败', error)
