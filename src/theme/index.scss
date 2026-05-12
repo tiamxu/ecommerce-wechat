@@ -100,7 +100,7 @@
 .theme-luxury {
   --primary: #c9a961;
   --primary-hover: #d4b872;
-  --primary-light: #2a2a1a;
+  --primary-light: #faf6ee;
   --accent: #d4af37;
   --accent-hover: #e5c76b;
   --accent-light: #2a2a1a;
@@ -143,12 +143,41 @@ page {
   --tab-bar-color: #999999;
   --tab-bar-active: #07c160;
 
+  /* 字体系统 - 兼容小程序 */
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+
   background-color: var(--bg-page);
   color: var(--text-main);
   font-size: 28rpx;
   line-height: 1.6;
+
+  /* 字体平滑优化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 view, text {
   box-sizing: border-box;
 }
+
+/* 标题字体 */
+.heading {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* 辅助文字 */
+.secondary-text {
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+/* 字号辅助类 */
+.text-caption { font-size: 22rpx; color: var(--text-sub); }
+.text-label { font-size: 26rpx; }
+.text-body { font-size: 28rpx; }
+.text-subtitle { font-size: 32rpx; font-weight: 600; line-height: 1.3; }
+.text-title { font-size: 36rpx; font-weight: 600; line-height: 1.3; }
+.text-hero { font-size: 48rpx; font-weight: 700; line-height: 1.2; }
+.price-text { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }

@@ -10,7 +10,7 @@ export const luxuryTheme: ThemePreset = {
   colors: {
     primary: '#c9a961',
     primaryHover: '#d4b872',
-    primaryLight: '#2a2a1a',
+    primaryLight: '#faf6ee',
     accent: '#d4af37',
     accentHover: '#e5c76b',
     accentLight: '#2a2a1a',

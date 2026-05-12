@@ -114,7 +114,7 @@ async function submitOrder() {
   try {
     // 1. 创建订单
     const createRes = await orderApi.create({
-      email: userStore.userInfo?.phone ? `${userStore.userInfo.phone}@example.com` : 'guest@example.com',
+      email: userStore.userInfo?.email || '',
       receiverName: addr.receiverName,
       phone: addr.phone,
       country: addr.country || '中国',
@@ -442,6 +442,7 @@ async function submitOrder() {
   font-size: 28rpx;
   color: var(--price);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .quantity {
@@ -491,6 +492,7 @@ async function submitOrder() {
   font-size: 40rpx;
   font-weight: 700;
   color: var(--price);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 底部支付栏 */

@@ -322,7 +322,7 @@ function handleBannerClick(banner: ContentBlock) {
   display: block;
   font-size: 40rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-inverse);
   margin-bottom: 8rpx;
   text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.3);
 }
@@ -463,16 +463,11 @@ function handleBannerClick(banner: ContentBlock) {
   margin-top: auto;
 }
 
-.card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .card-price {
   font-size: 32rpx;
   font-weight: 700;
   color: var(--price);
+  font-variant-numeric: tabular-nums;
 }
 
 .card-sales {

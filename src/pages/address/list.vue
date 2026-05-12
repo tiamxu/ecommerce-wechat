@@ -92,7 +92,7 @@ async function setDefault(id: number) {
 
     <view v-else-if="addresses.length === 0" class="empty-section">
       <view class="empty-icon">
-        <text>📍</text>
+        <uni-icons type="location" size="40" color="var(--text-placeholder)" />
       </view>
       <text class="empty-title">暂无收货地址</text>
       <text class="empty-desc">添加收货地址以便快速下单</text>
@@ -192,7 +192,6 @@ async function setDefault(id: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80rpx;
   margin-bottom: 32rpx;
 }
 

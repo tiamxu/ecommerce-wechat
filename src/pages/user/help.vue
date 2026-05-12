@@ -106,7 +106,7 @@ function callService() {
           <text class="service-desc">联系客服获取更多帮助</text>
         </view>
         <view class="service-btn" @click="callService">
-          <uni-icons type="phone" size="18" color="#fff" />
+          <uni-icons type="phone" size="18" color="var(--text-inverse)" />
           <text>拨打电话</text>
         </view>
       </view>
@@ -212,7 +212,7 @@ function callService() {
   gap: 8rpx;
   padding: 20rpx 32rpx;
   background: var(--primary);
-  color: #fff;
+  color: var(--text-inverse);
   border-radius: 40rpx;
   font-size: 26rpx;
   font-weight: 500;

@@ -295,7 +295,7 @@ const needBind = computed(() => {
 .avatar-text {
   font-size: 48rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .user-detail {
@@ -306,7 +306,7 @@ const needBind = computed(() => {
 .nickname {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   margin-bottom: 8rpx;
 }
 
@@ -342,7 +342,7 @@ const needBind = computed(() => {
 .login-btn {
   display: inline-block;
   padding: 12rpx 32rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--primary);
   font-size: 26rpx;
   font-weight: 600;
@@ -423,7 +423,7 @@ const needBind = computed(() => {
   height: 32rpx;
   padding: 0 8rpx;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-inverse);
   font-size: 20rpx;
   font-weight: 600;
   border-radius: 16rpx;

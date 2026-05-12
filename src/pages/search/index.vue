@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { productApi } from '../../api'
 import { THEME_CLASS } from '../../theme/config'
 
 const searchWords = ref('')
-const hotSearchWords = ref<string[]>([])
 const historyWords = ref<string[]>([])
 const searchResults = ref<any[]>([])
 const loading = ref(false)
@@ -14,20 +12,8 @@ const showResults = ref(false)
 const MAX_HISTORY = 10
 
 onMounted(() => {
-  loadHotSearch()
   loadHistory()
 })
-
-async function loadHotSearch() {
-  try {
-    const res = await productApi.getHotProducts(10)
-    if (res.code === 200 && res.data?.pageData) {
-      hotSearchWords.value = res.data.pageData.map((p: any) => p.name?.zh || p.name?.en || '商品')
-    }
-  } catch (error) {
-    console.error('加载热门搜索失败', error)
-  }
-}
 
 function loadHistory() {
   const history = uni.getStorageSync('search_history')
@@ -94,7 +80,7 @@ function onCancel() {
     <!-- 搜索头部 -->
     <view class="search-header">
       <view class="search-input-wrap">
-        <text class="search-icon">🔍</text>
+        <uni-icons type="search" size="18" color="var(--text-placeholder)" />
         <input
           v-model="searchWords"
           class="search-input"
@@ -152,19 +138,7 @@ function onCancel() {
       </view>
 
       <!-- 热门搜索 -->
-      <view class="section">
-        <view class="section-header">
-          <text class="section-title">热门搜索</text>
-        </view>
-        <view class="tags-wrap">
-          <text
-            v-for="word in hotSearchWords"
-            :key="word"
-            class="tag hot"
-            @click="handleSearch(word)"
-          >{{ word }}</text>
-        </view>
-      </view>
+      <!-- 暂不显示热门搜索，等待后端接口支持 -->
     </view>
   </view>
 </template>
@@ -208,7 +182,7 @@ function onCancel() {
 }
 
 .cancel-btn {
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 28rpx;
   padding: 0 8rpx;
 }
@@ -313,5 +287,6 @@ function onCancel() {
   font-size: 32rpx;
   font-weight: 600;
   color: var(--price);
+  font-variant-numeric: tabular-nums;
 }
 </style>

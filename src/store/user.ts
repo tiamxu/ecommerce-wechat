@@ -32,7 +32,8 @@ export const useUserStore = defineStore('user', {
   }),
 
   getters: {
-    isLoggedIn: (state) => !!state.token && !!state.userInfo,
+    // 只检查 token 是否存在，userInfo 通过 verifyToken 异步加载
+    isLoggedIn: (state) => !!state.token,
   },
 
   actions: {

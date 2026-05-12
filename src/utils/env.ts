@@ -6,6 +6,7 @@ let BASE_URL = '/api'
 
 // #ifdef MP-WEIXIN
 // 微信小程序：使用域名（需要配置好域名和 SSL）
+// ⚠️ 重要：部署前必须替换为真实域名
 BASE_URL = 'https://sdapi.k-think.com'
 // #endif
 

@@ -317,7 +317,7 @@ function goShopping() {
 
   &.active {
     background: var(--primary);
-    color: #fff;
+    color: var(--text-inverse);
     box-shadow: 0 4rpx 16rpx var(--primary-light);
   }
 }
@@ -349,14 +349,14 @@ function goShopping() {
 }
 
 .wechat-btn {
-  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
-  color: #fff;
-  box-shadow: 0 8rpx 32rpx rgba(7, 193, 96, 0.3);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: var(--text-inverse);
+  box-shadow: 0 8rpx 32rpx var(--shadow);
 }
 
 .account-btn {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: #fff;
+  color: var(--text-inverse);
   box-shadow: 0 8rpx 32rpx var(--shadow);
 }
 

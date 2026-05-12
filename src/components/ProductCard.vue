@@ -172,6 +172,7 @@ function handleClick() {
   font-size: 36rpx;
   font-weight: 700;
   color: var(--price);
+  font-variant-numeric: tabular-nums;
 }
 
 .original-price {

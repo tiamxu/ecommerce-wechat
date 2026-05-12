@@ -8,24 +8,24 @@ defineProps({
   }
 })
 
-function getIcon(icon: string): string {
+function getIconType(icon: string): string {
   const iconMap: Record<string, string> = {
-    'return': '↩',
-    'exchange': '⇄',
-    'warranty': '🛡',
-    'shield': '🛡',
-    'truck': '🚚',
-    'headset': '🎧',
-    'credit-card': '💳',
-    'gift': '🎁'
+    'return': 'undo',
+    'exchange': 'refresh',
+    'warranty': 'star',
+    'shield': 'star',
+    'truck': 'location',
+    'headset': 'phone',
+    'credit-card': 'wallet',
+    'gift': 'gift'
   }
-  return iconMap[icon] || '✓'
+  return iconMap[icon] || 'check'
 }
 </script>
 
 <template>
   <view class="service-badge">
-    <text class="badge-icon">{{ getIcon(service.icon) }}</text>
+    <uni-icons type="check" size="14" color="var(--primary)" />
     <text class="badge-name">{{ service.name }}</text>
   </view>
 </template>
@@ -41,10 +41,6 @@ function getIcon(icon: string): string {
   border-radius: 32rpx;
   font-size: 22rpx;
   color: var(--text-main);
-}
-
-.badge-icon {
-  font-size: 24rpx;
 }
 
 .badge-name {

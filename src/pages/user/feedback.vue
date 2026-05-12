@@ -192,7 +192,7 @@ async function submitFeedback() {
   width: 100%;
   padding: 28rpx;
   background: var(--primary);
-  color: #fff;
+  color: var(--text-inverse);
   text-align: center;
   border-radius: 48rpx;
   font-size: 32rpx;

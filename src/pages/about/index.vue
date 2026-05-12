@@ -21,7 +21,7 @@ function callService() {
   <view :class="['about-page', THEME_CLASS]">
     <view class="about-header">
       <view class="app-logo">
-        <text class="logo-icon">🛒</text>
+        <uni-icons type="shop" size="60" color="var(--primary)" />
       </view>
       <text class="app-name">{{ aboutInfo.name }}</text>
       <text class="app-version">v{{ aboutInfo.version }}</text>
@@ -74,7 +74,6 @@ function callService() {
 }
 
 .logo-icon {
-  font-size: 120rpx;
   margin-bottom: 24rpx;
 }
 

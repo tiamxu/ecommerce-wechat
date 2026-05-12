@@ -248,8 +248,8 @@ function goToRegister() {
   width: 100%;
   height: 100rpx;
   border-radius: 50rpx;
-  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: var(--text-inverse);
   border: none;
   display: flex;
   align-items: center;
@@ -257,7 +257,7 @@ function goToRegister() {
   gap: 12rpx;
   font-size: 32rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 32rpx rgba(7, 193, 96, 0.3);
+  box-shadow: 0 8rpx 32rpx var(--shadow);
 
   &::after {
     border: none;
@@ -328,7 +328,7 @@ function goToRegister() {
   height: 100rpx;
   border-radius: 50rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: #fff;
+  color: var(--text-inverse);
   border: none;
   font-size: 32rpx;
   font-weight: 600;

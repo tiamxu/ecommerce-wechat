@@ -1,8 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { orderApi, type Address } from '../../api'
 import { THEME_CLASS } from '../../theme/config'
 import regionData from '../../static/china_address.json'
+
+// 获取当前主题主色（用于 switch 等组件属性）
+const themePrimary = computed(() => {
+  const colorMap: Record<string, string> = {
+    'theme-light': '#07c160',
+    'theme-dark': '#4d7cff',
+    'theme-blue': '#007aff',
+    'theme-purple': '#667eea',
+    'theme-luxury': '#c9a961'
+  }
+  return colorMap[THEME_CLASS] || '#07c160'
+})
 
 // 表单字段
 const form = ref({
@@ -223,7 +235,7 @@ async function saveAddress() {
         <switch
           :checked="form.isDefault"
           @change="(e: any) => form.isDefault = e.detail.value"
-          color="#07c160"
+          :color="themePrimary"
         />
       </view>
     </view>

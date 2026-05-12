@@ -1,6 +1,9 @@
 import { BASE_URL } from '../utils/env'
 import { ErrorCodes, isSuccess, isAuthError, isCaptchaError, isNotFoundError } from '../constants/errorCode'
 
+// 登录页面路径常量
+const LOGIN_PAGE_PATH = '/pages/user/login'
+
 // 错误消息（支持 i18n）
 const errorMessages: Record<number, string> = {
   // 认证
@@ -53,7 +56,7 @@ function handleBusinessError(code: number, message: string): void {
     uni.removeStorageSync('token')
     uni.showToast({ title: getErrorMessage(code, message), icon: 'none' })
     setTimeout(() => {
-      uni.navigateTo({ url: '/pages/login/login' })
+      uni.navigateTo({ url: LOGIN_PAGE_PATH })
     }, 1500)
     return
   }
@@ -83,7 +86,7 @@ function handleHttpError(statusCode: number): void {
       uni.removeStorageSync('token')
       uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
       setTimeout(() => {
-        uni.navigateTo({ url: '/pages/login/login' })
+        uni.navigateTo({ url: LOGIN_PAGE_PATH })
       }, 1500)
       break
     case 403:

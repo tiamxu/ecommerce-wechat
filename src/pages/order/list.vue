@@ -195,7 +195,9 @@ async function cancelOrder(orderId: number) {
         <text class="loading-text">加载中...</text>
       </view>
       <view v-else-if="filteredOrders.length === 0" class="empty-section">
-        <view class="empty-icon">📦</view>
+        <view class="empty-icon">
+          <uni-icons type="box" size="40" color="var(--text-placeholder)" />
+        </view>
         <text class="empty-title">暂无订单</text>
         <text class="empty-desc">快去挑选心仪商品吧</text>
         <view class="empty-btn" @click="goToShop">去购物</view>
@@ -357,7 +359,6 @@ async function cancelOrder(orderId: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 80rpx;
   margin-bottom: 32rpx;
 }
 

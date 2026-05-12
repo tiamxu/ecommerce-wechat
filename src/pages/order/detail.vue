@@ -94,7 +94,9 @@ function goBack() {
 
     <!-- 订单不存在 -->
     <view v-else-if="!order" class="empty-section">
-      <view class="empty-icon">📋</view>
+      <view class="empty-icon">
+        <uni-icons type="paperclip" size="40" color="var(--text-placeholder)" />
+      </view>
       <text class="empty-title">订单不存在</text>
       <view class="back-btn" @click="goBack">
         <text>返回</text>
@@ -454,6 +456,7 @@ function goBack() {
   font-size: 28rpx;
   color: var(--price);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .quantity {

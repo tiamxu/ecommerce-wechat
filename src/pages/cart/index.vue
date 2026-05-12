@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { cartApi, type CartItem } from '../../api'
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
 import TabBar from '../../components/TabBar.vue'
@@ -9,9 +8,7 @@ import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
 const cartStore = useCartStore()
-const cartItems = ref<CartItem[]>([])
-const loading = ref(false)
-const updatingIds = ref<Set<number>>(new Set())
+const checkoutLoading = ref(false)
 
 onMounted(() => {
   loadCart()
@@ -19,106 +16,74 @@ onMounted(() => {
 
 // 每次显示页面时刷新（切换 tab 时触发）
 onShow(() => {
-  loadCart()
+  if (userStore.isLoggedIn) {
+    loadCart()
+  }
 })
 
 async function loadCart() {
-  // 游客不加载购物车
-  if (!userStore.isLoggedIn) {
-    loading.value = false
-    return
-  }
-
-  loading.value = true
-  try {
-    const res = await cartApi.getList()
-    if (res.code === 200 && res.data) {
-      // 后端返回 { items: [], totalCount, totalPrice } 结构
-      // 为每个item添加默认selected字段
-      cartItems.value = (res.data.items || []).map(item => ({
-        ...item,
-        selected: item.selected ?? true
-      }))
-    }
-  } catch (error) {
-    console.error('加载购物车失败', error)
-  } finally {
-    loading.value = false
-  }
+  await cartStore.loadCart()
 }
 
 const allSelected = computed({
-  get: () => cartItems.value.length > 0 && cartItems.value.every(item => item.selected),
-  set: (val: boolean) => {
-    cartItems.value.forEach(item => item.selected = val)
+  get: () => cartStore.items.length > 0 && cartStore.items.every(item => item.selected !== false),
+  set: () => {
+    cartStore.toggleSelectAll()
   }
 })
 
 const totalPrice = computed(() => {
-  return cartItems.value
-    .filter(item => item.selected)
-    .reduce((sum, item) => sum + item.productPrice * item.quantity, 0)
+  return cartStore.selectedPrice
 })
 
 const selectedCount = computed(() => {
-  return cartItems.value.filter(item => item.selected).length
+  return cartStore.selectedCount
 })
 
 function toggleAll() {
-  allSelected.value = !allSelected.value
+  cartStore.toggleSelectAll()
 }
 
-function toggleItem(id: number) {
-  const item = cartItems.value.find(i => i.id === id)
-  if (item) {
-    item.selected = !item.selected
-  }
+function toggleItem(productId: number) {
+  cartStore.toggleSelect(productId)
 }
 
 async function updateQuantity(productId: number, delta: number) {
-  const item = cartItems.value.find(i => i.productId === productId)
+  const item = cartStore.items.find(i => i.productId === productId)
   if (!item) return
-
-  // 防止重复点击
-  if (updatingIds.value.has(productId)) return
-  updatingIds.value.add(productId)
 
   const newQty = item.quantity + delta
   if (newQty < 1) {
-    updatingIds.value.delete(productId)
     await removeItem(productId)
     return
   }
 
-  // 乐观更新 UI
-  item.quantity = newQty
-
-  // 同步到服务器
-  try {
-    await cartApi.update(productId, newQty)
-  } catch (error) {
-    // 失败则回滚
-    item.quantity -= delta
-    uni.showToast({ title: '更新失败', icon: 'none' })
-  } finally {
-    updatingIds.value.delete(productId)
+  const result = await cartStore.updateQuantity(productId, newQty)
+  if (!result.success) {
+    uni.showToast({ title: result.message || '更新失败', icon: 'none' })
   }
 }
 
 async function removeItem(productId: number) {
-  try {
-    await cartApi.remove(productId)
-    cartItems.value = cartItems.value.filter(item => item.productId !== productId)
-    // 刷新 cartStore（更新 tabbar 数量）
-    cartStore.loadCart()
+  const confirm = await new Promise<boolean>(resolve => {
+    uni.showModal({
+      title: '确认删除',
+      content: '确定要从购物车中删除该商品吗？',
+      confirmColor: 'var(--primary)',
+      success: (res) => resolve(res.confirm)
+    })
+  })
+  if (!confirm) return
+
+  const result = await cartStore.removeItem(productId)
+  if (result.success) {
     uni.showToast({ title: '已删除', icon: 'success' })
-  } catch (error) {
-    uni.showToast({ title: '删除失败', icon: 'none' })
+  } else {
+    uni.showToast({ title: result.message || '删除失败', icon: 'none' })
   }
 }
 
-function checkout() {
-  // 检查登录状态，游客无法结算
+async function checkout() {
   if (!userStore.isLoggedIn) {
     uni.showToast({ title: '请先登录', icon: 'none' })
     setTimeout(() => {
@@ -132,12 +97,17 @@ function checkout() {
     return
   }
 
-  const selectedItems = cartItems.value.filter(item => item.selected)
+  if (checkoutLoading.value) return
+  checkoutLoading.value = true
+
+  const selectedItems = cartStore.items.filter(item => item.selected !== false)
   uni.setStorageSync('checkoutItems', JSON.stringify(selectedItems))
 
   uni.navigateTo({
     url: '/pages/order/confirm'
   })
+
+  checkoutLoading.value = false
 }
 
 function goToShop() {
@@ -149,7 +119,7 @@ function goToShop() {
   <view :class="['cart-page', THEME_CLASS]">
     <TabBar />
     <!-- 空状态 -->
-    <view v-if="!loading && cartItems.length === 0" class="empty-cart">
+    <view v-if="!cartStore.loading && cartStore.items.length === 0" class="empty-cart">
       <uni-icons type="cart" size="80" color="var(--text-placeholder)" />
       <text class="empty-text">购物车是空的</text>
       <text class="empty-btn" @click="goToShop">去逛逛</text>
@@ -158,17 +128,23 @@ function goToShop() {
     <!-- 购物车列表 -->
     <view v-else class="cart-content">
       <view class="cart-list">
-        <view v-for="item in cartItems" :key="item.id" class="cart-item">
+        <view v-for="item in cartStore.items" :key="item.id" class="cart-item">
           <!-- 选择框 -->
           <view
             class="item-checkbox"
             :class="{ selected: item.selected }"
-            @click="toggleItem(item.id)"
+            @click="toggleItem(item.productId)"
           ></view>
 
           <!-- 商品图片 -->
           <view class="item-img">
-            <image v-if="item.coverImage" :src="item.coverImage" mode="aspectFill" class="cover-img" />
+            <image
+              v-if="item.coverImage"
+              :src="item.coverImage"
+              mode="aspectFill"
+              class="cover-img"
+              :alt="item.productName"
+            />
             <text v-else class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
           </view>
 
@@ -186,7 +162,9 @@ function goToShop() {
           </view>
 
           <!-- 删除按钮 -->
-          <text class="delete-btn" @click="removeItem(item.productId)">×</text>
+          <view class="delete-btn" @click="removeItem(item.productId)">
+            <uni-icons type="trash" size="20" color="var(--text-placeholder)" />
+          </view>
         </view>
       </view>
 
@@ -198,9 +176,11 @@ function goToShop() {
         </view>
         <view class="total-section">
           <text class="total-label">合计</text>
-          <text class="total-price">¥{{ totalPrice }}</text>
+          <text class="total-price">¥{{ totalPrice.toFixed(2) }}</text>
         </view>
-        <text class="checkout-btn" @click="checkout">结算</text>
+        <text class="checkout-btn" :class="{ loading: checkoutLoading }" @click="checkout">
+          {{ checkoutLoading ? '结算中...' : '结算' }}
+        </text>
       </view>
     </view>
   </view>
@@ -268,14 +248,6 @@ function goToShop() {
   &.selected {
     background: var(--primary);
     border-color: var(--primary);
-    &::after {
-      content: '✓';
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 24rpx;
-    }
   }
 }
 
@@ -356,10 +328,12 @@ function goToShop() {
 }
 
 .delete-btn {
-  font-size: 40rpx;
-  color: var(--text-placeholder);
-  padding: 8rpx;
+  padding: 20rpx;
+  margin-left: 8rpx;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cart-footer {
@@ -404,6 +378,7 @@ function goToShop() {
   font-size: 36rpx;
   font-weight: 700;
   color: var(--price);
+  font-variant-numeric: tabular-nums;
 }
 
 .checkout-btn {
@@ -413,5 +388,9 @@ function goToShop() {
   border-radius: 44rpx;
   font-size: 28rpx;
   font-weight: 600;
+
+  &.loading {
+    opacity: 0.7;
+  }
 }
 </style>

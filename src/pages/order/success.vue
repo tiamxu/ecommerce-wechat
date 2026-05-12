@@ -10,11 +10,11 @@ const loading = ref<boolean>(true)
 
 // 状态映射
 const statusMap: Record<string, { text: string; color: string }> = {
-  '0': { text: '待支付', color: '#ff6b00' },
-  '1': { text: '已支付', color: '#07c160' },
-  '2': { text: '已发货', color: '#07c160' },
-  '3': { text: '已完成', color: '#07c160' },
-  '4': { text: '已取消', color: '#999999' }
+  '0': { text: '待支付', color: 'var(--accent)' },
+  '1': { text: '已支付', color: 'var(--primary)' },
+  '2': { text: '已发货', color: 'var(--primary)' },
+  '3': { text: '已完成', color: 'var(--primary)' },
+  '4': { text: '已取消', color: 'var(--text-placeholder)' }
 }
 
 onMounted(async () => {
@@ -82,7 +82,9 @@ async function payNow() {
     <view v-else class="success-content">
       <!-- 待支付状态 -->
       <view v-if="orderStatus === '0' || orderStatus === 'pending'" class="status-card pending">
-        <view class="status-icon">⏰</view>
+        <view class="status-icon">
+          <uni-icons type="clock" size="48" color="var(--accent)" />
+        </view>
         <view class="status-title">订单已创建</view>
         <view class="status-desc">请完成支付，支付成功后订单会自动生效</view>
 
@@ -101,7 +103,9 @@ async function payNow() {
 
       <!-- 已支付状态 -->
       <view v-else-if="orderStatus === '1'" class="status-card success">
-        <view class="status-icon">✅</view>
+        <view class="status-icon">
+          <uni-icons type="check" size="48" color="var(--primary)" />
+        </view>
         <view class="status-title">支付成功</view>
         <view class="status-desc">感谢您的购买，订单已生效</view>
 
@@ -120,7 +124,9 @@ async function payNow() {
 
       <!-- 其他状态 -->
       <view v-else class="status-card">
-        <view class="status-icon">📋</view>
+        <view class="status-icon">
+          <uni-icons type="paperclip" size="48" color="var(--text-sub)" />
+        </view>
         <view class="status-title">订单{{ statusMap[orderStatus]?.text || orderStatus }}</view>
 
         <view class="order-info">
@@ -164,7 +170,6 @@ async function payNow() {
 }
 
 .status-icon {
-  font-size: 96rpx;
   margin-bottom: 24rpx;
 }
 
