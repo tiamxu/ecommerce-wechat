@@ -1,4 +1,4 @@
-import { BASE_URL } from '../utils/env'
+import { BASE_URL, PLATFORM } from '../utils/env'
 import { ErrorCodes, isSuccess, isAuthError, isCaptchaError, isNotFoundError } from '../constants/errorCode'
 
 // 登录页面路径常量
@@ -142,6 +142,7 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
       header: {
         'Content-Type': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
+        'X-Platform': PLATFORM,
         ...options.header
       },
       timeout: options.timeout || 10000,
