@@ -3,8 +3,8 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useI18n } from 'vue-i18n'
 import { productApi, type Product, type ContentBlock } from '../../api'
+import ProductCard from '../../components/ProductCard.vue'
 import TabBar from '../../components/TabBar.vue'
-import Skeleton from '../../components/Skeleton.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const { locale } = useI18n()
@@ -103,17 +103,6 @@ function goToAllProducts() {
   uni.switchTab({ url: '/pages/product/list' })
 }
 
-function getProductName(product: Product): string {
-  return product.name?.zh || product.name?.en || '商品'
-}
-
-function getCoverImage(product: Product): string {
-  if (product.coverImages && product.coverImages.length > 0) {
-    return product.coverImages[0]
-  }
-  return ''
-}
-
 function handleBannerClick(banner: ContentBlock) {
   try {
     const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
@@ -186,49 +175,12 @@ function handleBannerClick(banner: ContentBlock) {
         </view>
       </view>
       <view class="product-grid">
-        <!-- 骨架屏 -->
-        <template v-if="loading && hotProducts.length === 0">
-          <view v-for="i in 4" :key="i" class="product-card">
-            <view class="card-img-wrap">
-              <Skeleton width="100%" height="320rpx" borderRadius="0" />
-            </view>
-            <view class="card-info">
-              <Skeleton width="80%" height="32rpx" />
-              <Skeleton width="50%" height="28rpx" />
-            </view>
-          </view>
-        </template>
-        <!-- 商品列表 -->
-        <template v-else>
-          <view
-            v-for="item in hotProducts"
-            :key="item.id"
-            class="product-card"
-            @click="goToProductDetail(item.id)"
-          >
-            <view class="card-img-wrap">
-              <image
-                v-if="getCoverImage(item)"
-                class="card-img"
-                :src="getCoverImage(item)"
-                mode="aspectFill"
-              />
-              <view v-else class="card-img-placeholder">
-                <text class="placeholder-text">{{ getProductName(item).charAt(0) }}</text>
-              </view>
-              <view v-if="item.primaryTag" class="card-tag">
-                {{ item.primaryTag.name }}
-              </view>
-            </view>
-            <view class="card-info">
-              <text class="card-name">{{ getProductName(item) }}</text>
-              <view class="card-bottom">
-                <text class="card-price">¥{{ item.price }}</text>
-                <text class="card-sales">已售{{ item.sales || 0 }}件</text>
-              </view>
-            </view>
-          </view>
-        </template>
+        <ProductCard
+          v-for="item in hotProducts"
+          :key="item.id"
+          :product="item"
+          @click="goToProductDetail(item.id)"
+        />
       </view>
       <view v-if="hotProducts.length === 0 && !loading" class="empty-tip">
         <text>暂无推荐商品</text>
@@ -251,42 +203,40 @@ function handleBannerClick(banner: ContentBlock) {
   left: 0;
   right: 0;
   z-index: 100;
-  display: flex;
-  align-items: center;
   padding: 12rpx 32rpx;
   padding-top: calc(12rpx + env(safe-area-inset-top));
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  background: var(--bg-page);
 }
 
 .search-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  height: 64rpx;
+  height: 72rpx;
   padding: 0 24rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 32rpx;
+  background: var(--bg-card);
+  border-radius: 36rpx;
 }
 
 .search-placeholder {
   font-size: 28rpx;
   color: var(--text-placeholder);
-  margin-left: 8rpx;
+  margin-left: 12rpx;
 }
 
 /* Banner */
 .banner {
-  padding-top: calc(88rpx + env(safe-area-inset-top));
+  padding-top: calc(96rpx + env(safe-area-inset-top));
 }
 
 .banner-swiper {
   width: 100%;
-  height: 380rpx;
+  height: 320rpx;
 }
 
 .banner-item {
   width: 100%;
-  height: 380rpx;
+  height: 320rpx;
   background-size: cover;
   background-position: center;
   position: relative;
@@ -297,8 +247,8 @@ function handleBannerClick(banner: ContentBlock) {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 200rpx;
-  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+  height: 160rpx;
+  background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
 }
 
 .banner-1 {
@@ -313,45 +263,36 @@ function handleBannerClick(banner: ContentBlock) {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 32rpx;
+  bottom: 24rpx;
   padding: 0 32rpx;
   z-index: 1;
 }
 
 .banner-title {
   display: block;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 700;
-  color: var(--text-inverse);
-  margin-bottom: 8rpx;
-  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.3);
+  color: #fff;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2);
 }
 
 .banner-desc {
   display: block;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 2rpx 6rpx rgba(0,0,0,0.25);
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4rpx;
 }
 
-/* 热门推荐 */
+/* 热门推荐 - 简化 */
 .section {
-  padding: 32rpx 24rpx;
-  background: var(--bg-card);
-  margin: 24rpx;
-  border-radius: 16rpx;
+  padding: 40rpx 24rpx;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: 24rpx;
-}
-
-.section-title-wrap {
-  display: flex;
-  flex-direction: column;
 }
 
 .section-title {
@@ -360,17 +301,11 @@ function handleBannerClick(banner: ContentBlock) {
   color: var(--text-main);
 }
 
-.section-subtitle {
-  font-size: 24rpx;
-  color: var(--text-sub);
-  margin-top: 4rpx;
-}
-
 .section-more {
   display: flex;
   align-items: center;
-  font-size: 24rpx;
-  color: var(--primary);
+  font-size: 26rpx;
+  color: var(--text-sub);
 }
 
 .more-arrow {
@@ -381,103 +316,13 @@ function handleBannerClick(banner: ContentBlock) {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
-}
-
-.product-card {
-  display: flex;
-  flex-direction: column;
-  height: 500rpx;
-  background: var(--bg-card);
-  border-radius: 16rpx;
-  overflow: hidden;
-}
-
-.card-img-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 100%;
-  height: 340rpx;
-}
-
-.card-img {
-  width: 100%;
-  height: 100%;
-}
-
-.card-img-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.placeholder-text {
-  font-size: 64rpx;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.card-tag {
-  position: absolute;
-  top: 12rpx;
-  left: 12rpx;
-  padding: 4rpx 12rpx;
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 20rpx;
-  border-radius: 20rpx;
-}
-
-.card-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16rpx;
-  min-height: 0;
-
-  :deep(.skeleton) {
-    margin-bottom: 12rpx;
-  }
-}
-
-.card-name {
-  display: block;
-  font-size: 28rpx;
-  color: var(--text-main);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  height: 72rpx;
-}
-
-.card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-
-.card-price {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--price);
-  font-variant-numeric: tabular-nums;
-}
-
-.card-sales {
-  font-size: 22rpx;
-  color: var(--text-sub);
+  gap: 24rpx 20rpx;
 }
 
 .empty-tip {
   text-align: center;
-  padding: 48rpx;
+  padding: 80rpx 0;
   color: var(--text-sub);
+  font-size: 28rpx;
 }
 </style>

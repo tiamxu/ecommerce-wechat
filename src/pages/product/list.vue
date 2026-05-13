@@ -188,15 +188,15 @@ function onReachBottom() {
 
 .search-bar {
   height: 96rpx;
-  padding: 16rpx 24rpx;
-  background: var(--primary);
+  padding: 12rpx 24rpx;
+  background: var(--bg-page);
   flex-shrink: 0;
 }
 
 .search-input-wrap {
-  height: 64rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 32rpx;
+  height: 72rpx;
+  background: var(--bg-card);
+  border-radius: 36rpx;
   display: flex;
   align-items: center;
   padding: 0 24rpx;

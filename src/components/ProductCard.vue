@@ -87,65 +87,53 @@ function handleClick() {
 .product-card {
   display: flex;
   flex-direction: column;
-  height: 500rpx;
-  background: var(--bg-card);
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 4rpx 16rpx var(--shadow);
-  transition: all 0.3s;
-
-  &:active {
-    transform: scale(0.98);
-    opacity: 0.9;
-  }
+  background: var(--bg-page);
 }
 
 .card-img {
   position: relative;
-  flex-shrink: 0;
   width: 100%;
   height: 340rpx;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  background: var(--bg-card);
 }
 
 .cover-img {
   width: 100%;
   height: 100%;
-  transition: opacity 0.3s;
 }
 
 .img-placeholder {
   width: 100%;
   height: 100%;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--border) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .placeholder-text {
-  font-size: 80rpx;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 48rpx;
+  font-weight: 600;
+  color: var(--text-placeholder);
 }
 
 .card-tag {
   position: absolute;
   top: 12rpx;
   left: 12rpx;
-  padding: 6rpx 16rpx;
+  padding: 4rpx 12rpx;
   background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 22rpx;
-  font-weight: 500;
-  border-radius: 24rpx;
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: 4rpx;
 }
 
 .card-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16rpx;
-  min-height: 0;
+  justify-content: space-between;
+  min-height: 120rpx;
+  padding: 16rpx 0;
 }
 
 .product-name {
@@ -158,20 +146,19 @@ function handleClick() {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  height: 72rpx;
 }
 
 .price-row {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  margin-top: auto;
+  margin-top: 12rpx;
 }
 
 .product-price {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 700;
-  color: var(--price);
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
