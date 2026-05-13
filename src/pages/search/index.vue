@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { THEME_CLASS } from '../../theme/config'
+import { productApi } from '../../api'
 
 const searchWords = ref('')
 const historyWords = ref<string[]>([])
