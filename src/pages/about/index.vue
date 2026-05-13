@@ -2,9 +2,9 @@
 import { THEME_CLASS } from '../../theme/config'
 
 const aboutInfo = {
-  name: '跨境电商',
+  name: '精选电商',
   version: '1.0.0',
-  description: '专注为您提供优质的跨境购物体验'
+  description: '专注为您提供优质的购物体验'
 }
 
 function callService() {
