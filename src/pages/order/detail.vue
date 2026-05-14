@@ -564,6 +564,11 @@ function goBack() {
   border-radius: 44rpx;
   font-size: 28rpx;
   font-weight: 500;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+  }
 
   &.pay {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
@@ -580,6 +585,7 @@ function goBack() {
   &.back {
     background: var(--accent);
     color: var(--text-inverse);
+    box-shadow: 0 4rpx 16rpx var(--accent-light);
   }
 }
 </style>

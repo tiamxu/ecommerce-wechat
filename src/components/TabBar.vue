@@ -59,10 +59,10 @@ function goTo(tab: typeof tabs[0], index: number) {
       <view class="icon-wrap">
         <uni-icons
           :type="tab.icon"
-          :size="22"
+          :size="24"
           :color="currentIndex === index ? 'var(--tab-bar-active)' : 'var(--tab-bar-color)'"
         />
-        <view v-if="tab.icon === 'cart' && totalCount > 0" class="badge">
+        <view v-if="tab.icon === 'cart' && totalCount > 0" class="badge" :class="{ small: totalCount < 10 }">
           {{ totalCount > 99 ? '99+' : totalCount }}
         </view>
       </view>
@@ -81,7 +81,7 @@ function goTo(tab: typeof tabs[0], index: number) {
   height: calc(100rpx + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--tab-bar-bg);
-  border-top: 1rpx solid var(--border);
+  box-shadow: 0 -2rpx 12rpx var(--shadow);
   z-index: 999;
 }
 
@@ -91,8 +91,13 @@ function goTo(tab: typeof tabs[0], index: number) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
+  gap: 6rpx;
   padding: 8rpx 0;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.92);
+  }
 
   &.active .tab-text {
     color: var(--tab-bar-active);
@@ -105,8 +110,8 @@ function goTo(tab: typeof tabs[0], index: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44rpx;
-  height: 44rpx;
+  width: 48rpx;
+  height: 48rpx;
 }
 
 .tab-text {
@@ -122,18 +127,25 @@ function goTo(tab: typeof tabs[0], index: number) {
 
 .badge {
   position: absolute;
-  top: -8rpx;
-  right: -16rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  padding: 0 8rpx;
+  top: -4rpx;
+  right: -12rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 6rpx;
   background: var(--accent);
   color: var(--text-inverse);
-  font-size: 20rpx;
+  font-size: 18rpx;
   font-weight: 600;
-  line-height: 32rpx;
+  line-height: 28rpx;
   text-align: center;
-  border-radius: 16rpx;
-  transform: scale(0.9);
+  border-radius: 14rpx;
+
+  &.small {
+    min-width: 24rpx;
+    height: 24rpx;
+    font-size: 16rpx;
+    line-height: 24rpx;
+    border-radius: 12rpx;
+  }
 }
 </style>

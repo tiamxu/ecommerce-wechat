@@ -294,13 +294,14 @@ async function submitOrder() {
 }
 
 .address-icon {
-  width: 72rpx;
-  height: 72rpx;
+  width: 80rpx;
+  height: 80rpx;
   background: var(--primary-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .address-info {
@@ -529,13 +530,18 @@ async function submitOrder() {
 }
 
 .pay-btn {
-  padding: 24rpx 64rpx;
+  padding: 28rpx 72rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: var(--text-inverse);
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
   box-shadow: 0 8rpx 32rpx var(--shadow);
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+  }
 
   &.disabled {
     background: var(--text-placeholder);

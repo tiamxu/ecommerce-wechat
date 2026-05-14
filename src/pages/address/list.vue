@@ -293,10 +293,11 @@ async function setDefault(id: number) {
 
 .default-badge {
   padding: 8rpx 20rpx;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: var(--text-inverse);
   font-size: 22rpx;
   border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx var(--primary-light);
 }
 
 .set-default {

@@ -120,6 +120,30 @@
   --tab-bar-active: #c9a961;
 }
 
+/* 科技主题 - 音箱/耳机/数码产品 */
+.theme-tech {
+  --primary: #6366f1;
+  --primary-hover: #818cf8;
+  --primary-light: #e0e7ff;
+  --accent: #f97316;
+  --accent-hover: #fb923c;
+  --accent-light: #fff7ed;
+  --price: #f97316;
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-header: #ffffff;
+  --bg-input: #f1f5f9;
+  --text-main: #1e293b;
+  --text-sub: #64748b;
+  --text-placeholder: #94a3b8;
+  --text-inverse: #ffffff;
+  --border: #e2e8f0;
+  --shadow: rgba(99, 102, 241, 0.08);
+  --tab-bar-bg: #ffffff;
+  --tab-bar-color: #94a3b8;
+  --tab-bar-active: #6366f1;
+}
+
 /* 默认页面样式（浅色主题） */
 page {
   --primary: #07c160;

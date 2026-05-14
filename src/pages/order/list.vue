@@ -15,11 +15,11 @@ const pageSize = ref(10)
 const hasMore = ref(true)
 
 const tabs = [
-  { key: 'all', label: '全部', icon: 'bars' },
+  { key: 'all', label: '全部', icon: 'list' },
   { key: '0', label: '待付款', icon: 'wallet' },
   { key: '1', label: '待发货', icon: 'box' },
-  { key: '2', label: '待收货', icon: 'car' },
-  { key: '3', label: '已完成', icon: 'check' }
+  { key: '2', label: '待收货', icon: 'cart' },
+  { key: '3', label: '已完成', icon: 'checkbox' }
 ]
 
 const statusMap: Record<string, string> = {
@@ -281,11 +281,12 @@ async function cancelOrder(orderId: number) {
 
 .tab-item {
   flex: 1;
-  padding: 28rpx 16rpx;
+  min-width: 0;
+  padding: 24rpx 8rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
+  gap: 6rpx;
   position: relative;
 
   &.active {
@@ -433,8 +434,8 @@ async function cancelOrder(orderId: number) {
 }
 
 .goods-img-wrap {
-  width: 160rpx;
-  height: 160rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 16rpx;
   overflow: hidden;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
@@ -460,8 +461,8 @@ async function cancelOrder(orderId: number) {
 }
 
 .goods-more {
-  width: 160rpx;
-  height: 160rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 16rpx;
   background: var(--bg-page);
   display: flex;

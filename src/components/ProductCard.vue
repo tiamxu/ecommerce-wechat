@@ -19,13 +19,16 @@ const props = withDefaults(defineProps<{
   product: Product
   showPrice?: boolean
   showOriginalPrice?: boolean
+  showCartBtn?: boolean
 }>(), {
   showPrice: true,
-  showOriginalPrice: true
+  showOriginalPrice: true,
+  showCartBtn: false
 })
 
 const emit = defineEmits<{
   click: [id: number]
+  addCart: [product: Product]
 }>()
 
 const productName = computed(() => {
@@ -53,25 +56,39 @@ const originalPrice = computed(() => {
 function handleClick() {
   emit('click', props.product.id)
 }
+
+function handleAddCart(e: any) {
+  e.stopPropagation()
+  emit('addCart', props.product)
+}
 </script>
 
 <template>
   <view class="product-card" @click="handleClick">
-    <view class="card-img">
+    <view class="card-img" :clickable="false">
       <image
         v-if="coverImage"
         :src="coverImage"
         mode="aspectFill"
         class="cover-img"
+        :clickable="false"
       />
-      <view v-else class="img-placeholder">
+      <view v-else class="img-placeholder" :clickable="false">
         <text class="placeholder-text">{{ productName.charAt(0) || 'P' }}</text>
       </view>
-      <view v-if="displayTag" class="card-tag">
+      <view v-if="displayTag" class="card-tag" :clickable="false">
         {{ displayTag }}
       </view>
+      <view
+        v-if="showCartBtn"
+        class="card-cart-btn"
+        :catch:tap="true"
+        @tap="handleAddCart"
+      >
+        <uni-icons type="cart" size="16" color="var(--text-inverse)" />
+      </view>
     </view>
-    <view class="card-info">
+    <view class="card-info" :clickable="false">
       <text class="product-name">{{ productName }}</text>
       <view class="price-row">
         <text v-if="showPrice" class="product-price">¥{{ product.price }}</text>
@@ -126,6 +143,25 @@ function handleClick() {
   color: #fff;
   font-size: 20rpx;
   border-radius: 4rpx;
+}
+
+.card-cart-btn {
+  position: absolute;
+  bottom: 12rpx;
+  right: 12rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx var(--primary-light);
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.9);
+  }
 }
 
 .card-info {

@@ -3,11 +3,18 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useI18n } from 'vue-i18n'
 import { productApi, type Product, type ContentBlock } from '../../api'
+import { useSearchStore } from '../../store/search'
+import { useCartStore } from '../../store/cart'
+import { useUserStore } from '../../store/user'
 import ProductCard from '../../components/ProductCard.vue'
+import SearchBar from '../../components/SearchBar.vue'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const { locale } = useI18n()
+const searchStore = useSearchStore()
+const cartStore = useCartStore()
+const userStore = useUserStore()
 
 const hotProducts = ref<Product[]>([])
 const banners = ref<ContentBlock[]>([])
@@ -87,15 +94,18 @@ function getBannerDesc(banner: ContentBlock): string {
   }
 }
 
-function goToSearch() {
-  uni.navigateTo({
-    url: '/pages/search/index'
-  })
-}
-
 function goToProductDetail(id: number) {
   uni.navigateTo({
     url: `/pages/product/detail?id=${id}`
+  })
+}
+
+function goToSearch(keyword: string) {
+  if (keyword?.trim()) {
+    searchStore.addHistory(keyword)
+  }
+  uni.navigateTo({
+    url: '/pages/search/index'
   })
 }
 
@@ -115,6 +125,22 @@ function handleBannerClick(banner: ContentBlock) {
     console.error('解析banner数据失败', e)
   }
 }
+
+async function addToCart(product: Product) {
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+  try {
+    await cartStore.addItem(product.id, 1)
+    uni.showToast({ title: '已加入购物车', icon: 'success' })
+  } catch (error) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
+}
 </script>
 
 <template>
@@ -123,10 +149,7 @@ function handleBannerClick(banner: ContentBlock) {
     <TabBar />
     <!-- 顶部搜索栏 -->
     <view class="search-bar">
-      <view class="search-input-wrap" @click="goToSearch">
-        <uni-icons type="search" size="16" color="var(--text-placeholder)" />
-        <text class="search-placeholder">搜索商品</text>
-      </view>
+      <SearchBar @search="goToSearch" />
     </view>
 
     <!-- Banner -->
@@ -179,7 +202,9 @@ function handleBannerClick(banner: ContentBlock) {
           v-for="item in hotProducts"
           :key="item.id"
           :product="item"
+          :show-cart-btn="true"
           @click="goToProductDetail(item.id)"
+          @add-cart="addToCart"
         />
       </view>
       <view v-if="hotProducts.length === 0 && !loading" class="empty-tip">
@@ -203,40 +228,26 @@ function handleBannerClick(banner: ContentBlock) {
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 12rpx 32rpx;
+  padding: 12rpx 24rpx;
   padding-top: calc(12rpx + env(safe-area-inset-top));
   background: var(--bg-page);
-}
-
-.search-input-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  height: 72rpx;
-  padding: 0 24rpx;
-  background: var(--bg-card);
-  border-radius: 36rpx;
-}
-
-.search-placeholder {
-  font-size: 28rpx;
-  color: var(--text-placeholder);
-  margin-left: 12rpx;
+  box-shadow: 0 2rpx 12rpx var(--shadow);
 }
 
 /* Banner */
 .banner {
-  padding-top: calc(96rpx + env(safe-area-inset-top));
+  padding-top: calc(88rpx + env(safe-area-inset-top));
 }
 
 .banner-swiper {
   width: 100%;
-  height: 320rpx;
+  height: 360rpx;
+  border-radius: 0;
 }
 
 .banner-item {
   width: 100%;
-  height: 320rpx;
+  height: 360rpx;
   background-size: cover;
   background-position: center;
   position: relative;
@@ -247,8 +258,8 @@ function handleBannerClick(banner: ContentBlock) {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 160rpx;
-  background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+  height: 180rpx;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
 }
 
 .banner-1 {
@@ -263,29 +274,36 @@ function handleBannerClick(banner: ContentBlock) {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 24rpx;
+  bottom: 32rpx;
   padding: 0 32rpx;
   z-index: 1;
 }
 
 .banner-title {
   display: block;
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2);
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.25);
+}
+
+.banner-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 8rpx;
 }
 
 .banner-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: rgba(255, 255, 255, 0.85);
   margin-top: 4rpx;
 }
 
-/* 热门推荐 - 简化 */
+/* 热门推荐 */
 .section {
-  padding: 40rpx 24rpx;
+  padding: 40rpx 20rpx;
 }
 
 .section-header {
@@ -295,28 +313,43 @@ function handleBannerClick(banner: ContentBlock) {
   margin-bottom: 24rpx;
 }
 
+.section-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
 .section-title {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: 34rpx;
+  font-weight: 700;
   color: var(--text-main);
+}
+
+.section-subtitle {
+  font-size: 22rpx;
+  color: var(--text-sub);
 }
 
 .section-more {
   display: flex;
   align-items: center;
-  font-size: 26rpx;
-  color: var(--text-sub);
+  padding: 12rpx 20rpx;
+  background: var(--primary-light);
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .more-arrow {
-  font-size: 28rpx;
+  font-size: 24rpx;
   margin-left: 4rpx;
 }
 
 .product-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx 20rpx;
+  gap: 20rpx;
 }
 
 .empty-tip {

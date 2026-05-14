@@ -1,67 +1,46 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { THEME_CLASS } from '../../theme/config'
-import { productApi } from '../../api'
+import { useSearchStore } from '../../store/search'
+
+const searchStore = useSearchStore()
 
 const searchWords = ref('')
-const historyWords = ref<string[]>([])
-const searchResults = ref<any[]>([])
-const loading = ref(false)
 const showResults = ref(false)
+const focused = ref(false)
 
-// 历史记录最多10条
-const MAX_HISTORY = 10
+// 防抖定时器
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
-  loadHistory()
+  searchStore.loadHistory()
+  searchStore.fetchHotWords()
 })
 
-function loadHistory() {
-  const history = uni.getStorageSync('search_history')
-  if (history) {
-    historyWords.value = JSON.parse(history)
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
   }
-}
-
-function saveHistory(word: string) {
-  if (!word.trim()) return
-  // 删除已存在的
-  historyWords.value = historyWords.value.filter(w => w !== word)
-  // 添加到最前面
-  historyWords.value.unshift(word)
-  // 最多保留10条
-  if (historyWords.value.length > MAX_HISTORY) {
-    historyWords.value = historyWords.value.slice(0, MAX_HISTORY)
-  }
-  uni.setStorageSync('search_history', JSON.stringify(historyWords.value))
-}
-
-function clearHistory() {
-  historyWords.value = []
-  uni.removeStorageSync('search_history')
-}
+})
 
 function handleSearch(word: string) {
-  const keyword = word || searchWords.value
-  if (!keyword.trim()) return
-  saveHistory(keyword)
+  const kw = word || searchWords.value
+  if (!kw.trim()) return
+  searchStore.addHistory(kw)
   showResults.value = true
-  loadSearchResults(keyword)
+  searchStore.search(kw, true)
 }
 
-async function loadSearchResults(keyword: string) {
-  loading.value = true
-  try {
-    const res = await productApi.getList({ keyword, pageSize: 50 })
-    if (res.code === 200) {
-      searchResults.value = res.data.pageData || []
-    }
-  } catch (error) {
-    console.error('搜索失败', error)
-    uni.showToast({ title: '搜索失败', icon: 'none' })
-  } finally {
-    loading.value = false
+function handleInput() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
   }
+  debounceTimer = setTimeout(() => {
+    if (searchWords.value.trim()) {
+      handleSearch('')
+    }
+  }, 300)
 }
 
 function goToDetail(id: number) {
@@ -73,6 +52,24 @@ function goToDetail(id: number) {
 function onCancel() {
   searchWords.value = ''
   showResults.value = false
+  focused.value = false
+}
+
+function handleFocus() {
+  focused.value = true
+}
+
+function handleBlur() {
+  focused.value = false
+}
+
+function handleClear() {
+  searchWords.value = ''
+}
+
+function onLoadMore() {
+  if (!showResults.value) return
+  searchStore.loadMore()
 }
 </script>
 
@@ -80,7 +77,7 @@ function onCancel() {
   <view :class="['search-page', THEME_CLASS]">
     <!-- 搜索头部 -->
     <view class="search-header">
-      <view class="search-input-wrap">
+      <view class="search-input-wrap" :class="{ focused }">
         <uni-icons type="search" size="18" color="var(--text-placeholder)" />
         <input
           v-model="searchWords"
@@ -88,21 +85,36 @@ function onCancel() {
           type="text"
           placeholder="搜索商品"
           confirm-type="search"
+          @input="handleInput"
           @confirm="handleSearch('')"
+          @focus="handleFocus"
+          @blur="handleBlur"
         />
+        <view v-if="searchWords" class="clear-btn" @click="handleClear">
+          <uni-icons type="clear" size="14" color="var(--text-placeholder)" />
+        </view>
       </view>
       <text class="cancel-btn" @click="onCancel">取消</text>
     </view>
 
     <!-- 搜索结果 -->
-    <scroll-view v-if="showResults" class="results-scroll" scroll-y>
-      <view v-if="loading" class="loading">搜索中...</view>
-      <view v-else-if="searchResults.length === 0" class="empty">
-        <text>未找到相关商品</text>
+    <scroll-view
+      v-if="showResults"
+      class="results-scroll"
+      scroll-y
+      @scrolltolower="onLoadMore"
+    >
+      <view v-if="searchStore.loading" class="loading">搜索中...</view>
+      <view v-else-if="searchStore.searchResults.length === 0" class="empty">
+        <view class="empty-icon">
+          <uni-icons type="search" size="48" color="var(--text-placeholder)" />
+        </view>
+        <text class="empty-text">未找到相关商品</text>
+        <text class="empty-hint">试试其他关键词</text>
       </view>
       <view v-else class="results-list">
         <view
-          v-for="item in searchResults"
+          v-for="item in searchStore.searchResults"
           :key="item.id"
           class="result-item"
           @click="goToDetail(item.id)"
@@ -114,23 +126,25 @@ function onCancel() {
           />
           <view class="result-info">
             <text class="result-name">{{ item.name?.zh || item.name?.en || '商品' }}</text>
-            <text class="result-price">¥{{ item.price }}</text>
+            <text class="result-price">¥{{ item.price ?? '--' }}</text>
           </view>
         </view>
+        <view v-if="searchStore.loading && searchStore.searchResults.length > 0" class="loading-more">加载中...</view>
+        <view v-if="!searchStore.hasMore && searchStore.searchResults.length > 0" class="no-more">没有更多了</view>
       </view>
     </scroll-view>
 
     <!-- 搜索内容 -->
     <view v-else class="search-content">
       <!-- 搜索历史 -->
-      <view v-if="historyWords.length > 0" class="section">
+      <view v-if="searchStore.historyWords.length > 0" class="section">
         <view class="section-header">
           <text class="section-title">搜索历史</text>
-          <text class="clear-btn" @click="clearHistory">清除</text>
+          <text class="clear-history" @click="searchStore.clearHistory">清除</text>
         </view>
         <view class="tags-wrap">
           <text
-            v-for="word in historyWords"
+            v-for="word in searchStore.historyWords"
             :key="word"
             class="tag"
             @click="handleSearch(word)"
@@ -139,7 +153,19 @@ function onCancel() {
       </view>
 
       <!-- 热门搜索 -->
-      <!-- 暂不显示热门搜索，等待后端接口支持 -->
+      <view v-if="searchStore.hotWords.length > 0" class="section">
+        <view class="section-header">
+          <text class="section-title">热门搜索</text>
+        </view>
+        <view class="tags-wrap">
+          <text
+            v-for="word in searchStore.hotWords"
+            :key="word"
+            class="tag hot"
+            @click="handleSearch(word)"
+          >{{ word }}</text>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -168,7 +194,13 @@ function onCancel() {
   border-radius: 32rpx;
   display: flex;
   align-items: center;
-  padding: 0 24rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.search-input-wrap.focused {
+  border-color: var(--primary);
 }
 
 .search-icon {
@@ -211,7 +243,7 @@ function onCancel() {
   color: var(--text-main);
 }
 
-.clear-btn {
+.clear-history {
   font-size: 26rpx;
   color: var(--text-sub);
 }
@@ -228,6 +260,12 @@ function onCancel() {
   border-radius: 32rpx;
   font-size: 26rpx;
   color: var(--text-main);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 
   &.hot {
     background: var(--primary-light);
@@ -241,11 +279,29 @@ function onCancel() {
 }
 
 .loading,
-.empty {
-  padding: 100rpx 0;
+.empty,
+.loading-more,
+.no-more {
+  padding: 80rpx 0;
   text-align: center;
   color: var(--text-sub);
+  font-size: 26rpx;
+}
+
+.empty-icon {
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  display: block;
   font-size: 28rpx;
+  color: var(--text-main);
+  margin-bottom: 8rpx;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: var(--text-sub);
 }
 
 .results-list {
@@ -258,6 +314,12 @@ function onCancel() {
   background: var(--bg-card);
   border-radius: 16rpx;
   margin-bottom: 16rpx;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
 }
 
 .result-image {

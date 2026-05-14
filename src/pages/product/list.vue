@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { productApi, type Category, type Product } from '../../api'
+import { useSearchStore } from '../../store/search'
+import { useCartStore } from '../../store/cart'
+import { useUserStore } from '../../store/user'
 import ProductCard from '../../components/ProductCard.vue'
+import SearchBar from '../../components/SearchBar.vue'
 import Skeleton from '../../components/Skeleton.vue'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
@@ -9,6 +13,9 @@ import { THEME_CLASS } from '../../theme/config'
 const categories = ref<Category[]>([])
 const products = ref<Product[]>([])
 const selectedCategoryId = ref<number | null>(null)
+const searchStore = useSearchStore()
+const cartStore = useCartStore()
+const userStore = useUserStore()
 const loading = ref(false)
 const pageNo = ref(1)
 const pageSize = 12
@@ -84,14 +91,17 @@ function goToDetail(id: number) {
   })
 }
 
-function goToSearch() {
+function goToShop() {
+  selectCategory(null)
+}
+
+function goToSearch(keyword: string) {
+  if (keyword?.trim()) {
+    searchStore.addHistory(keyword)
+  }
   uni.navigateTo({
     url: '/pages/search/index'
   })
-}
-
-function goToShop() {
-  selectCategory(null)
 }
 
 // 下拉刷新
@@ -107,41 +117,58 @@ function onReachBottom() {
     loadProducts(false)
   }
 }
+
+async function addToCart(product: Product) {
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+  try {
+    await cartStore.addItem(product.id, 1)
+    uni.showToast({ title: '已加入购物车', icon: 'success' })
+  } catch (error) {
+    uni.showToast({ title: '添加失败', icon: 'none' })
+  }
+}
 </script>
 
 <template>
   <view :class="['product-list', THEME_CLASS]">
     <TabBar />
 
-    <!-- 顶部搜索栏 -->
-    <view class="search-bar" @click="goToSearch">
-      <view class="search-input-wrap">
-        <uni-icons type="search" size="16" color="var(--text-placeholder)" />
-        <text class="search-placeholder">搜索商品</text>
+    <!-- 顶部搜索和分类 -->
+    <view class="search-section">
+      <view class="search-bar">
+        <SearchBar @search="goToSearch" />
+      </view>
+      <view class="category-wrapper">
+        <scroll-view class="category-nav" scroll-x>
+          <view class="category-list">
+            <view
+              class="category-item"
+              :class="{ active: selectedCategoryId === null }"
+              @click="selectCategory(null)"
+            >
+              <text class="category-text">全部</text>
+            </view>
+            <view
+              v-for="cat in categories"
+              :key="cat.id"
+              class="category-item"
+              :class="{ active: selectedCategoryId === cat.id }"
+              @click="selectCategory(cat.id)"
+            >
+              <text class="category-text">{{ cat.name?.zh || cat.name?.en || '分类' }}</text>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="category-fade-left"></view>
+        <view class="category-fade-right"></view>
       </view>
     </view>
-
-    <!-- 顶部分类导航 -->
-    <scroll-view class="category-nav" scroll-x>
-      <view class="category-list">
-        <view
-          class="category-item"
-          :class="{ active: selectedCategoryId === null }"
-          @click="selectCategory(null)"
-        >
-          <text class="category-text">全部</text>
-        </view>
-        <view
-          v-for="cat in categories"
-          :key="cat.id"
-          class="category-item"
-          :class="{ active: selectedCategoryId === cat.id }"
-          @click="selectCategory(cat.id)"
-        >
-          <text class="category-text">{{ cat.name?.zh || cat.name?.en || '分类' }}</text>
-        </view>
-      </view>
-    </scroll-view>
 
     <!-- 商品列表 -->
     <scroll-view class="product-scroll" scroll-y @scrolltolower="onReachBottom">
@@ -162,7 +189,9 @@ function onReachBottom() {
           v-for="item in products"
           :key="item.id"
           :product="item"
+          :show-cart-btn="true"
           @click="goToDetail(item.id)"
+          @add-cart="addToCart"
         />
       </view>
 
@@ -186,53 +215,47 @@ function onReachBottom() {
   background: var(--bg-page);
 }
 
-.search-bar {
-  height: 96rpx;
-  padding: 12rpx 24rpx;
-  background: var(--bg-page);
+.search-section {
+  background: var(--bg-card);
   flex-shrink: 0;
 }
 
-.search-input-wrap {
-  height: 72rpx;
-  background: var(--bg-card);
-  border-radius: 36rpx;
-  display: flex;
-  align-items: center;
-  padding: 0 24rpx;
+.search-bar {
+  padding: 16rpx 24rpx;
 }
 
-.search-placeholder {
-  color: var(--text-placeholder);
-  font-size: 26rpx;
-  margin-left: 8rpx;
+.category-wrapper {
+  position: relative;
 }
 
 .category-nav {
-  height: 88rpx;
-  background: var(--bg-card);
-  border-bottom: 1rpx solid var(--border);
+  height: 80rpx;
   white-space: nowrap;
-  flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 0 8rpx;
 }
 
 .category-list {
   display: inline-flex;
-  padding: 0 16rpx;
+  padding: 0 8rpx;
   gap: 16rpx;
-  height: 88rpx;
+  height: 80rpx;
   align-items: center;
 }
 
 .category-item {
   display: inline-block;
-  padding: 16rpx 32rpx;
+  padding: 14rpx 28rpx;
   background: var(--bg-page);
-  border-radius: 40rpx;
-  font-size: 28rpx;
+  border-radius: 36rpx;
+  font-size: 26rpx;
   color: var(--text-sub);
   flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 
   &.active {
     background: var(--primary);
@@ -242,20 +265,40 @@ function onReachBottom() {
 }
 
 .category-text {
-  font-size: 28rpx;
+  font-size: 26rpx;
+}
+
+.category-fade-left,
+.category-fade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48rpx;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.category-fade-left {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-card), transparent);
+}
+
+.category-fade-right {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-card), transparent);
 }
 
 .product-scroll {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 .product-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx;
-  padding: 24rpx;
+  gap: 20rpx;
+  padding: 20rpx;
 }
 
 .loading-tip {

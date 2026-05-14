@@ -238,16 +238,18 @@ function goToShop() {
 }
 
 .item-checkbox, .checkbox {
-  width: 44rpx;
-  height: 44rpx;
+  width: 40rpx;
+  height: 40rpx;
   border: 2rpx solid var(--border);
   border-radius: 50%;
   margin-right: 20rpx;
   flex-shrink: 0;
+  transition: all 0.2s ease;
 
   &.selected {
     background: var(--primary);
     border-color: var(--primary);
+    box-shadow: 0 0 0 4rpx var(--primary-light);
   }
 }
 
@@ -314,9 +316,13 @@ function goToShop() {
   font-size: 32rpx;
   font-weight: 600;
   color: var(--text-main);
+  transition: all 0.15s ease;
+  border-radius: 8rpx;
 
   &:active {
-    background: var(--border);
+    transform: scale(0.92);
+    background: var(--primary-light);
+    color: var(--primary);
   }
 }
 
@@ -382,12 +388,19 @@ function goToShop() {
 }
 
 .checkout-btn {
-  padding: 24rpx 48rpx;
-  background: var(--primary);
+  padding: 24rpx 56rpx;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: var(--text-inverse);
-  border-radius: 44rpx;
+  border-radius: 48rpx;
   font-size: 28rpx;
   font-weight: 600;
+  box-shadow: 0 8rpx 24rpx var(--primary-light);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 4rpx 12rpx var(--primary-light);
+  }
 
   &.loading {
     opacity: 0.7;

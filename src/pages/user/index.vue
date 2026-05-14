@@ -112,10 +112,10 @@ function handleLogout() {
 }
 
 const orderTabs = computed(() => [
-  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0', count: orderCounts.value.pending },
-  { id: '1', text: '待发货', icon: 'box', path: '/pages/order/list?status=1', count: orderCounts.value.paid },
-  { id: '2', text: '待收货', icon: 'car', path: '/pages/order/list?status=2', count: orderCounts.value.shipped },
-  { id: '3', text: '已完成', icon: 'check', path: '/pages/order/list?status=3', count: orderCounts.value.completed }
+  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
+  { id: '1', text: '待发货', icon: 'shop', path: '/pages/order/list?status=1' },
+  { id: '2', text: '待收货', icon: 'cart', path: '/pages/order/list?status=2' },
+  { id: '3', text: '已完成', icon: 'checkbox', path: '/pages/order/list?status=3' }
 ])
 
 const menuItems = [
@@ -172,7 +172,7 @@ const needBind = computed(() => {
       <view class="section-header" @click="goTo('/pages/order/list')">
         <text class="section-title">我的订单</text>
         <view class="section-more">
-          <text>全部订单</text>
+          <text>查看全部</text>
           <uni-icons type="right" size="12" color="var(--text-placeholder)" />
         </view>
       </view>
@@ -180,12 +180,11 @@ const needBind = computed(() => {
         <view
           v-for="tab in orderTabs"
           :key="tab.id"
-          class="order-tab active"
+          class="order-tab"
           @click="goTo(tab.path)"
         >
           <view class="tab-icon-wrap">
             <uni-icons :type="tab.icon" size="28" />
-            <view v-if="tab.count > 0" class="tab-badge">{{ tab.count > 99 ? '99+' : tab.count }}</view>
           </view>
           <text class="tab-text">{{ tab.text }}</text>
         </view>
@@ -402,17 +401,13 @@ const needBind = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-page);
+  background: var(--primary-light);
   border-radius: 16rpx;
   position: relative;
 }
 
 .tab-icon-wrap .uni-icons {
-  color: var(--text-placeholder) !important;
-}
-
-.order-tab:not(.disabled) .tab-icon-wrap .uni-icons {
-  color: var(--text-main) !important;
+  color: var(--primary) !important;
 }
 
 .tab-badge {
@@ -422,7 +417,7 @@ const needBind = computed(() => {
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 8rpx;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: var(--text-inverse);
   font-size: 20rpx;
   font-weight: 600;
@@ -430,6 +425,7 @@ const needBind = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2rpx 8rpx var(--accent-light);
 }
 
 .tab-text {

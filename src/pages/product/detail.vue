@@ -12,7 +12,6 @@ const product = ref<Product | null>(null)
 const loading = ref(false)
 const quantity = ref(1)
 const activeTab = ref('detail')
-const servicesExpanded = ref(false)
 const cartLoading = ref(false)
 const buyLoading = ref(false)
 const userStore = useUserStore()
@@ -287,14 +286,10 @@ function getCoverImages(): string[] {
 
     <!-- 服务政策 -->
     <view v-if="product?.services?.length" class="detail-services">
-      <view class="services-header" @click="servicesExpanded = !servicesExpanded">
+      <view class="services-header">
         <text class="services-title">服务保障</text>
-        <view class="services-toggle">
-          <text class="toggle-text">{{ servicesExpanded ? '收起' : '展开查看' }}</text>
-          <uni-icons :type="servicesExpanded ? 'up' : 'down'" size="14" color="var(--text-sub)" />
-        </view>
       </view>
-      <view class="services-list" :class="{ expanded: servicesExpanded }">
+      <view class="services-list">
         <view
           v-for="service in product.services"
           :key="service.id"
@@ -374,7 +369,7 @@ function getCoverImages(): string[] {
 
 .detail-swiper {
   width: 100%;
-  height: 500rpx;
+  height: 420rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
@@ -422,7 +417,7 @@ function getCoverImages(): string[] {
 }
 
 .product-price {
-  font-size: 56rpx;
+  font-size: 48rpx;
   font-weight: 700;
   color: var(--price);
   font-variant-numeric: tabular-nums;
@@ -476,28 +471,10 @@ function getCoverImages(): string[] {
   color: var(--text-main);
 }
 
-.services-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.toggle-text {
-  font-size: 24rpx;
-  color: var(--text-sub);
-}
-
 .services-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx 32rpx;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-
-  &.expanded {
-    max-height: 500rpx;
-  }
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
 }
 
 .service-item {
@@ -723,7 +700,7 @@ function getCoverImages(): string[] {
 .btn-add {
   width: 200rpx;
   padding: 20rpx 0;
-  background: var(--bg-page);
+  background: var(--primary-light);
   color: var(--primary);
   border: 2rpx solid var(--primary);
 }
@@ -733,6 +710,7 @@ function getCoverImages(): string[] {
   padding: 20rpx 0;
   background: var(--primary);
   color: var(--text-inverse);
+  border: 2rpx solid var(--primary);
 }
 
 @keyframes spin {

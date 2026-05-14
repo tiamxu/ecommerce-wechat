@@ -1,6 +1,6 @@
 // 主题系统类型定义
 
-export type ThemeType = 'light' | 'dark' | 'blue' | 'luxury' | 'purple'
+export type ThemeType = 'light' | 'dark' | 'blue' | 'luxury' | 'purple' | 'tech'
 
 export interface ThemeColors {
   // 主色系
