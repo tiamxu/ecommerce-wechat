@@ -200,10 +200,6 @@ function onTouchEnd(productId: number) {
     swipeState.value[productId] = ''
   }
 }
-
-function closeSwipe(productId: number) {
-  swipeState.value[productId] = ''
-}
 </script>
 
 <template>
@@ -390,7 +386,7 @@ function closeSwipe(productId: number) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
+  gap: 6rpx;
   z-index: 1;
 }
 
