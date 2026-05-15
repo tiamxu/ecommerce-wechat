@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { BASE_URL } from '../utils/env'
+import { BASE_URL, PLATFORM } from '../utils/env'
 import { request } from '../api/request'
 
 interface UserInfo {
@@ -90,7 +90,11 @@ export const useUserStore = defineStore('user', {
         const res = await uni.request({
           url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          data: { code }
+          data: { code },
+          header: {
+            'Content-Type': 'application/json',
+            'X-Platform': PLATFORM
+          }
         })
 
         const data = res.data as any
@@ -119,7 +123,11 @@ export const useUserStore = defineStore('user', {
         const res = await uni.request({
           url: `${BASE_URL}/public/wechat/login`,
           method: 'POST',
-          data: { code, encryptedData, iv }
+          data: { code, encryptedData, iv },
+          header: {
+            'Content-Type': 'application/json',
+            'X-Platform': PLATFORM
+          }
         })
 
         const data = res.data as any
@@ -149,7 +157,11 @@ export const useUserStore = defineStore('user', {
         const res = await uni.request({
           url: `${BASE_URL}/auth/login`,
           method: 'POST',
-          data: { account, password }
+          data: { account, password },
+          header: {
+            'Content-Type': 'application/json',
+            'X-Platform': PLATFORM
+          }
         })
 
         const data = res.data as any

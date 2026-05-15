@@ -189,9 +189,7 @@ async function addToCart(product: Product) {
           v-for="item in products"
           :key="item.id"
           :product="item"
-          :show-cart-btn="true"
           @click="goToDetail(item.id)"
-          @add-cart="addToCart"
         />
       </view>
 

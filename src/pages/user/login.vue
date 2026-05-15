@@ -5,9 +5,7 @@ import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
 const loading = ref(false)
-
-// 登录方式：wechat=微信登录，account=账户密码登录
-const loginType = ref<'wechat' | 'account'>('wechat')
+const showAccount = ref(false)
 
 // 账户密码登录表单
 const accountForm = ref({
@@ -15,13 +13,22 @@ const accountForm = ref({
   password: ''
 })
 
-// 切换登录方式
-function switchLoginType(type: 'wechat' | 'account') {
-  loginType.value = type
+// 密码显示/隐藏
+const showPassword = ref(false)
+
+// 切换账户密码登录显示
+function toggleAccount() {
+  showAccount.value = !showAccount.value
 }
 
-// 微信登录
-async function handleLogin() {
+// 微信一键登录（获取手机号）
+async function onGetPhoneNumber(e: any) {
+  if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+    // 用户拒绝授权，提示可使用账户密码登录
+    uni.showToast({ title: '可使用账户密码登录', icon: 'none' })
+    return
+  }
+
   loading.value = true
   try {
     const loginRes = await new Promise<WechatMiniprogram.LoginSuccessCallbackResult>((resolve, reject) => {
@@ -32,17 +39,9 @@ async function handleLogin() {
       throw new Error('获取登录凭证失败')
     }
 
-    const result = await userStore.loginWithWechatCode(loginRes.code)
+    const result = await userStore.loginWithWechat(loginRes.code, e.detail.encryptedData, e.detail.iv)
 
     if (result.success) {
-      if (result.need_bind) {
-        uni.showToast({ title: '请先完善账号信息', icon: 'none' })
-        setTimeout(() => {
-          uni.navigateTo({ url: '/pages/user/bind-account' })
-        }, 1500)
-        return
-      }
-      // 登录成功，强制刷新用户信息
       uni.$emit('refreshUserInfo')
       uni.showToast({ title: '登录成功', icon: 'success' })
       setTimeout(() => {
@@ -54,11 +53,11 @@ async function handleLogin() {
         }
       }, 1500)
     } else {
-      uni.showToast({ title: result.message || '登录失败', icon: 'none' })
+      uni.showToast({ title: result.message || '一键登录失败', icon: 'none' })
     }
   } catch (error: any) {
-    console.error('登录失败', error)
-    uni.showToast({ title: error.message || '登录失败', icon: 'none' })
+    console.error('一键登录失败', error)
+    uni.showToast({ title: error.message || '一键登录失败', icon: 'none' })
   } finally {
     loading.value = false
   }
@@ -82,7 +81,6 @@ async function handleAccountLogin() {
     const result = await userStore.loginWithAccount(account, password)
 
     if (result.success) {
-      // 登录成功，强制刷新用户信息
       uni.$emit('refreshUserInfo')
       uni.showToast({ title: '登录成功', icon: 'success' })
       setTimeout(() => {
@@ -133,74 +131,65 @@ function goShopping() {
         <text class="subtitle">一键登录，畅享购物</text>
       </view>
 
-      <!-- 登录方式切换 -->
-      <view class="login-tabs">
-        <view
-          :class="['tab-item', loginType === 'wechat' ? 'active' : '']"
-          @click="switchLoginType('wechat')"
-        >
-          <uni-icons type="weixin" size="20" color="inherit" />
-          <text class="tab-text">微信登录</text>
-        </view>
-        <view
-          :class="['tab-item', loginType === 'account' ? 'active' : '']"
-          @click="switchLoginType('account')"
-        >
-          <uni-icons type="staff" size="20" color="inherit" />
-          <text class="tab-text">账户登录</text>
-        </view>
-      </view>
-
-      <!-- 微信登录按钮 -->
-      <view v-show="loginType === 'wechat'" class="btn-section">
+      <!-- 微信一键登录按钮 -->
+      <view class="btn-section">
         <button
           class="login-btn wechat-btn"
           :class="{ loading }"
           :disabled="loading"
-          @click="handleLogin"
+          open-type="getPhoneNumber"
+          @getphonenumber="onGetPhoneNumber"
         >
           <uni-icons type="weixin" size="24" color="inherit" />
           <text v-if="loading">登录中...</text>
-          <text v-else>微信登录</text>
+          <text v-else>微信一键登录</text>
         </button>
-        <text class="btn-tip">登录即表示同意《用户协议》和《隐私政策》</text>
       </view>
 
-      <!-- 账户密码登录表单 -->
-      <view v-show="loginType === 'account'" class="account-section">
-        <view class="account-form">
-          <view class="form-item">
-            <uni-icons type="person" size="22" color="var(--text-placeholder)" />
-            <input
-              v-model="accountForm.account"
-              class="form-input"
-              type="text"
-              placeholder="手机号/邮箱/用户名"
-              placeholder-class="input-placeholder"
-            />
-          </view>
-          <view class="form-divider"></view>
-          <view class="form-item">
-            <uni-icons type="locked" size="22" color="var(--text-placeholder)" />
-            <input
-              v-model="accountForm.password"
-              class="form-input"
-              type="password"
-              password
-              placeholder="请输入密码"
-              placeholder-class="input-placeholder"
-            />
-          </view>
+      <!-- 其他登录方式折叠 -->
+      <view class="fold-section">
+        <view class="fold-header" @click="toggleAccount">
+          <text class="fold-text">其他登录方式</text>
+          <uni-icons :type="showAccount ? 'up' : 'down'" size="14" color="var(--text-placeholder)" />
         </view>
-        <button
-          class="login-btn account-btn"
-          :class="{ loading }"
-          :disabled="loading"
-          @click="handleAccountLogin"
-        >
-          <text v-if="loading">登录中...</text>
-          <text v-else>登录</text>
-        </button>
+
+        <view v-show="showAccount" class="fold-content">
+          <view class="account-form">
+            <view class="form-item">
+              <uni-icons type="person" size="22" color="var(--text-placeholder)" />
+              <input
+                v-model="accountForm.account"
+                class="form-input"
+                type="text"
+                placeholder="手机号/邮箱/用户名"
+                placeholder-class="input-placeholder"
+              />
+            </view>
+            <view class="form-divider"></view>
+            <view class="form-item">
+              <uni-icons type="locked" size="22" color="var(--text-placeholder)" />
+              <input
+                v-model="accountForm.password"
+                class="form-input"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="请输入密码"
+                placeholder-class="input-placeholder"
+              />
+              <view class="password-toggle" @click="showPassword = !showPassword">
+                <uni-icons :type="showPassword ? 'eye' : 'eye-slash'" size="20" color="var(--text-placeholder)" />
+              </view>
+            </view>
+          </view>
+          <button
+            class="login-btn account-btn"
+            :class="{ loading }"
+            :disabled="loading"
+            @click="handleAccountLogin"
+          >
+            <text v-if="loading">登录中...</text>
+            <text v-else>账户密码登录</text>
+          </button>
+        </view>
       </view>
 
       <!-- 底部链接 -->
@@ -294,37 +283,9 @@ function goShopping() {
   color: var(--text-sub);
 }
 
-/* 登录方式切换 */
-.login-tabs {
-  display: flex;
-  background: var(--bg-card);
-  border-radius: 20rpx;
-  padding: 8rpx;
-  margin-bottom: 40rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-}
-
-.tab-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  height: 80rpx;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: var(--text-placeholder);
-
-  &.active {
-    background: var(--primary);
-    color: var(--text-inverse);
-    box-shadow: 0 4rpx 16rpx var(--primary-light);
-  }
-}
-
 /* 微信登录按钮 */
 .btn-section {
-  margin-bottom: 40rpx;
+  margin-bottom: 48rpx;
 }
 
 .login-btn {
@@ -346,6 +307,10 @@ function goShopping() {
   &.loading {
     opacity: 0.7;
   }
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 
 .wechat-btn {
@@ -355,30 +320,39 @@ function goShopping() {
 }
 
 .account-btn {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: var(--text-inverse);
-  box-shadow: 0 8rpx 32rpx var(--shadow);
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1rpx solid var(--border);
 }
 
-.btn-tip {
-  display: block;
-  text-align: center;
-  font-size: 22rpx;
-  color: var(--text-placeholder);
-  margin-top: 24rpx;
-  line-height: 1.5;
-}
-
-/* 账户登录表单 */
-.account-section {
+/* 折叠区域 */
+.fold-section {
   margin-bottom: 40rpx;
+}
+
+.fold-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx;
+}
+
+.fold-text {
+  font-size: 26rpx;
+  color: var(--text-placeholder);
+}
+
+.fold-content {
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .account-form {
   background: var(--bg-card);
   border-radius: 24rpx;
   padding: 8rpx 24rpx;
-  margin-bottom: 32rpx;
+  margin-bottom: 24rpx;
   box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -404,6 +378,10 @@ function goShopping() {
   &::placeholder {
     color: var(--text-placeholder);
   }
+}
+
+.password-toggle {
+  padding: 10rpx;
 }
 
 .input-placeholder {

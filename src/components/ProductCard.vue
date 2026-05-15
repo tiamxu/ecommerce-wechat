@@ -53,6 +53,15 @@ const originalPrice = computed(() => {
   return Math.round(props.product.price * 1.3)
 })
 
+const priceDisplay = computed(() => {
+  const price = props.product.price
+  const parts = price.toFixed(2).split('.')
+  return {
+    integer: parts[0],
+    decimal: parts[1]
+  }
+})
+
 function handleClick() {
   emit('click', props.product.id)
 }
@@ -91,10 +100,9 @@ function handleAddCart(e: any) {
     <view class="card-info" :clickable="false">
       <text class="product-name">{{ productName }}</text>
       <view class="price-row">
-        <text v-if="showPrice" class="product-price">¥{{ product.price }}</text>
-        <text v-if="showOriginalPrice && product.price < originalPrice" class="original-price">
-          ¥{{ originalPrice }}
-        </text>
+        <text class="price-symbol">¥</text>
+        <text class="price-integer">{{ priceDisplay.integer }}</text>
+        <text class="price-decimal">.{{ priceDisplay.decimal }}</text>
       </view>
     </view>
   </view>
@@ -187,20 +195,26 @@ function handleAddCart(e: any) {
 .price-row {
   display: flex;
   align-items: baseline;
-  gap: 12rpx;
   margin-top: 12rpx;
 }
 
-.product-price {
+.price-symbol {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.price-integer {
   font-size: 32rpx;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
-.original-price {
+.price-decimal {
   font-size: 24rpx;
-  color: var(--text-placeholder);
-  text-decoration: line-through;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 </style>

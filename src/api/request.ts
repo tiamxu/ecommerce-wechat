@@ -148,7 +148,9 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
       timeout: options.timeout || 10000,
       success: (res: any) => {
         if (options.showLoading) {
-          uni.hideLoading()
+          try {
+            uni.hideLoading()
+          } catch (e) {}
         }
 
         if (res.statusCode === 200) {
@@ -169,7 +171,9 @@ export function request<T = any>(options: RequestOptions): Promise<ApiResponse<T
       },
       fail: (error: any) => {
         if (options.showLoading) {
-          uni.hideLoading()
+          try {
+            uni.hideLoading()
+          } catch (e) {}
         }
         handleNetworkError()
         reject(error)

@@ -1,34 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPageScroll } from '@dcloudio/uni-app'
 import { productApi, type Product } from '../../api'
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
 import { THEME_CLASS } from '../../theme/config'
 import TabBar from '../../components/TabBar.vue'
-import ServiceBadge from '../../components/ServiceBadge.vue'
 
 const product = ref<Product | null>(null)
-const loading = ref(false)
 const quantity = ref(1)
-const activeTab = ref('detail')
+const activeTab = ref('product')
 const cartLoading = ref(false)
 const buyLoading = ref(false)
+const recommendProducts = ref<Product[]>([])
 const userStore = useUserStore()
 const cartStore = useCartStore()
 
-const originalPrice = computed(() => {
-  if (!product.value) return 0
-  if (product.value.originalPrice) return product.value.originalPrice
-  return Math.round(product.value.price * 1.3)
-})
-
-const salesDisplay = computed(() => {
-  if (!product.value?.sales) return ''
-  if (product.value.sales >= 10000) {
-    return (product.value.sales / 10000).toFixed(1) + '万'
+const priceDisplay = computed(() => {
+  if (!product.value) return { integer: '0', decimal: '00' }
+  const parts = product.value.price.toFixed(2).split('.')
+  return {
+    integer: parts[0],
+    decimal: parts[1]
   }
-  return product.value.sales + '件'
 })
 
 const displayServices = computed(() => {
@@ -56,7 +50,11 @@ onMounted(() => {
 
   if (id) {
     loadProduct(Number(id))
+    loadRecommendProducts()
   }
+  // 立即更新位置，300ms后再更新一次确保准确
+  updateSectionPositions()
+  setTimeout(updateSectionPositions, 300)
 })
 
 // 登录后返回时检查是否有待执行动作
@@ -75,8 +73,61 @@ onShow(() => {
   }
 })
 
+// 点击tab跳转到对应区块
+const sectionPositions = ref({
+  product: 0,
+  comment: 0,
+  detail: 0,
+  recommend: 0
+})
+
+function scrollToTab(tab: string) {
+  activeTab.value = tab
+  uni.pageScrollTo({
+    scrollTop: sectionPositions.value[tab as keyof typeof sectionPositions.value] - 88,
+    duration: 200
+  })
+}
+
+// 监听滚动，更新当前tab和Tab栏显示
+const showStickyTabs = ref(false)
+
+// 更新各区块滚动位置
+function updateSectionPositions() {
+  uni.createSelectorQuery()
+    .select('#product').boundingClientRect()
+    .select('#comment').boundingClientRect()
+    .select('#detail').boundingClientRect()
+    .select('#recommend').boundingClientRect()
+    .exec((res: any) => {
+    if (res[0] && res[0].top !== undefined) sectionPositions.value.product = res[0].top
+    if (res[1] && res[1].top !== undefined) sectionPositions.value.comment = res[1].top
+    if (res[2] && res[2].top !== undefined) sectionPositions.value.detail = res[2].top
+    if (res[3] && res[3].top !== undefined) sectionPositions.value.recommend = res[3].top
+    console.log('sectionPositions:', sectionPositions.value)
+  })
+}
+
+// 页面滚动监听
+onPageScroll((e: any) => {
+  const scrollTop = e.scrollTop
+
+  // 滚动超过100px时显示吸顶Tab
+  showStickyTabs.value = scrollTop > 100
+
+  // 根据滚动位置判断当前tab（使用固定阈值）
+  if (scrollTop < 400) {
+    activeTab.value = 'product'
+  } else if (scrollTop < 800) {
+    activeTab.value = 'comment'
+  } else if (scrollTop < 1200) {
+    activeTab.value = 'detail'
+  } else {
+    activeTab.value = 'recommend'
+  }
+})
+
 async function loadProduct(id: number) {
-  loading.value = true
   try {
     const res = await productApi.getDetail(id)
     if (res.code === 200 && res.data) {
@@ -85,8 +136,6 @@ async function loadProduct(id: number) {
     }
   } catch (error) {
     console.error('加载商品详情失败', error)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -187,11 +236,6 @@ function getProductName(): string {
   return product.value.name?.zh || product.value.name?.en || '商品'
 }
 
-function getProductDesc(): string {
-  if (!product.value?.description) return ''
-  return product.value.description?.zh || product.value.description?.en || ''
-}
-
 function getServiceIcon(icon: string): string {
   const iconMap: Record<string, string> = {
     'return': 'undo',
@@ -244,113 +288,178 @@ function getCoverImages(): string[] {
 
   return images
 }
+
+function getRecommendCoverImages(p: Product): string {
+  if (p.coverImages && p.coverImages.length > 0) return p.coverImages[0]
+  if (p.metaImage) return p.metaImage
+  if (p.images && p.images.length > 0) {
+    const cover = p.images.find(img => img.isCover === 1)
+    return cover?.url || p.images[0].url
+  }
+  return ''
+}
+
+function getRecommendName(p: Product): string {
+  return p.name?.zh || p.name?.en || '商品'
+}
+
+function getRecommendPrice(p: Product): { integer: string; decimal: string } {
+  const parts = p.price.toFixed(2).split('.')
+  return { integer: parts[0], decimal: parts[1] }
+}
+
+function goToRecommendDetail(id: number) {
+  uni.navigateTo({
+    url: `/pages/product/detail?id=${id}`
+  })
+}
+
+async function loadRecommendProducts() {
+  try {
+    const res = await productApi.getHotProducts(10)
+    if (res.code === 200 && res.data) {
+      recommendProducts.value = res.data.pageData || []
+    }
+  } catch (error) {
+    console.warn('加载推荐商品失败', error)
+  }
+}
 </script>
 
 <template>
   <view :class="['product-detail', THEME_CLASS]">
-    <TabBar :hidden="true" />
-    <!-- 商品图片轮播 -->
-    <view class="detail-swiper">
-      <swiper
-        v-if="getCoverImages().length > 0"
-        class="image-swiper"
-        :indicator-dots="getCoverImages().length > 1"
-        :autoplay="getCoverImages().length > 1"
-        :interval="3000"
-        :circular="true"
-        indicator-color="rgba(255,255,255,0.5)"
-        indicator-active-color="var(--text-inverse)"
-      >
-        <swiper-item v-for="(img, index) in getCoverImages()" :key="index">
-          <image :src="img" mode="aspectFill" class="swiper-image" />
-        </swiper-item>
-      </swiper>
-      <view v-else class="img-placeholder">
-        <text class="placeholder-text">{{ getProductName().charAt(0) || 'P' }}</text>
+    <!-- <TabBar :hidden="true" /> -->
+
+    <!-- 吸顶Tab -->
+    <view class="sticky-tabs" :class="{ 'sticky-show': showStickyTabs }">
+      <view class="tabs-inner">
+        <text :class="['tab-item', { active: activeTab === 'product' }]" @click="scrollToTab('product')">商品</text>
+        <text :class="['tab-item', { active: activeTab === 'comment' }]" @click="scrollToTab('comment')">评价</text>
+        <text :class="['tab-item', { active: activeTab === 'detail' }]" @click="scrollToTab('detail')">详情</text>
+        <text :class="['tab-item', { active: activeTab === 'recommend' }]" @click="scrollToTab('recommend')">推荐</text>
       </view>
     </view>
 
-    <!-- 商品信息 -->
-    <view v-if="product" class="detail-info">
-      <view class="info-header">
-        <view class="price-section">
-          <text class="product-price">¥{{ product.price }}</text>
-          <text v-if="product.price < originalPrice" class="original-price">¥{{ originalPrice }}</text>
-        </view>
-      </view>
-      <view class="info-meta">
-        <text v-if="salesDisplay" class="sales-count">已售{{ salesDisplay }}</text>
-        <text class="product-name">{{ getProductName() }}</text>
-      </view>
-    </view>
-
-    <!-- 服务政策 -->
-    <view v-if="product?.services?.length" class="detail-services">
-      <view class="services-header">
-        <text class="services-title">服务保障</text>
-      </view>
-      <view class="services-list">
-        <view
-          v-for="service in product.services"
-          :key="service.id"
-          class="service-item"
+    <!-- 页面内容（自然滚动） -->
+    <view class="page-content">
+      <!-- 商品图片轮播 -->
+      <view id="product" class="detail-swiper">
+        <swiper
+          v-if="getCoverImages().length > 0"
+          class="image-swiper"
+          :indicator-dots="getCoverImages().length > 1"
+          :autoplay="getCoverImages().length > 1"
+          :interval="3000"
+          :circular="true"
+          indicator-color="rgba(255,255,255,0.5)"
+          indicator-active-color="var(--text-inverse)"
         >
-          <uni-icons :type="getServiceIcon(service.icon)" size="18" color="var(--primary)" />
-          <text class="service-name">{{ service.name }}</text>
+          <swiper-item v-for="(img, index) in getCoverImages()" :key="index">
+            <image :src="img" mode="aspectFill" class="swiper-image" />
+          </swiper-item>
+        </swiper>
+        <view v-else class="img-placeholder">
+          <text class="placeholder-text">{{ getProductName().charAt(0) || 'P' }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 图文详情 -->
-    <view class="detail-content">
-      <view class="content-tabs">
-        <text :class="['tab-item', { active: activeTab === 'detail' }]" role="tab" :aria-selected="activeTab === 'detail'" @click="activeTab = 'detail'">商品详情</text>
-        <text :class="['tab-item', { active: activeTab === 'specs' }]" role="tab" :aria-selected="activeTab === 'specs'" @click="activeTab = 'specs'">规格参数</text>
-        <text :class="['tab-item', { active: activeTab === 'afterSale' }]" role="tab" :aria-selected="activeTab === 'afterSale'" @click="activeTab = 'afterSale'">售后条款</text>
-      </view>
-      <view v-if="activeTab === 'detail'" class="content-panel">
-        <rich-text v-if="processedDescription" :nodes="processedDescription"></rich-text>
-        <view v-else class="content-empty">
-          <text>暂无商品详情</text>
+      <!-- 商品信息卡片 -->
+      <view class="product-info-section">
+        <view class="price-row">
+          <text class="price-symbol">¥</text>
+          <text class="price-integer">{{ priceDisplay.integer }}</text>
+          <text class="price-decimal">.{{ priceDisplay.decimal }}</text>
         </view>
-      </view>
-      <view v-if="activeTab === 'specs'" class="content-panel">
-        <view class="specs-list">
-          <view class="spec-item">
-            <text class="spec-label">商品编号</text>
-            <text class="spec-value">{{ product?.id }}</text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">库存状态</text>
-            <text class="spec-value">{{ product?.stock && product.stock > 0 ? '有货' : '缺货' }}</text>
-          </view>
-          <view v-if="product?.services?.length" class="spec-item">
-            <text class="spec-label">服务政策</text>
-            <text class="spec-value">{{ product.services.map(s => s.name).join('、') }}</text>
+        <text class="product-title">{{ getProductName() }}</text>
+
+        <!-- 售后服务 -->
+        <view v-if="displayServices.length" class="service-row">
+          <view v-for="service in displayServices" :key="service.id" class="service-tag">
+            <uni-icons :type="getServiceIcon(service.icon)" size="12" color="var(--primary)" />
+            <text class="service-text">{{ service.name }}</text>
           </view>
         </view>
+
+        <!-- 数量选择 -->
+        <view class="quantity-row">
+          <text class="qty-label">购买数量</text>
+          <view class="qty-control">
+            <text class="qty-btn" @click="decreaseQty">-</text>
+            <text class="qty-value">{{ quantity }}</text>
+            <text class="qty-btn" @click="increaseQty">+</text>
+          </view>
+          <text class="stock-text">库存 {{ product?.stock || 0 }}</text>
+        </view>
       </view>
-      <view v-if="activeTab === 'afterSale'" class="content-panel">
-        <view class="after-sale-list">
-          <view v-for="service in product?.services || []" :key="service.id" class="after-sale-item">
-            <uni-icons :type="getServiceIcon(service.icon)" size="28" color="var(--primary)" />
-            <view class="after-sale-content">
-              <text class="after-sale-name">{{ service.name }}</text>
-              <text class="after-sale-desc">{{ service.description }}</text>
+
+      <!-- 评价区块 -->
+      <view id="comment" class="section-block">
+        <view class="section-header">
+          <text class="section-title">商品评价</text>
+        </view>
+        <view class="empty-comment">
+          <text class="empty-comment-text">暂无评价</text>
+        </view>
+      </view>
+
+      <!-- 详情区块 -->
+      <view id="detail" class="section-block">
+        <view class="section-header">
+          <text class="section-title">商品详情</text>
+        </view>
+        <view class="detail-content">
+          <rich-text v-if="processedDescription" :nodes="processedDescription"></rich-text>
+          <view v-else class="content-empty">
+            <text>暂无商品详情</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 推荐区块 -->
+      <view id="recommend" class="section-block">
+        <view class="section-header">
+          <text class="section-title">推荐商品</text>
+        </view>
+        <scroll-view class="recommend-scroll" scroll-x>
+          <view class="recommend-list">
+            <view
+              v-for="item in recommendProducts"
+              :key="item.id"
+              class="recommend-item"
+              @click="goToRecommendDetail(item.id)"
+            >
+              <image
+                :src="getRecommendCoverImages(item)"
+                mode="aspectFill"
+                class="recommend-img"
+              />
+              <view class="recommend-info">
+                <text class="recommend-name">{{ getRecommendName(item) }}</text>
+                <view class="recommend-price">
+                  <text class="rec-price-symbol">¥</text>
+                  <text class="rec-price-integer">{{ getRecommendPrice(item).integer }}</text>
+                  <text class="rec-price-decimal">.{{ getRecommendPrice(item).decimal }}</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
+        </scroll-view>
       </view>
+
+      <!-- 底部占位 -->
+      <view class="bottom-placeholder"></view>
     </view>
 
     <!-- 操作栏 -->
     <view class="action-bar">
-      <view class="quantity">
-        <text class="qty-label">数量</text>
-        <view class="qty-control">
-          <text class="qty-btn" aria-label="减少数量" @click="decreaseQty">-</text>
-          <text class="qty-value" aria-label="当前数量">{{ quantity }}</text>
-          <text class="qty-btn" aria-label="增加数量" @click="increaseQty">+</text>
+      <view class="action-icons">
+        <view class="icon-btn" @click="addToCart">
+          <uni-icons type="cart" size="24" color="var(--text-main)" />
+          <text class="icon-label">购物车</text>
+        </view>
+        <view class="icon-btn">
+          <uni-icons type="star" size="24" color="var(--text-main)" />
+          <text class="icon-label">收藏</text>
         </view>
       </view>
       <view class="action-buttons">
@@ -365,6 +474,63 @@ function getCoverImages(): string[] {
 .product-detail {
   min-height: 100vh;
   background: var(--bg-page);
+  position: relative;
+}
+
+/* 吸顶Tab */
+.sticky-tabs {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: var(--bg-card);
+  border-bottom: 1rpx solid var(--border);
+  padding-top: calc(env(safe-area-inset-top));
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.sticky-tabs.sticky-show {
+  transform: translateY(0);
+}
+
+.tabs-inner {
+  display: flex;
+  height: 88rpx;
+}
+
+.tabs-inner .tab-item {
+  flex: 1;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--text-sub);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabs-inner .tab-item.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tabs-inner .tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: var(--primary);
+  border-radius: 2rpx;
+}
+
+/* 页面内容区 */
+.page-content {
+  padding-top: 0;
 }
 
 .detail-swiper {
@@ -397,138 +563,132 @@ function getCoverImages(): string[] {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.detail-info {
+/* 商品信息区块 */
+.product-info-section {
   padding: 32rpx;
   background: var(--bg-card);
-  margin-bottom: 24rpx;
-}
-
-.info-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 16rpx;
 }
 
-.price-section {
+.price-row {
   display: flex;
   align-items: baseline;
-  gap: 16rpx;
+  margin-bottom: 16rpx;
 }
 
-.product-price {
-  font-size: 48rpx;
-  font-weight: 700;
-  color: var(--price);
-  font-variant-numeric: tabular-nums;
-}
-
-.original-price {
-  font-size: 28rpx;
-  color: var(--text-placeholder);
-  text-decoration: line-through;
-}
-
-.info-meta {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.sales-count {
-  font-size: 24rpx;
-  color: var(--text-sub);
-}
-
-.product-name {
-  flex: 1;
-  font-size: 28rpx;
+.product-title {
+  font-size: 32rpx;
+  font-weight: 600;
   color: var(--text-main);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1.4;
-}
-
-.detail-services {
-  padding: 24rpx 32rpx;
-  background: var(--bg-card);
-  margin-bottom: 24rpx;
-}
-
-.services-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20rpx;
 }
 
-.services-title {
+.service-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.service-tag {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 16rpx;
+  background: var(--bg-page);
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: var(--text-main);
+}
+
+.service-text {
+  font-size: 22rpx;
+  color: var(--text-main);
+}
+
+.quantity-row {
+  display: flex;
+  align-items: center;
+}
+
+.qty-label {
+  font-size: 26rpx;
+  color: var(--text-sub);
+  margin-right: 24rpx;
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  background: var(--bg-page);
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 64rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-main);
+
+  &:active {
+    background: var(--border);
+  }
+}
+
+.qty-value {
+  min-width: 64rpx;
+  text-align: center;
   font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  padding: 0 8rpx;
+}
+
+.stock-text {
+  font-size: 24rpx;
+  color: var(--text-placeholder);
+  margin-left: auto;
+}
+
+/* 通用区块 */
+.section-block {
+  background: var(--bg-card);
+  margin-bottom: 16rpx;
+}
+
+.section-header {
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.section-title {
+  font-size: 30rpx;
   font-weight: 600;
   color: var(--text-main);
 }
 
-.services-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16rpx;
-}
-
-.service-item {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.service-name {
-  font-size: 24rpx;
-  color: var(--text-main);
-}
-
+/* 详情内容 */
 .detail-content {
-  background: var(--bg-card);
-  margin-bottom: 24rpx;
-  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
-}
-
-.content-tabs {
-  display: flex;
-  border-bottom: 1rpx solid var(--border);
-}
-
-.tab-item {
-  flex: 1;
-  text-align: center;
-  padding: 24rpx 0;
-  font-size: 28rpx;
-  color: var(--text-sub);
-
-  &.active {
-    color: var(--primary);
-    border-bottom: 4rpx solid var(--primary);
-    margin-bottom: -1rpx;
-  }
-}
-
-.content-panel {
   padding: 32rpx;
 
-  /* 限制详情图片大小 */
   :deep(img) {
     max-width: 100%;
     height: auto;
     display: block;
   }
 
-  /* 限制表格宽度 */
   :deep(table) {
     max-width: 100%;
   }
 
-  /* 限制段落宽度 */
   :deep(p) {
     word-wrap: break-word;
     overflow: hidden;
@@ -539,60 +699,90 @@ function getCoverImages(): string[] {
   text-align: center;
   color: var(--text-placeholder);
   font-size: 28rpx;
+  padding: 60rpx 0;
 }
 
-.specs-list {
+/* 评价 */
+.empty-comment {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
 }
 
-.spec-item {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid var(--border);
-}
-
-.spec-label {
-  font-size: 26rpx;
-  color: var(--text-sub);
-}
-
-.spec-value {
-  font-size: 26rpx;
-  color: var(--text-main);
-}
-
-.after-sale-list {
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
-}
-
-.after-sale-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-}
-
-.after-sale-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.after-sale-name {
+.empty-comment-text {
   font-size: 28rpx;
-  font-weight: 600;
-  color: var(--text-main);
+  color: var(--text-placeholder);
 }
 
-.after-sale-desc {
+/* 推荐 */
+.recommend-scroll {
+  width: 100%;
+  white-space: nowrap;
+  padding: 24rpx 0;
+}
+
+.recommend-list {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 0 16rpx;
+}
+
+.recommend-item {
+  width: 200rpx;
+  flex-shrink: 0;
+  background: var(--bg-page);
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.recommend-img {
+  width: 200rpx;
+  height: 200rpx;
+}
+
+.recommend-info {
+  padding: 12rpx;
+}
+
+.recommend-name {
+  display: block;
   font-size: 24rpx;
-  color: var(--text-sub);
-  line-height: 1.5;
+  color: var(--text-main);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8rpx;
+}
+
+.recommend-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.rec-price-symbol {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--price);
+}
+
+.rec-price-integer {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--price);
+}
+
+.rec-price-decimal {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--price);
+}
+
+/* 底部占位 */
+.bottom-placeholder {
+  height: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .action-bar {
@@ -610,49 +800,21 @@ function getCoverImages(): string[] {
   z-index: 1000;
 }
 
-.quantity {
+.action-icons {
   display: flex;
-  align-items: center;
+  gap: 32rpx;
 }
 
-.qty-label {
-  font-size: 28rpx;
+.icon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.icon-label {
+  font-size: 20rpx;
   color: var(--text-sub);
-  margin-right: 16rpx;
-}
-
-.qty-control {
-  display: flex;
-  align-items: center;
-  background: var(--bg-page);
-  border-radius: 8rpx;
-  overflow: hidden;
-}
-
-.qty-btn {
-  width: 88rpx;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  font-weight: 600;
-  color: var(--text-main);
-  transition: transform 0.15s ease, background 0.15s ease;
-
-  &:active {
-    transform: scale(0.95);
-    background: var(--border);
-  }
-}
-
-.qty-value {
-  min-width: 72rpx;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: var(--text-main);
-  padding: 0 8rpx;
 }
 
 .action-buttons {
