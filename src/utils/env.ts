@@ -6,12 +6,13 @@ let BASE_URL = '/api'
 
 // 平台标识 - 根据小程序类型配置
 // 可选值：mini_clothing / mini_food / mini_baby /mini_electronics
-const PLATFORM = 'web'
+let PLATFORM = 'web'
 
 // #ifdef MP-WEIXIN
 // 微信小程序：使用域名（需要配置好域名和 SSL）
 // ⚠️ 重要：部署前必须替换为真实域名
 BASE_URL = 'https://sdapi.k-think.com'
+PLATFORM = 'web'
 // #endif
 
 // #ifdef H5

@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { THEME_CLASS } from '../../theme/config'
 import { useSearchStore } from '../../store/search'
+import PriceText from '../../components/PriceText.vue'
 
 const searchStore = useSearchStore()
 
@@ -126,7 +127,8 @@ function onLoadMore() {
           />
           <view class="result-info">
             <text class="result-name">{{ item.name?.zh || item.name?.en || '商品' }}</text>
-            <text class="result-price">¥{{ item.price ?? '--' }}</text>
+            <PriceText v-if="item.price" :price="item.price" size="small" />
+            <text v-else class="result-price">¥--</text>
           </view>
         </view>
         <view v-if="searchStore.loading && searchStore.searchResults.length > 0" class="loading-more">加载中...</view>

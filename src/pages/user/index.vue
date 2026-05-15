@@ -20,16 +20,12 @@ const orderCounts = ref({
   completed: 0
 })
 
-// uni-app 页面生命周期
-let refreshTimer: number | null = null
-
 onMounted(() => {
   if (userStore.isLoggedIn) {
     loadUserInfo()
     loadOrderCounts()
   }
 
-  // 监听刷新事件
   uni.$on('refreshUserInfo', () => {
     if (userStore.isLoggedIn) {
       loadUserInfo()
@@ -45,7 +41,6 @@ onShow(() => {
   }
 })
 
-// 下拉刷新
 onPullDownRefresh(() => {
   Promise.all([loadUserInfo(), loadOrderCounts()]).finally(() => {
     uni.stopPullDownRefresh()
@@ -53,10 +48,6 @@ onPullDownRefresh(() => {
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer)
-    refreshTimer = null
-  }
   uni.$off('refreshUserInfo')
 })
 
@@ -91,8 +82,6 @@ function goTo(path: string) {
 
 function handleLogin() {
   if (!userStore.isLoggedIn) {
-    // 跳转到登录页面，而不是直接调用 login()
-    // 因为 login() 会用缓存的 openid，跳过获取手机号
     uni.navigateTo({ url: '/pages/user/login' })
   }
 }
@@ -111,27 +100,35 @@ function handleLogout() {
   })
 }
 
+// 订单tab
 const orderTabs = computed(() => [
-  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
-  { id: '1', text: '待发货', icon: 'shop', path: '/pages/order/list?status=1' },
-  { id: '2', text: '待收货', icon: 'cart', path: '/pages/order/list?status=2' },
-  { id: '3', text: '已完成', icon: 'checkbox', path: '/pages/order/list?status=3' }
+  { id: '0', text: '待付款', icon: 'wallet', count: orderCounts.value.pending, path: '/pages/order/list?status=0' },
+  { id: '1', text: '待发货', icon: 'shop', count: orderCounts.value.paid, path: '/pages/order/list?status=1' },
+  { id: '2', text: '待收货', icon: 'cart', count: orderCounts.value.shipped, path: '/pages/order/list?status=2' },
+  { id: '3', text: '已完成', icon: 'checkbox', count: orderCounts.value.completed, path: '/pages/order/list?status=3' }
 ])
 
-const menuItems = [
-  { id: 1, icon: 'location', text: '收货地址', path: '/pages/address/list' },
-  { id: 2, icon: 'help', text: '帮助中心', path: '/pages/user/help' },
-  { id: 3, icon: 'chat', text: '意见反馈', path: '/pages/user/feedback' },
-  { id: 4, icon: 'star', text: '关于我们', path: '/pages/about/index' }
-]
+// 快捷工具入口
+const quickTools = computed(() => [
+  { id: 1, icon: 'star', text: '我的收藏', path: '/pages/user/favorite', badge: 0 },
+  { id: 2, icon: 'location', text: '收货地址', path: '/pages/address/list', badge: 0 },
+  { id: 3, icon: 'help', text: '帮助中心', path: '/pages/user/help', badge: 0 },
+  { id: 4, icon: 'chat', text: '意见反馈', path: '/pages/user/feedback', badge: 0 }
+])
 
-const accountItems = [
-  { id: 5, icon: 'locked', text: '修改密码', path: '/pages/user/password' }
-]
+// 功能入口
+const funcItems = computed(() => [
+  { id: 1, icon: 'info', text: '关于我们', path: '/pages/about/index' }
+])
 
-// 检查是否需要完善资料（没有手机号）
-const needBind = computed(() => {
-  return !userInfo.value?.phone && !userInfo.value?.email
+// 会员等级
+const memberLevel = computed(() => {
+  // 简单逻辑：普通会员
+  return '普通会员'
+})
+
+const memberColor = computed(() => {
+  return 'rgba(255,255,255,0.6)'
 })
 </script>
 
@@ -139,36 +136,65 @@ const needBind = computed(() => {
   <view :class="['user-page', THEME_CLASS]">
     <TabBar />
 
-    <!-- 用户头部 -->
+    <!-- 用户信息区 -->
     <view class="user-header">
+      <!-- 顶部工具栏 -->
+      <view class="header-toolbar">
+        <view class="toolbar-left">
+          <uni-icons type="gear" size="22" color="var(--text-inverse)" @click="goTo('/pages/user/settings')" aria-label="设置" />
+        </view>
+        <text class="header-title">会员中心</text>
+        <view class="toolbar-right">
+          <uni-icons type="chat" size="22" color="var(--text-inverse)" @click="goTo('/pages/notice/list')" aria-label="消息" />
+        </view>
+      </view>
+
+      <!-- 用户信息 -->
       <view v-if="userStore.isLoggedIn" class="user-info">
-        <view class="avatar" @click="needBind && goTo('/pages/user/bind-account')">
+        <view class="avatar" @click="goTo('/pages/user/profile')">
           <image v-if="userInfo?.avatar" :src="userInfo.avatar" class="avatar-img" />
           <text v-else class="avatar-text">{{ (userInfo?.nickname || userInfo?.username || 'U').charAt(0).toUpperCase() }}</text>
         </view>
-        <view class="user-detail">
+        <view class="user-content">
           <text class="nickname">{{ userInfo?.nickname || userInfo?.username || '微信用户' }}</text>
-          <view v-if="needBind" class="bind-tip" @click="goTo('/pages/user/bind-account')">
-            <text>点击绑定手机号</text>
+          <view class="member-row">
+            <text class="member-tag" :style="{ background: memberColor }">{{ memberLevel }}</text>
           </view>
+        </view>
+        <view class="sign-btn" @click="goTo('/pages/user/sign')">
+          <text class="sign-text">签到</text>
         </view>
       </view>
-      <view v-else class="login-prompt" @click="handleLogin">
+
+      <!-- 未登录 -->
+      <view v-else class="user-info guest" @click="handleLogin">
         <view class="avatar login-avatar">
-          <uni-icons type="person" size="40" color="var(--text-placeholder)" />
+          <uni-icons type="person" size="40" color="var(--text-inverse)" />
         </view>
-        <view class="login-content">
-          <text class="login-title">登录后可享受更多服务</text>
-          <view class="login-btn">
-            <text>登录/注册</text>
-          </view>
+        <view class="user-content">
+          <text class="nickname">点击登录</text>
+          <text class="guest-hint">登录享受更多服务</text>
         </view>
-        <uni-icons type="right" size="16" color="var(--text-placeholder)" />
+      </view>
+    </view>
+
+    <!-- 快捷工具栏 -->
+    <view class="quick-tools" v-if="userStore.isLoggedIn">
+      <view
+        v-for="tool in quickTools"
+        :key="tool.id"
+        class="quick-item"
+        @click="goTo(tool.path)"
+      >
+        <view class="quick-icon-wrap">
+          <uni-icons :type="tool.icon" size="24" color="var(--primary)" />
+        </view>
+        <text class="quick-text">{{ tool.text }}</text>
       </view>
     </view>
 
     <!-- 订单入口 -->
-    <view class="order-section" v-if="userStore.isLoggedIn">
+    <view class="order-section">
       <view class="section-header" @click="goTo('/pages/order/list')">
         <text class="section-title">我的订单</text>
         <view class="section-more">
@@ -184,67 +210,26 @@ const needBind = computed(() => {
           @click="goTo(tab.path)"
         >
           <view class="tab-icon-wrap">
-            <uni-icons :type="tab.icon" size="28" />
+            <uni-icons :type="tab.icon" size="26" />
+            <view v-if="tab.count > 0" class="tab-badge">{{ tab.count > 99 ? '99+' : tab.count }}</view>
           </view>
           <text class="tab-text">{{ tab.text }}</text>
         </view>
       </view>
     </view>
 
-    <!-- 登录提示订单入口 -->
-    <view class="order-section" v-else>
-      <view class="section-header">
-        <text class="section-title">我的订单</text>
-      </view>
-      <view class="order-tabs">
-        <view v-for="tab in orderTabs" :key="tab.id" class="order-tab disabled">
-          <view class="tab-icon-wrap">
-            <uni-icons :type="tab.icon" size="28" />
-          </view>
-          <text class="tab-text">{{ tab.text }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 常用功能 -->
-    <view class="menu-section">
-      <view class="section-header">
-        <text class="section-title">常用服务</text>
-      </view>
+    <!-- 功能入口网格 -->
+    <view class="func-grid">
       <view
-        v-for="(item, index) in menuItems"
+        v-for="item in funcItems"
         :key="item.id"
-        class="menu-item"
-        @click="item.path ? goTo(item.path) : uni.showToast({ title: '功能开发中', icon: 'none' })"
+        class="func-item"
+        @click="goTo(item.path)"
       >
-        <view class="menu-left">
-          <view class="menu-icon-wrap">
-            <uni-icons :type="item.icon" size="22" color="var(--primary)" />
-          </view>
-          <text class="menu-text">{{ item.text }}</text>
+        <view class="func-icon-wrap">
+          <uni-icons :type="item.icon" size="24" color="var(--primary)" />
         </view>
-        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
-      </view>
-    </view>
-
-    <!-- 账户安全 -->
-    <view class="menu-section">
-      <view class="section-header">
-        <text class="section-title">账户安全</text>
-      </view>
-      <view
-        v-for="item in accountItems"
-        :key="item.id"
-        class="menu-item"
-        @click="item.path ? goTo(item.path) : uni.showToast({ title: '功能开发中', icon: 'none' })"
-      >
-        <view class="menu-left">
-          <view class="menu-icon-wrap">
-            <uni-icons :type="item.icon" size="22" color="var(--primary)" />
-          </view>
-          <text class="menu-text">{{ item.text }}</text>
-        </view>
-        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
+        <text class="func-text">{{ item.text }}</text>
       </view>
     </view>
 
@@ -264,20 +249,48 @@ const needBind = computed(() => {
 
 /* 用户头部 */
 .user-header {
-  padding: 48rpx 32rpx;
+  padding: calc(24rpx + env(safe-area-inset-top)) 32rpx 32rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
+/* 顶部工具栏 */
+.header-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.header-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-inverse);
+}
+
+.toolbar-left,
+.toolbar-right {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 用户信息 */
 .user-info {
   display: flex;
   align-items: center;
 }
 
+.user-info.guest {
+  opacity: 0.9;
+}
+
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
+  width: 112rpx;
+  height: 112rpx;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 60rpx;
+  border-radius: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,12 +305,17 @@ const needBind = computed(() => {
 }
 
 .avatar-text {
-  font-size: 48rpx;
+  font-size: 44rpx;
   font-weight: 600;
   color: var(--text-inverse);
 }
 
-.user-detail {
+.login-avatar {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.user-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
@@ -309,44 +327,72 @@ const needBind = computed(() => {
   margin-bottom: 8rpx;
 }
 
-.bind-tip {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 24rpx;
-  margin-top: 8rpx;
-}
-
-.login-prompt {
+.member-row {
   display: flex;
   align-items: center;
-  padding: 16rpx 0;
 }
 
-.login-avatar {
+.member-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: var(--text-inverse);
+}
+
+.guest-hint {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sign-btn {
+  padding: 12rpx 28rpx;
   background: rgba(255, 255, 255, 0.2);
-  margin-right: 20rpx;
+  border-radius: 32rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
 }
 
-.login-content {
+.sign-text {
+  font-size: 26rpx;
+  color: var(--text-inverse);
+  font-weight: 500;
+}
+
+/* 快捷工具栏 */
+.quick-tools {
+  display: flex;
+  padding: 24rpx 16rpx;
+  background: var(--bg-card);
+  margin: 24rpx;
+  border-radius: 16rpx;
+  gap: 16rpx;
+}
+
+.quick-item {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8rpx;
 }
 
-.login-title {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.8);
+.quick-icon-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  border-radius: 16rpx;
+
+  .uni-icons {
+    color: var(--primary);
+  }
 }
 
-.login-btn {
-  display: inline-block;
-  padding: 12rpx 32rpx;
-  background: var(--bg-card);
-  color: var(--primary);
-  font-size: 26rpx;
-  font-weight: 600;
-  border-radius: 40rpx;
-  width: fit-content;
+.quick-text {
+  font-size: 24rpx;
+  color: var(--text-main);
 }
 
 /* 订单入口 */
@@ -389,10 +435,6 @@ const needBind = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-
-  &.disabled {
-    opacity: 0.5;
-  }
 }
 
 .tab-icon-wrap {
@@ -404,10 +446,10 @@ const needBind = computed(() => {
   background: var(--primary-light);
   border-radius: 16rpx;
   position: relative;
-}
 
-.tab-icon-wrap .uni-icons {
-  color: var(--primary) !important;
+  .uni-icons {
+    color: var(--primary);
+  }
 }
 
 .tab-badge {
@@ -416,16 +458,14 @@ const needBind = computed(() => {
   right: -8rpx;
   min-width: 32rpx;
   height: 32rpx;
-  padding: 0 8rpx;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: var(--accent);
   color: var(--text-inverse);
   font-size: 20rpx;
-  font-weight: 600;
   border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2rpx 8rpx var(--accent-light);
+  padding: 0 8rpx;
 }
 
 .tab-text {
@@ -433,23 +473,26 @@ const needBind = computed(() => {
   color: var(--text-main);
 }
 
-/* 菜单区块 */
-.menu-section {
+/* 功能入口网格 */
+.func-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
   background: var(--bg-card);
-  margin: 0 24rpx 24rpx;
+  margin: 0 24rpx;
   border-radius: 16rpx;
   overflow: hidden;
 }
 
-.menu-item {
+.func-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 28rpx 24rpx;
-  border-bottom: 1rpx solid var(--border);
+  padding: 32rpx 0;
+  border-right: 1rpx solid var(--border);
 
   &:last-child {
-    border-bottom: none;
+    border-right: none;
   }
 
   &:active {
@@ -457,12 +500,7 @@ const needBind = computed(() => {
   }
 }
 
-.menu-left {
-  display: flex;
-  align-items: center;
-}
-
-.menu-icon-wrap {
+.func-icon-wrap {
   width: 56rpx;
   height: 56rpx;
   display: flex;
@@ -470,17 +508,17 @@ const needBind = computed(() => {
   justify-content: center;
   background: var(--primary-light);
   border-radius: 12rpx;
-  margin-right: 20rpx;
+  margin-bottom: 8rpx;
 }
 
-.menu-text {
-  font-size: 28rpx;
+.func-text {
+  font-size: 24rpx;
   color: var(--text-main);
 }
 
 /* 退出登录 */
 .logout-section {
-  padding: 0 24rpx;
+  padding: 32rpx 24rpx;
 }
 
 .logout-btn {
@@ -488,14 +526,14 @@ const needBind = computed(() => {
   width: 100%;
   padding: 28rpx;
   background: var(--bg-card);
-  color: var(--accent);
+  color: var(--text-sub);
   text-align: center;
   border-radius: 16rpx;
   font-size: 28rpx;
   font-weight: 500;
 
   &:active {
-    opacity: 0.8;
+    opacity: 0.7;
   }
 }
 </style>

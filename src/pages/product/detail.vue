@@ -1,29 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { onShow, onPageScroll } from '@dcloudio/uni-app'
-import { productApi, type Product } from '../../api'
+import { productApi, favoriteApi, type Product } from '../../api'
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
 import { THEME_CLASS } from '../../theme/config'
 import TabBar from '../../components/TabBar.vue'
+import ProductCard from '../../components/ProductCard.vue'
+import PriceText from '../../components/PriceText.vue'
 
 const product = ref<Product | null>(null)
 const quantity = ref(1)
 const activeTab = ref('product')
 const cartLoading = ref(false)
 const buyLoading = ref(false)
+const favoriteStatus = ref({ isFavorite: false, favoriteId: 0 })
 const recommendProducts = ref<Product[]>([])
 const userStore = useUserStore()
 const cartStore = useCartStore()
-
-const priceDisplay = computed(() => {
-  if (!product.value) return { integer: '0', decimal: '00' }
-  const parts = product.value.price.toFixed(2).split('.')
-  return {
-    integer: parts[0],
-    decimal: parts[1]
-  }
-})
+let currentScrollTop = 0
 
 const displayServices = computed(() => {
   return product.value?.services?.slice(0, 4) || []
@@ -82,17 +77,37 @@ const sectionPositions = ref({
 })
 
 function scrollToTab(tab: string) {
+  const position = sectionPositions.value[tab as keyof typeof sectionPositions.value]
   activeTab.value = tab
+
+  // 点击Tab后暂停跟踪，等滚动稳定
+  scrollTrackingPaused.value = true
+  setTimeout(() => {
+    scrollTrackingPaused.value = false
+  }, 300)
+
+  // 位置未获取时，延迟执行
+  if (position === undefined || position === 0) {
+    setTimeout(() => {
+      uni.pageScrollTo({
+        scrollTop: sectionPositions.value[tab as keyof typeof sectionPositions.value] - 88,
+        duration: 200
+      })
+    }, 100)
+    return
+  }
+
   uni.pageScrollTo({
-    scrollTop: sectionPositions.value[tab as keyof typeof sectionPositions.value] - 88,
+    scrollTop: position - 88,
     duration: 200
   })
 }
 
 // 监听滚动，更新当前tab和Tab栏显示
 const showStickyTabs = ref(false)
+const scrollTrackingPaused = ref(false)
 
-// 更新各区块滚动位置
+// 更新各区块滚动位置（使用 offsetTop 计算固定位置）
 function updateSectionPositions() {
   uni.createSelectorQuery()
     .select('#product').boundingClientRect()
@@ -100,27 +115,37 @@ function updateSectionPositions() {
     .select('#detail').boundingClientRect()
     .select('#recommend').boundingClientRect()
     .exec((res: any) => {
-    if (res[0] && res[0].top !== undefined) sectionPositions.value.product = res[0].top
-    if (res[1] && res[1].top !== undefined) sectionPositions.value.comment = res[1].top
-    if (res[2] && res[2].top !== undefined) sectionPositions.value.detail = res[2].top
-    if (res[3] && res[3].top !== undefined) sectionPositions.value.recommend = res[3].top
-    console.log('sectionPositions:', sectionPositions.value)
-  })
+      if (res[0] && res[0].top !== undefined) {
+        sectionPositions.value.product = res[0].top + currentScrollTop
+      }
+      if (res[1] && res[1].top !== undefined) {
+        sectionPositions.value.comment = res[1].top + currentScrollTop
+      }
+      if (res[2] && res[2].top !== undefined) {
+        sectionPositions.value.detail = res[2].top + currentScrollTop
+      }
+      if (res[3] && res[3].top !== undefined) {
+        sectionPositions.value.recommend = res[3].top + currentScrollTop
+      }
+    })
 }
 
 // 页面滚动监听
 onPageScroll((e: any) => {
-  const scrollTop = e.scrollTop
+  currentScrollTop = e.scrollTop
 
   // 滚动超过100px时显示吸顶Tab
-  showStickyTabs.value = scrollTop > 100
+  showStickyTabs.value = e.scrollTop > 100
+
+  // 点击Tab后暂停跟踪，等滚动稳定
+  if (scrollTrackingPaused.value) return
 
   // 根据滚动位置判断当前tab（使用固定阈值）
-  if (scrollTop < 400) {
+  if (e.scrollTop < 400) {
     activeTab.value = 'product'
-  } else if (scrollTop < 800) {
+  } else if (e.scrollTop < 800) {
     activeTab.value = 'comment'
-  } else if (scrollTop < 1200) {
+  } else if (e.scrollTop < 1200) {
     activeTab.value = 'detail'
   } else {
     activeTab.value = 'recommend'
@@ -133,9 +158,28 @@ async function loadProduct(id: number) {
     if (res.code === 200 && res.data) {
       product.value = res.data
       loadProductServices(id)
+      // 检查收藏状态
+      if (userStore.isLoggedIn) {
+        checkFavoriteStatus(id)
+      }
     }
   } catch (error) {
     console.error('加载商品详情失败', error)
+  }
+}
+
+// 检查收藏状态
+async function checkFavoriteStatus(productId: number) {
+  try {
+    const res = await favoriteApi.check(productId)
+    if (res.code === 200 && res.data) {
+      favoriteStatus.value = {
+        isFavorite: res.data.isFavorite,
+        favoriteId: res.data.favoriteId || 0
+      }
+    }
+  } catch (error) {
+    console.warn('检查收藏状态失败', error)
   }
 }
 
@@ -289,29 +333,51 @@ function getCoverImages(): string[] {
   return images
 }
 
-function getRecommendCoverImages(p: Product): string {
-  if (p.coverImages && p.coverImages.length > 0) return p.coverImages[0]
-  if (p.metaImage) return p.metaImage
-  if (p.images && p.images.length > 0) {
-    const cover = p.images.find(img => img.isCover === 1)
-    return cover?.url || p.images[0].url
-  }
-  return ''
-}
-
-function getRecommendName(p: Product): string {
-  return p.name?.zh || p.name?.en || '商品'
-}
-
-function getRecommendPrice(p: Product): { integer: string; decimal: string } {
-  const parts = p.price.toFixed(2).split('.')
-  return { integer: parts[0], decimal: parts[1] }
-}
-
 function goToRecommendDetail(id: number) {
   uni.navigateTo({
     url: `/pages/product/detail?id=${id}`
   })
+}
+
+function goToCart() {
+  uni.switchTab({ url: '/pages/cart/index' })
+}
+
+async function toggleFavorite() {
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+
+  const productId = product.value?.id
+  if (!productId) return
+
+  try {
+    if (favoriteStatus.value.isFavorite) {
+      // 取消收藏
+      if (favoriteStatus.value.favoriteId) {
+        await favoriteApi.remove(favoriteStatus.value.favoriteId)
+        favoriteStatus.value = { isFavorite: false, favoriteId: 0 }
+        uni.showToast({ title: '已取消收藏', icon: 'success' })
+      }
+    } else {
+      // 添加收藏
+      const res = await favoriteApi.add(productId)
+      if (res.code === 200 && res.data) {
+        // 重新检查收藏状态获取 favoriteId
+        await checkFavoriteStatus(productId)
+        uni.showToast({ title: '已收藏', icon: 'success' })
+      }
+    }
+  } catch (error: any) {
+    // 业务错误已由 handleBusinessError 显示 toast
+    // 网络/系统错误由 request 层处理
+    // 这里只记录未预期的错误
+    console.error('收藏操作失败', error)
+  }
 }
 
 async function loadRecommendProducts() {
@@ -364,11 +430,9 @@ async function loadRecommendProducts() {
       </view>
 
       <!-- 商品信息卡片 -->
-      <view class="product-info-section">
+      <view v-if="product" class="product-info-section">
         <view class="price-row">
-          <text class="price-symbol">¥</text>
-          <text class="price-integer">{{ priceDisplay.integer }}</text>
-          <text class="price-decimal">.{{ priceDisplay.decimal }}</text>
+          <PriceText :price="product?.price || 0" size="large" />
         </view>
         <text class="product-title">{{ getProductName() }}</text>
 
@@ -384,11 +448,11 @@ async function loadRecommendProducts() {
         <view class="quantity-row">
           <text class="qty-label">购买数量</text>
           <view class="qty-control">
-            <text class="qty-btn" @click="decreaseQty">-</text>
+            <text class="qty-btn" aria-label="减少数量" @click="decreaseQty">-</text>
             <text class="qty-value">{{ quantity }}</text>
-            <text class="qty-btn" @click="increaseQty">+</text>
+            <text class="qty-btn" aria-label="增加数量" @click="increaseQty">+</text>
           </view>
-          <text class="stock-text">库存 {{ product?.stock || 0 }}</text>
+          <text class="stock-text">库存 {{ product.stock || 0 }}</text>
         </view>
       </view>
 
@@ -398,6 +462,7 @@ async function loadRecommendProducts() {
           <text class="section-title">商品评价</text>
         </view>
         <view class="empty-comment">
+          <uni-icons type="chat" size="48" color="var(--text-placeholder)" />
           <text class="empty-comment-text">暂无评价</text>
         </view>
       </view>
@@ -420,30 +485,14 @@ async function loadRecommendProducts() {
         <view class="section-header">
           <text class="section-title">推荐商品</text>
         </view>
-        <scroll-view class="recommend-scroll" scroll-x>
-          <view class="recommend-list">
-            <view
-              v-for="item in recommendProducts"
-              :key="item.id"
-              class="recommend-item"
-              @click="goToRecommendDetail(item.id)"
-            >
-              <image
-                :src="getRecommendCoverImages(item)"
-                mode="aspectFill"
-                class="recommend-img"
-              />
-              <view class="recommend-info">
-                <text class="recommend-name">{{ getRecommendName(item) }}</text>
-                <view class="recommend-price">
-                  <text class="rec-price-symbol">¥</text>
-                  <text class="rec-price-integer">{{ getRecommendPrice(item).integer }}</text>
-                  <text class="rec-price-decimal">.{{ getRecommendPrice(item).decimal }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
+        <view class="recommend-grid">
+          <ProductCard
+            v-for="item in recommendProducts"
+            :key="item.id"
+            :product="item"
+            @click="goToRecommendDetail(item.id)"
+          />
+        </view>
       </view>
 
       <!-- 底部占位 -->
@@ -453,13 +502,13 @@ async function loadRecommendProducts() {
     <!-- 操作栏 -->
     <view class="action-bar">
       <view class="action-icons">
-        <view class="icon-btn" @click="addToCart">
+        <view class="icon-btn" aria-label="购物车" @click="goToCart">
           <uni-icons type="cart" size="24" color="var(--text-main)" />
           <text class="icon-label">购物车</text>
         </view>
-        <view class="icon-btn">
-          <uni-icons type="star" size="24" color="var(--text-main)" />
-          <text class="icon-label">收藏</text>
+        <view class="icon-btn" :class="{ active: favoriteStatus.isFavorite }" :aria-label="favoriteStatus.isFavorite ? '取消收藏' : '收藏商品'" @click="toggleFavorite">
+          <uni-icons :type="favoriteStatus.isFavorite ? 'star-filled' : 'star'" size="24" :color="favoriteStatus.isFavorite ? 'var(--accent)' : 'var(--text-main)'" />
+          <text class="icon-label" :style="{ color: favoriteStatus.isFavorite ? 'var(--accent)' : '' }">{{ favoriteStatus.isFavorite ? '已收藏' : '收藏' }}</text>
         </view>
       </view>
       <view class="action-buttons">
@@ -535,7 +584,7 @@ async function loadRecommendProducts() {
 
 .detail-swiper {
   width: 100%;
-  height: 420rpx;
+  height: 360rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
@@ -571,17 +620,15 @@ async function loadRecommendProducts() {
 }
 
 .price-row {
-  display: flex;
-  align-items: baseline;
   margin-bottom: 16rpx;
 }
 
 .product-title {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: var(--text-main);
   line-height: 1.4;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .service-row {
@@ -625,28 +672,32 @@ async function loadRecommendProducts() {
   align-items: center;
   background: var(--bg-page);
   border-radius: 8rpx;
-  overflow: hidden;
+  padding: 0 4rpx;
 }
 
 .qty-btn {
-  width: 64rpx;
-  height: 56rpx;
+  width: 56rpx;
+  height: 52rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 600;
   color: var(--text-main);
+  border-radius: 8rpx;
+  background: var(--bg-page);
+  transition: all 0.15s ease;
 
   &:active {
-    background: var(--border);
+    background: var(--primary-light);
+    color: var(--primary);
   }
 }
 
 .qty-value {
-  min-width: 64rpx;
+  min-width: 56rpx;
   text-align: center;
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: var(--text-main);
   padding: 0 8rpx;
@@ -708,76 +759,21 @@ async function loadRecommendProducts() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 0;
+  padding: 60rpx 0;
+  gap: 16rpx;
 }
 
 .empty-comment-text {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: var(--text-placeholder);
 }
 
 /* 推荐 */
-.recommend-scroll {
-  width: 100%;
-  white-space: nowrap;
-  padding: 24rpx 0;
-}
-
-.recommend-list {
-  display: inline-flex;
-  gap: 16rpx;
-  padding: 0 16rpx;
-}
-
-.recommend-item {
-  width: 200rpx;
-  flex-shrink: 0;
-  background: var(--bg-page);
-  border-radius: 12rpx;
-  overflow: hidden;
-}
-
-.recommend-img {
-  width: 200rpx;
-  height: 200rpx;
-}
-
-.recommend-info {
-  padding: 12rpx;
-}
-
-.recommend-name {
-  display: block;
-  font-size: 24rpx;
-  color: var(--text-main);
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 8rpx;
-}
-
-.recommend-price {
-  display: flex;
-  align-items: baseline;
-}
-
-.rec-price-symbol {
-  font-size: 22rpx;
-  font-weight: 600;
-  color: var(--price);
-}
-
-.rec-price-integer {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: var(--price);
-}
-
-.rec-price-decimal {
-  font-size: 22rpx;
-  font-weight: 600;
-  color: var(--price);
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+  padding: 0 20rpx 24rpx;
 }
 
 /* 底部占位 */
@@ -802,7 +798,7 @@ async function loadRecommendProducts() {
 
 .action-icons {
   display: flex;
-  gap: 32rpx;
+  gap: 24rpx;
 }
 
 .icon-btn {
@@ -810,6 +806,11 @@ async function loadRecommendProducts() {
   flex-direction: column;
   align-items: center;
   gap: 4rpx;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 
 .icon-label {
@@ -824,8 +825,8 @@ async function loadRecommendProducts() {
 
 .btn-add, .btn-buy {
   position: relative;
-  border-radius: 44rpx;
-  font-size: 28rpx;
+  border-radius: 40rpx;
+  font-size: 26rpx;
   font-weight: 600;
   text-align: center;
   transition: transform 0.15s ease, opacity 0.15s ease;
@@ -844,9 +845,9 @@ async function loadRecommendProducts() {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 32rpx;
-    height: 32rpx;
-    margin: -16rpx 0 0 -16rpx;
+    width: 28rpx;
+    height: 28rpx;
+    margin: -14rpx 0 0 -14rpx;
     border: 3rpx solid transparent;
     border-top-color: currentColor;
     border-radius: 50%;
@@ -860,16 +861,16 @@ async function loadRecommendProducts() {
 }
 
 .btn-add {
-  width: 200rpx;
-  padding: 20rpx 0;
+  width: 180rpx;
+  padding: 18rpx 0;
   background: var(--primary-light);
   color: var(--primary);
   border: 2rpx solid var(--primary);
 }
 
 .btn-buy {
-  width: 200rpx;
-  padding: 20rpx 0;
+  width: 180rpx;
+  padding: 18rpx 0;
   background: var(--primary);
   color: var(--text-inverse);
   border: 2rpx solid var(--primary);

@@ -39,6 +39,10 @@ const errorMessages: Record<number, string> = {
   // 支付
   [ErrorCodes.PAYMENT_DISABLED]: '支付方式已禁用',
 
+  // 收藏
+  [ErrorCodes.FAVORITE_ALREADY_EXISTS]: '已收藏过该商品',
+  [ErrorCodes.FAVORITE_NOT_FOUND]: '收藏不存在',
+
   // 管理员
   [ErrorCodes.INVALID_ADMIN_CREDENTIALS]: '管理员用户名或密码错误',
   [ErrorCodes.ADMIN_DISABLED]: '管理员账号已被禁用',

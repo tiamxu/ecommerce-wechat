@@ -10,6 +10,7 @@ export const BusinessCodeRange = {
   CART:       [31001, 31099],  // 购物车
   ORDER:      [32001, 32099],  // 订单
   PAYMENT:    [33001, 33099],  // 支付
+  FAVORITE:   [34001, 34099],  // 收藏
   TAG:        [40001, 40099],  // 标签
   ADMIN:      [90001, 90099],  // 管理员
 }
@@ -51,6 +52,10 @@ export const ErrorCodes = {
   // ========== 支付 (33001-33099) ==========
   PAYMENT_DISABLED:    33001,
 
+  // ========== 收藏 (34001-34099) ==========
+  FAVORITE_ALREADY_EXISTS: 34001,
+  FAVORITE_NOT_FOUND:      34002,
+
   // ========== 标签 (40001-40099) ==========
   TAG_NOT_FOUND:       40001,
 
@@ -82,5 +87,6 @@ export function isNotFoundError(code: number): boolean {
   return code === ErrorCodes.PRODUCT_NOT_FOUND ||
          code === ErrorCodes.CATEGORY_NOT_FOUND ||
          code === ErrorCodes.TAG_NOT_FOUND ||
-         code === ErrorCodes.ORDER_NOT_FOUND
+         code === ErrorCodes.ORDER_NOT_FOUND ||
+         code === ErrorCodes.FAVORITE_NOT_FOUND
 }

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { orderApi } from '../../api'
 import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
+import PriceText from '../../components/PriceText.vue'
 
 // 获取用户信息
 const userStore = useUserStore()
@@ -223,7 +224,7 @@ async function submitOrder() {
         <view class="goods-detail">
           <text class="goods-name">{{ item.productName }}</text>
           <view class="goods-price-row">
-            <text class="price">¥{{ item.productPrice || item.price }}</text>
+            <PriceText :price="item.productPrice || item.price || 0" size="small" />
             <text class="quantity">x{{ item.quantity }}</text>
           </view>
         </view>
@@ -244,7 +245,7 @@ async function submitOrder() {
       </view>
       <view class="summary-row total-row">
         <text class="total-label">合计</text>
-        <text class="total-value">¥{{ orderTotal.toFixed(2) }}</text>
+        <PriceText :price="orderTotal" />
       </view>
     </view>
 
@@ -439,13 +440,6 @@ async function submitOrder() {
   align-items: center;
 }
 
-.price {
-  font-size: 28rpx;
-  color: var(--price);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 .quantity {
   font-size: 26rpx;
   color: var(--text-sub);
@@ -487,13 +481,6 @@ async function submitOrder() {
   font-size: 28rpx;
   font-weight: 600;
   color: var(--text-main);
-}
-
-.total-value {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: var(--price);
-  font-variant-numeric: tabular-nums;
 }
 
 /* 底部支付栏 */

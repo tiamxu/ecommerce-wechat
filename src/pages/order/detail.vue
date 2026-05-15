@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { orderApi, type OrderItem, type OrderProduct } from '../../api/order'
 import { THEME_CLASS } from '../../theme/config'
+import PriceText from '../../components/PriceText.vue'
 
 const loading = ref(false)
 const order = ref<OrderItem | null>(null)
@@ -147,7 +148,7 @@ function goBack() {
           <view class="goods-detail">
             <text class="goods-name">{{ item.productName }}</text>
             <view class="goods-price-row">
-              <text class="price">¥{{ item.productPrice || item.price }}</text>
+              <PriceText :price="item.productPrice || item.price || 0" size="small" />
               <text class="quantity">x{{ item.quantity }}</text>
             </view>
           </view>
@@ -450,13 +451,6 @@ function goBack() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.price {
-  font-size: 28rpx;
-  color: var(--price);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .quantity {

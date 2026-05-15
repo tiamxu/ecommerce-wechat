@@ -17,7 +17,7 @@ const hasMore = ref(true)
 const tabs = [
   { key: 'all', label: '全部', icon: 'list' },
   { key: '0', label: '待付款', icon: 'wallet' },
-  { key: '1', label: '待发货', icon: 'box' },
+  { key: '1', label: '待发货', icon: 'shop' },
   { key: '2', label: '待收货', icon: 'cart' },
   { key: '3', label: '已完成', icon: 'checkbox' }
 ]
@@ -213,9 +213,9 @@ async function cancelOrder(orderId: number) {
 
           <!-- 商品信息 -->
           <view class="order-goods">
-            <view v-for="(item, index) in (order.items || []).slice(0, 3)" :key="index" class="goods-item">
+            <view v-for="(item, index) in (order.items || []).slice(0, 3)" :key="index" class="goods-item" @click.stop>
               <view class="goods-img-wrap">
-                <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+                <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" lazy-load />
                 <view v-else class="goods-placeholder">
                   <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
                 </view>
