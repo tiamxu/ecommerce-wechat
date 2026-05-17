@@ -4,16 +4,19 @@ import { orderApi, type Address } from '../../api'
 import { THEME_CLASS } from '../../theme/config'
 import regionData from '../../static/china_address.json'
 
+const COLOR_MAP: Record<string, string> = {
+  'theme-light': '#07c160',
+  'theme-dark': '#4d7cff',
+  'theme-blue': '#007aff',
+  'theme-purple': '#667eea',
+  'theme-luxury': '#c9a961'
+}
+
+const PHONE_PATTERN = /^1[3-9]\d{9}$/
+
 // 获取当前主题主色（用于 switch 等组件属性）
 const themePrimary = computed(() => {
-  const colorMap: Record<string, string> = {
-    'theme-light': '#07c160',
-    'theme-dark': '#4d7cff',
-    'theme-blue': '#007aff',
-    'theme-purple': '#667eea',
-    'theme-luxury': '#c9a961'
-  }
-  return colorMap[THEME_CLASS] || '#07c160'
+  return COLOR_MAP[THEME_CLASS] || '#07c160'
 })
 
 // 表单字段
@@ -149,6 +152,12 @@ function onRegionChange(e: any) {
 
 function onRegionConfirm() {
   const [pIdx, cIdx, dIdx] = regionValues.value
+
+  if (pIdx < 0 || cIdx < 0 || dIdx < 0 ||
+      pIdx >= provinces.length || cIdx >= cities.value.length || dIdx >= districts.value.length) {
+    return
+  }
+
   form.value.province = provinces[pIdx]
   form.value.city = cities.value[cIdx] || ''
   form.value.district = districts.value[dIdx] || ''
@@ -162,6 +171,10 @@ async function saveAddress() {
   }
   if (!form.value.phone) {
     uni.showToast({ title: '请输入手机号码', icon: 'none' })
+    return
+  }
+  if (!PHONE_PATTERN.test(form.value.phone)) {
+    uni.showToast({ title: '请输入正确的手机号码', icon: 'none' })
     return
   }
   if (!form.value.province || !form.value.city || !form.value.address) {

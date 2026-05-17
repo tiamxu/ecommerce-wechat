@@ -71,8 +71,11 @@ const totalAmount = computed(() => {
   return checkoutItems.value.reduce((sum, item) => sum + (item.productPrice || item.price || 0) * item.quantity, 0)
 })
 
+const FREIGHT_THRESHOLD = 99
+const FREIGHT_AMOUNT = 10
+
 const freight = computed(() => {
-  return totalAmount.value >= 99 ? 0 : 10
+  return totalAmount.value >= FREIGHT_THRESHOLD ? 0 : FREIGHT_AMOUNT
 })
 
 const orderTotal = computed(() => {
@@ -129,6 +132,13 @@ async function submitOrder() {
 
     if (createRes.code !== 200) {
       uni.showToast({ title: createRes.message || '创建订单失败', icon: 'none' })
+      loading.value = false
+      return
+    }
+
+    if (!createRes.data) {
+      uni.showToast({ title: '创建订单失败', icon: 'none' })
+      loading.value = false
       return
     }
 

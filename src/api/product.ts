@@ -1,4 +1,4 @@
-import { request, type ApiResponse } from './request'
+import { request, type ApiResponse, cleanParams } from './request'
 
 export interface Product {
   id: number
@@ -58,17 +58,6 @@ interface ProductListResponse {
 interface CategoryListResponse {
   pageData: Category[]
   total: number
-}
-
-// 过滤空值参数
-function cleanParams(params: Record<string, any>): Record<string, any> {
-  const cleaned: Record<string, any> = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') {
-      cleaned[key] = value
-    }
-  }
-  return cleaned
 }
 
 export const productApi = {

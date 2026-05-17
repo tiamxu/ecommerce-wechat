@@ -1,43 +1,83 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { userApi } from '../../api'
+import { ref, onMounted } from 'vue'
+import { feedbackApi, type CreateFeedbackParams } from '../../api'
+import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
 
-const feedbackType = ref('suggest')
+const userStore = useUserStore()
+const feedbackType = ref('function')
 const feedbackTypes = [
-  { value: 'suggest', label: '功能建议' },
+  { value: 'function', label: '功能建议' },
   { value: 'bug', label: '问题反馈' },
+  { value: 'experience', label: '体验反馈' },
+  { value: 'suggestion', label: '优化建议' },
+  { value: 'complaint', label: '投诉建议' },
   { value: 'other', label: '其他' }
 ]
 
 const form = ref({
-  type: 'suggest',
+  category: 'function',
+  subject: '',
   content: '',
   contact: ''
 })
 
 const submitting = ref(false)
+const typeLabel = ref('')
+
+onMounted(() => {
+  // 设置默认标题
+  const current = feedbackTypes.find(t => t.value === feedbackType.value)
+  typeLabel.value = current?.label || '意见反馈'
+})
 
 function selectType(type: string) {
   feedbackType.value = type
-  form.value.type = type
+  form.value.category = type
+  const current = feedbackTypes.find(t => t.value === type)
+  typeLabel.value = current?.label || ''
 }
 
 async function submitFeedback() {
+  if (!form.value.subject.trim()) {
+    uni.showToast({ title: '请输入标题', icon: 'none' })
+    return
+  }
   if (!form.value.content.trim()) {
     uni.showToast({ title: '请输入反馈内容', icon: 'none' })
     return
   }
 
+  // 检查登录状态
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/user/login' })
+    }, 1500)
+    return
+  }
+
   submitting.value = true
   try {
-    // TODO: 调用反馈接口
-    // await userApi.submitFeedback(form.value)
-    uni.showToast({ title: '提交成功，感谢您的反馈', icon: 'success' })
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1500)
+    const params: CreateFeedbackParams = {
+      category: form.value.category,
+      subject: form.value.subject.trim(),
+      content: form.value.content.trim(),
+      images: undefined,
+      contact: form.value.contact.trim() || undefined
+    }
+
+    const res = await feedbackApi.create(params)
+    if (res.code === 200) {
+      uni.showToast({ title: '提交成功，感谢您的反馈', icon: 'success' })
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
+    } else {
+      uni.showToast({ title: res.message || '提交失败', icon: 'none' })
+    }
   } catch (error) {
+    console.error('提交反馈失败', error)
     uni.showToast({ title: '提交失败，请重试', icon: 'none' })
   } finally {
     submitting.value = false
@@ -64,6 +104,18 @@ async function submitFeedback() {
         </view>
       </view>
 
+      <!-- 标题 -->
+      <view class="form-section">
+        <text class="section-title">标题</text>
+        <input
+          v-model="form.subject"
+          class="subject-input"
+          type="text"
+          placeholder="请输入问题标题"
+          maxlength="100"
+        />
+      </view>
+
       <!-- 反馈内容 -->
       <view class="form-section">
         <text class="section-title">反馈内容</text>
@@ -71,9 +123,9 @@ async function submitFeedback() {
           v-model="form.content"
           class="feedback-textarea"
           placeholder="请详细描述您的问题或建议..."
-          maxlength="500"
+          maxlength="2000"
         />
-        <text class="word-count">{{ form.content.length }}/500</text>
+        <text class="word-count">{{ form.content.length }}/2000</text>
       </view>
 
       <!-- 联系方式 -->
@@ -91,7 +143,7 @@ async function submitFeedback() {
 
     <!-- 提交按钮 -->
     <view class="submit-section">
-      <view class="submit-btn" @click="submitFeedback">
+      <view class="submit-btn" :class="{ loading: submitting }" @click="submitFeedback">
         <text v-if="submitting">提交中...</text>
         <text v-else>提交反馈</text>
       </view>
@@ -127,6 +179,7 @@ async function submitFeedback() {
 
 .type-list {
   display: flex;
+  flex-wrap: wrap;
   gap: 20rpx;
 }
 
@@ -142,6 +195,25 @@ async function submitFeedback() {
     background: var(--primary-light);
     color: var(--primary);
     border-color: var(--primary);
+  }
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.subject-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: var(--bg-page);
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: var(--text-main);
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--text-placeholder);
   }
 }
 
@@ -197,6 +269,10 @@ async function submitFeedback() {
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
+
+  &.loading {
+    opacity: 0.7;
+  }
 
   &:active {
     opacity: 0.9;

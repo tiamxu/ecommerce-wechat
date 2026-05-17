@@ -88,5 +88,6 @@ export function isNotFoundError(code: number): boolean {
          code === ErrorCodes.CATEGORY_NOT_FOUND ||
          code === ErrorCodes.TAG_NOT_FOUND ||
          code === ErrorCodes.ORDER_NOT_FOUND ||
-         code === ErrorCodes.FAVORITE_NOT_FOUND
+         code === ErrorCodes.FAVORITE_NOT_FOUND ||
+         code === ErrorCodes.CART_PRODUCT_NOT_FOUND
 }

@@ -4,7 +4,7 @@ import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
-import { userApi, orderApi, type UserInfo } from '../../api'
+import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
@@ -12,24 +12,14 @@ const userStore = useUserStore()
 const cartStore = useCartStore()
 const userInfo = ref<UserInfo | null>(null)
 
-// 订单数量统计
-const orderCounts = ref({
-  pending: 0,
-  paid: 0,
-  shipped: 0,
-  completed: 0
-})
-
 onMounted(() => {
   if (userStore.isLoggedIn) {
     loadUserInfo()
-    loadOrderCounts()
   }
 
   uni.$on('refreshUserInfo', () => {
     if (userStore.isLoggedIn) {
       loadUserInfo()
-      loadOrderCounts()
     }
   })
 })
@@ -37,12 +27,11 @@ onMounted(() => {
 onShow(() => {
   if (userStore.isLoggedIn) {
     loadUserInfo()
-    loadOrderCounts()
   }
 })
 
 onPullDownRefresh(() => {
-  Promise.all([loadUserInfo(), loadOrderCounts()]).finally(() => {
+  loadUserInfo().finally(() => {
     uni.stopPullDownRefresh()
   })
 })
@@ -60,17 +49,6 @@ async function loadUserInfo() {
     }
   } catch (error) {
     console.error('加载用户信息失败', error)
-  }
-}
-
-async function loadOrderCounts() {
-  try {
-    const res = await orderApi.getOrderCounts()
-    if (res.code === 200 && res.data) {
-      orderCounts.value = res.data
-    }
-  } catch (error) {
-    console.error('加载订单数量失败', error)
   }
 }
 
@@ -101,35 +79,19 @@ function handleLogout() {
 }
 
 // 订单tab
-const orderTabs = computed(() => [
-  { id: '0', text: '待付款', icon: 'wallet', count: orderCounts.value.pending, path: '/pages/order/list?status=0' },
-  { id: '1', text: '待发货', icon: 'shop', count: orderCounts.value.paid, path: '/pages/order/list?status=1' },
-  { id: '2', text: '待收货', icon: 'cart', count: orderCounts.value.shipped, path: '/pages/order/list?status=2' },
-  { id: '3', text: '已完成', icon: 'checkbox', count: orderCounts.value.completed, path: '/pages/order/list?status=3' }
-])
+const orderTabs = [
+  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
+  { id: '1', text: '待发货', icon: 'shop', path: '/pages/order/list?status=1' },
+  { id: '2', text: '待收货', icon: 'cart', path: '/pages/order/list?status=2' },
+  { id: '3', text: '已完成', icon: 'checkbox', path: '/pages/order/list?status=3' }
+]
 
-// 快捷工具入口
-const quickTools = computed(() => [
-  { id: 1, icon: 'star', text: '我的收藏', path: '/pages/user/favorite', badge: 0 },
-  { id: 2, icon: 'location', text: '收货地址', path: '/pages/address/list', badge: 0 },
-  { id: 3, icon: 'help', text: '帮助中心', path: '/pages/user/help', badge: 0 },
-  { id: 4, icon: 'chat', text: '意见反馈', path: '/pages/user/feedback', badge: 0 }
-])
-
-// 功能入口
-const funcItems = computed(() => [
-  { id: 1, icon: 'info', text: '关于我们', path: '/pages/about/index' }
-])
-
-// 会员等级
-const memberLevel = computed(() => {
-  // 简单逻辑：普通会员
-  return '普通会员'
-})
-
-const memberColor = computed(() => {
-  return 'rgba(255,255,255,0.6)'
-})
+// 快捷工具
+const quickTools = [
+  { id: 1, icon: 'star', text: '收藏', path: '/pages/user/favorite' },
+  { id: 2, icon: 'location', text: '收货地址', path: '/pages/address/list' },
+  { id: 3, icon: 'help', text: '帮助', path: '/pages/user/help' }
+]
 </script>
 
 <template>
@@ -138,31 +100,17 @@ const memberColor = computed(() => {
 
     <!-- 用户信息区 -->
     <view class="user-header">
-      <!-- 顶部工具栏 -->
-      <view class="header-toolbar">
-        <view class="toolbar-left">
-          <uni-icons type="gear" size="22" color="var(--text-inverse)" @click="goTo('/pages/user/settings')" aria-label="设置" />
-        </view>
-        <text class="header-title">会员中心</text>
-        <view class="toolbar-right">
-          <uni-icons type="chat" size="22" color="var(--text-inverse)" @click="goTo('/pages/notice/list')" aria-label="消息" />
-        </view>
-      </view>
-
       <!-- 用户信息 -->
-      <view v-if="userStore.isLoggedIn" class="user-info">
-        <view class="avatar" @click="goTo('/pages/user/profile')">
+      <view v-if="userStore.isLoggedIn" class="user-info" @click="goTo('/pages/user/profile')">
+        <view class="avatar">
           <image v-if="userInfo?.avatar" :src="userInfo.avatar" class="avatar-img" />
           <text v-else class="avatar-text">{{ (userInfo?.nickname || userInfo?.username || 'U').charAt(0).toUpperCase() }}</text>
         </view>
         <view class="user-content">
           <text class="nickname">{{ userInfo?.nickname || userInfo?.username || '微信用户' }}</text>
-          <view class="member-row">
-            <text class="member-tag" :style="{ background: memberColor }">{{ memberLevel }}</text>
-          </view>
         </view>
-        <view class="sign-btn" @click="goTo('/pages/user/sign')">
-          <text class="sign-text">签到</text>
+        <view class="setting-btn" @click.stop="goTo('/pages/user/settings')">
+          <uni-icons type="gear" size="22" color="rgba(255,255,255,0.8)" />
         </view>
       </view>
 
@@ -178,26 +126,11 @@ const memberColor = computed(() => {
       </view>
     </view>
 
-    <!-- 快捷工具栏 -->
-    <view class="quick-tools" v-if="userStore.isLoggedIn">
-      <view
-        v-for="tool in quickTools"
-        :key="tool.id"
-        class="quick-item"
-        @click="goTo(tool.path)"
-      >
-        <view class="quick-icon-wrap">
-          <uni-icons :type="tool.icon" size="24" color="var(--primary)" />
-        </view>
-        <text class="quick-text">{{ tool.text }}</text>
-      </view>
-    </view>
-
     <!-- 订单入口 -->
     <view class="order-section">
-      <view class="section-header" @click="goTo('/pages/order/list')">
+      <view class="section-header">
         <text class="section-title">我的订单</text>
-        <view class="section-more">
+        <view class="section-more" @click="goTo('/pages/order/list')">
           <text>查看全部</text>
           <uni-icons type="right" size="12" color="var(--text-placeholder)" />
         </view>
@@ -209,27 +142,41 @@ const memberColor = computed(() => {
           class="order-tab"
           @click="goTo(tab.path)"
         >
-          <view class="tab-icon-wrap">
-            <uni-icons :type="tab.icon" size="26" />
-            <view v-if="tab.count > 0" class="tab-badge">{{ tab.count > 99 ? '99+' : tab.count }}</view>
-          </view>
+          <uni-icons :type="tab.icon" size="22" color="var(--primary)" />
           <text class="tab-text">{{ tab.text }}</text>
         </view>
       </view>
     </view>
 
-    <!-- 功能入口网格 -->
-    <view class="func-grid">
+    <!-- 快捷工具 -->
+    <view class="quick-tools" v-if="userStore.isLoggedIn">
       <view
-        v-for="item in funcItems"
-        :key="item.id"
-        class="func-item"
-        @click="goTo(item.path)"
+        v-for="tool in quickTools"
+        :key="tool.id"
+        class="quick-item"
+        @click="goTo(tool.path)"
       >
-        <view class="func-icon-wrap">
-          <uni-icons :type="item.icon" size="24" color="var(--primary)" />
-        </view>
-        <text class="func-text">{{ item.text }}</text>
+        <uni-icons :type="tool.icon" size="22" color="var(--text-main)" />
+        <text class="quick-text">{{ tool.text }}</text>
+      </view>
+    </view>
+
+    <!-- 功能列表 -->
+    <view class="func-list">
+      <view class="func-item" @click="goTo('/pages/user/feedback')">
+        <uni-icons type="chat" size="20" color="var(--text-main)" />
+        <text class="func-text">意见反馈</text>
+        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
+      </view>
+      <view class="func-item" @click="goTo('/pages/user/feedback-list')">
+        <uni-icons type="flag" size="20" color="var(--text-main)" />
+        <text class="func-text">我的反馈</text>
+        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
+      </view>
+      <view class="func-item" @click="goTo('/pages/about/index')">
+        <uni-icons type="info" size="20" color="var(--text-main)" />
+        <text class="func-text">关于我们</text>
+        <uni-icons type="right" size="14" color="var(--text-placeholder)" />
       </view>
     </view>
 
@@ -249,34 +196,10 @@ const memberColor = computed(() => {
 
 /* 用户头部 */
 .user-header {
-  padding: calc(24rpx + env(safe-area-inset-top)) 32rpx 32rpx;
+  padding: calc(64rpx + env(safe-area-inset-top)) 32rpx 48rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
-/* 顶部工具栏 */
-.header-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.header-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: var(--text-inverse);
-}
-
-.toolbar-left,
-.toolbar-right {
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 用户信息 */
 .user-info {
   display: flex;
   align-items: center;
@@ -287,10 +210,10 @@ const memberColor = computed(() => {
 }
 
 .avatar {
-  width: 112rpx;
-  height: 112rpx;
+  width: 96rpx;
+  height: 96rpx;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 56rpx;
+  border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,7 +228,7 @@ const memberColor = computed(() => {
 }
 
 .avatar-text {
-  font-size: 44rpx;
+  font-size: 40rpx;
   font-weight: 600;
   color: var(--text-inverse);
 }
@@ -324,75 +247,20 @@ const memberColor = computed(() => {
   font-size: 36rpx;
   font-weight: 600;
   color: var(--text-inverse);
-  margin-bottom: 8rpx;
-}
-
-.member-row {
-  display: flex;
-  align-items: center;
-}
-
-.member-tag {
-  display: inline-block;
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  color: var(--text-inverse);
 }
 
 .guest-hint {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.6);
+  margin-top: 4rpx;
 }
 
-.sign-btn {
-  padding: 12rpx 28rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 32rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
-}
-
-.sign-text {
-  font-size: 26rpx;
-  color: var(--text-inverse);
-  font-weight: 500;
-}
-
-/* 快捷工具栏 */
-.quick-tools {
-  display: flex;
-  padding: 24rpx 16rpx;
-  background: var(--bg-card);
-  margin: 24rpx;
-  border-radius: 16rpx;
-  gap: 16rpx;
-}
-
-.quick-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.quick-icon-wrap {
+.setting-btn {
   width: 64rpx;
   height: 64rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-light);
-  border-radius: 16rpx;
-
-  .uni-icons {
-    color: var(--primary);
-  }
-}
-
-.quick-text {
-  font-size: 24rpx;
-  color: var(--text-main);
 }
 
 /* 订单入口 */
@@ -407,7 +275,7 @@ const memberColor = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 24rpx 16rpx;
+  padding: 28rpx 24rpx 20rpx;
 }
 
 .section-title {
@@ -434,65 +302,58 @@ const memberColor = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
-}
-
-.tab-icon-wrap {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-light);
-  border-radius: 16rpx;
-  position: relative;
-
-  .uni-icons {
-    color: var(--primary);
-  }
-}
-
-.tab-badge {
-  position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 20rpx;
-  border-radius: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8rpx;
+  gap: 8rpx;
+  padding: 16rpx 0;
 }
 
 .tab-text {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: var(--text-main);
 }
 
-/* 功能入口网格 */
-.func-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
+/* 快捷工具 */
+.quick-tools {
+  display: flex;
   background: var(--bg-card);
   margin: 0 24rpx;
   border-radius: 16rpx;
   overflow: hidden;
 }
 
-.func-item {
+.quick-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 32rpx 0;
-  border-right: 1rpx solid var(--border);
+  gap: 8rpx;
+
+  &:active {
+    background: var(--bg-page);
+  }
+}
+
+.quick-text {
+  font-size: 24rpx;
+  color: var(--text-main);
+}
+
+/* 功能列表 */
+.func-list {
+  background: var(--bg-card);
+  margin: 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.func-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid var(--border);
 
   &:last-child {
-    border-right: none;
+    border-bottom: none;
   }
 
   &:active {
@@ -500,25 +361,16 @@ const memberColor = computed(() => {
   }
 }
 
-.func-icon-wrap {
-  width: 56rpx;
-  height: 56rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-light);
-  border-radius: 12rpx;
-  margin-bottom: 8rpx;
-}
-
 .func-text {
-  font-size: 24rpx;
+  flex: 1;
+  margin-left: 20rpx;
+  font-size: 28rpx;
   color: var(--text-main);
 }
 
 /* 退出登录 */
 .logout-section {
-  padding: 32rpx 24rpx;
+  padding: 0 24rpx;
 }
 
 .logout-btn {

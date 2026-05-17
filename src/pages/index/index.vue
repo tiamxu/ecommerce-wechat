@@ -6,6 +6,7 @@ import { productApi, type Product, type ContentBlock } from '../../api'
 import { useSearchStore } from '../../store/search'
 import { useCartStore } from '../../store/cart'
 import { useUserStore } from '../../store/user'
+import { parseBannerExtra, getLocalizedValue } from '../../utils/banner'
 import ProductCard from '../../components/ProductCard.vue'
 import SearchBar from '../../components/SearchBar.vue'
 import TabBar from '../../components/TabBar.vue'
@@ -54,12 +55,8 @@ async function loadData() {
 }
 
 function getBannerBg(banner: ContentBlock): string {
-  try {
-    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    return extra.image || ''
-  } catch {
-    return ''
-  }
+  const extra = parseBannerExtra(banner)
+  return extra.image || ''
 }
 
 function getBannerTitle(banner: ContentBlock): string {
@@ -67,31 +64,13 @@ function getBannerTitle(banner: ContentBlock): string {
 }
 
 function getBannerSubtitle(banner: ContentBlock): string {
-  try {
-    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    const val = extra.subtitle
-    if (!val) return ''
-    if (typeof val === 'object' && val !== null) {
-      return locale.value === 'zh' ? (val.zh || '') : (val.en || '')
-    }
-    return val
-  } catch {
-    return ''
-  }
+  const extra = parseBannerExtra(banner)
+  return getLocalizedValue(extra.subtitle, locale.value)
 }
 
 function getBannerDesc(banner: ContentBlock): string {
-  try {
-    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    const val = extra.desc
-    if (!val) return ''
-    if (typeof val === 'object' && val !== null) {
-      return locale.value === 'zh' ? (val.zh || '') : (val.en || '')
-    }
-    return val
-  } catch {
-    return ''
-  }
+  const extra = parseBannerExtra(banner)
+  return getLocalizedValue(extra.desc, locale.value)
 }
 
 function goToProductDetail(id: number) {
@@ -114,15 +93,11 @@ function goToAllProducts() {
 }
 
 function handleBannerClick(banner: ContentBlock) {
-  try {
-    const extra = banner.extraJSON ? JSON.parse(banner.extraJSON) : {}
-    if (extra.productId) {
-      uni.navigateTo({
-        url: `/pages/product/detail?id=${extra.productId}`
-      })
-    }
-  } catch (e) {
-    console.error('解析banner数据失败', e)
+  const extra = parseBannerExtra(banner)
+  if (extra.productId) {
+    uni.navigateTo({
+      url: `/pages/product/detail?id=${extra.productId}`
+    })
   }
 }
 

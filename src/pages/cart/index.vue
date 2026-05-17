@@ -138,10 +138,11 @@ async function checkout() {
   uni.setStorageSync('checkoutItems', JSON.stringify(selectedItems))
 
   uni.navigateTo({
-    url: '/pages/order/confirm'
+    url: '/pages/order/confirm',
+    complete: () => {
+      checkoutLoading.value = false
+    }
   })
-
-  checkoutLoading.value = false
 }
 
 function goToShop() {

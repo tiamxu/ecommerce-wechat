@@ -5,7 +5,6 @@ import { productApi, favoriteApi, type Product } from '../../api'
 import { useUserStore } from '../../store/user'
 import { useCartStore } from '../../store/cart'
 import { THEME_CLASS } from '../../theme/config'
-import TabBar from '../../components/TabBar.vue'
 import ProductCard from '../../components/ProductCard.vue'
 import PriceText from '../../components/PriceText.vue'
 
@@ -27,15 +26,19 @@ const displayServices = computed(() => {
 // 处理商品详情HTML，限制图片宽度（兼容小程序rich-text）
 const processedDescription = computed(() => {
   if (!product.value?.description?.zh) return ''
-  let html = product.value.description.zh
-  // 给 img 标签添加行内样式（rich-text中%单位更稳定）
-  html = html.replace(/<img/gi, '<img style="max-width:100%!important;height:auto;display:block;"')
-  // 给 table 标签添加 max-width:100%
-  html = html.replace(/<table/gi, '<table style="max-width:100%!important;border-collapse:collapse;"')
-  // 给 td/th 添加边框和内边距
-  html = html.replace(/<td/gi, '<td style="padding:8px;border:1px solid #ddd;"')
-  html = html.replace(/<th/gi, '<th style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"')
-  return html
+  try {
+    let html = product.value.description.zh
+    html = html
+      .replace(/<img/gi, '<img style="max-width:100%!important;height:auto;display:block;"')
+      .replace(/<table/gi, '<table style="max-width:100%!important;border-collapse:collapse;"')
+      .replace(/<(td|th)/gi, (match) => match === '<td'
+        ? '<td style="padding:8px;border:1px solid #ddd;"'
+        : '<th style="padding:8px;border:1px solid #ddd;background:#f5f5f5;"')
+    return html
+  } catch (e) {
+    console.error('处理商品详情HTML失败', e)
+    return ''
+  }
 })
 
 onMounted(() => {
@@ -58,7 +61,8 @@ onShow(() => {
   if (pendingAction && pendingAction.type === 'addToCart' && pendingAction.productId) {
     // 延迟一点执行，确保页面已完全返回
     setTimeout(async () => {
-      const result = await cartStore.addItem(pendingAction.productId!, pendingAction.quantity || 1)
+      if (!pendingAction.productId) return
+      const result = await cartStore.addItem(pendingAction.productId, pendingAction.quantity || 1)
       if (result.success) {
         uni.showToast({ title: '已加入购物车', icon: 'success' })
       } else {

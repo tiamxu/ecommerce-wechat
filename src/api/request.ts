@@ -4,6 +4,17 @@ import { ErrorCodes, isSuccess, isAuthError, isCaptchaError, isNotFoundError } f
 // 登录页面路径常量
 const LOGIN_PAGE_PATH = '/pages/user/login'
 
+// 过滤空值参数
+export function cleanParams(params: Record<string, any>): Record<string, any> {
+  const cleaned: Record<string, any> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') {
+      cleaned[key] = value
+    }
+  }
+  return cleaned
+}
+
 // 错误消息（支持 i18n）
 const errorMessages: Record<number, string> = {
   // 认证

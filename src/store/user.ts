@@ -75,7 +75,15 @@ export const useUserStore = defineStore('user', {
         this.pendingAction = null
         uni.removeStorageSync('pendingLoginAction')
       }
-      return action ? (typeof action === 'string' ? JSON.parse(action) : action) : null
+      if (!action) return null
+      if (typeof action === 'string') {
+        try {
+          return JSON.parse(action)
+        } catch {
+          return null
+        }
+      }
+      return action
     },
 
     // 清除待执行动作
