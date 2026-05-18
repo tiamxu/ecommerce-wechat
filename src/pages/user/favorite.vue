@@ -54,7 +54,10 @@ function getCoverImage(item: FavoriteItem): string {
   if (item.coverImage) return item.coverImage
   if (item.images && item.images.length > 0) {
     const cover = item.images.find(img => img.isCover === 1)
-    return cover?.url || item.images[0].url
+    if (cover) {
+      return cover.urlLarge || cover.urlMedium || cover.url
+    }
+    return item.images[0].urlLarge || item.images[0].urlMedium || item.images[0].url
   }
   return ''
 }

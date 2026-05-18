@@ -312,9 +312,10 @@ function getCoverImages(): string[] {
   if (product.value.images && product.value.images.length > 0) {
     const coverImages = product.value.images.filter(img => img.isCover === 1)
     coverImages.forEach(img => {
-      if (img.url) {
-        images.push(img.url)
-        seenUrls.add(img.url)
+      const imgUrl = img.urlLarge || img.urlMedium || img.url
+      if (imgUrl && !seenUrls.has(imgUrl)) {
+        images.push(imgUrl)
+        seenUrls.add(imgUrl)
       }
     })
   }
@@ -322,9 +323,10 @@ function getCoverImages(): string[] {
   // 添加其他图片（非封面）
   if (product.value.images && product.value.images.length > 0) {
     product.value.images.forEach(img => {
-      if (img.url && !seenUrls.has(img.url)) {
-        images.push(img.url)
-        seenUrls.add(img.url)
+      const imgUrl = img.urlLarge || img.urlMedium || img.url
+      if (imgUrl && !seenUrls.has(imgUrl)) {
+        images.push(imgUrl)
+        seenUrls.add(imgUrl)
       }
     })
   }
