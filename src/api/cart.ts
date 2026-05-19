@@ -1,15 +1,23 @@
 import { request, type ApiResponse } from './request'
 
+export interface CartImage {
+  url: string
+  urlThumb?: string
+  urlMedium?: string
+  urlLarge?: string
+  isCover?: number
+}
+
 // 后端返回的购物车项结构
 export interface CartItem {
   id: number
   productId: number
   productName: string
-  coverImage?: string
-  productPrice: number  // 后端字段是 productPrice
+  productPrice: number
   quantity: number
   stock?: number
   subTotal?: number
+  image?: CartImage
   // 前端添加的字段
   selected?: boolean
 }

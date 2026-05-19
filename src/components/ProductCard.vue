@@ -11,7 +11,6 @@ interface Product {
   metaImage?: string
   name?: { zh?: string; en?: string }
   images?: { url: string; isCover?: number }[]
-  coverImages?: string[]
   tags?: { name: string }[]
   primaryTag?: { name: string }
 }
@@ -39,8 +38,9 @@ const productName = computed(() => {
 })
 
 const coverImage = computed(() => {
-  if (props.product.coverImages && props.product.coverImages.length > 0) {
-    return props.product.coverImages[0]
+  if (props.product.images && props.product.images.length > 0) {
+    const first = props.product.images[0]
+    return typeof first === 'string' ? first : (first.url || '')
   }
   return ''
 })

@@ -23,12 +23,20 @@ export interface OrderItem {
   createTime: string
 }
 
+export interface OrderImage {
+  url: string
+  urlThumb?: string
+  urlMedium?: string
+  urlLarge?: string
+  isCover?: number
+}
+
 export interface OrderProduct {
   productId: number
   productName: string
-  coverImage?: string
   price: number
   quantity: number
+  image?: OrderImage
 }
 
 export interface CreateOrderParams {
@@ -40,7 +48,7 @@ export interface CreateOrderParams {
   city: string
   address: string
   postalCode: string
-  items: { productId: number; quantity: number; price?: number; productName?: string; coverImage?: string }[]
+  items: { productId: number; quantity: number; price?: number; productName?: string }[]
   remark?: string
 }
 

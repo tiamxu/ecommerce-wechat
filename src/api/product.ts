@@ -1,5 +1,13 @@
 import { request, type ApiResponse, cleanParams } from './request'
 
+export interface ProductImage {
+  url: string
+  urlThumb?: string
+  urlMedium?: string
+  urlLarge?: string
+  isCover?: number
+}
+
 export interface Product {
   id: number
   price: number
@@ -11,8 +19,7 @@ export interface Product {
   metaImage?: string
   name: { zh?: string; en?: string }
   description?: { zh?: string; en?: string }
-  images?: { url: string; isCover?: number }[]
-  coverImages?: string[]
+  images?: ProductImage[]
   primaryTag?: { name: string }
   tags?: { name: string }[]
   services?: ServicePolicy[]

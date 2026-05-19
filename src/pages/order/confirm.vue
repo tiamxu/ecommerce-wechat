@@ -38,7 +38,7 @@ onMounted(async () => {
         price: quickBuy.price || 0,
         quantity: quickBuy.quantity,
         selected: true,
-        coverImage: quickBuy.coverImage || ''
+        images: quickBuy.images || []
       }]
     }
   }
@@ -111,8 +111,7 @@ async function submitOrder() {
     productId: item.productId,
     quantity: item.quantity,
     price: item.productPrice || item.price,
-    productName: item.productName,
-    coverImage: item.coverImage
+    productName: item.productName
   }))
 
   try {
@@ -226,7 +225,7 @@ async function submitOrder() {
       </view>
       <view v-for="item in checkoutItems" :key="item.id" class="goods-item">
         <view class="goods-img-wrap">
-          <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" />
+          <image v-if="item.image" :src="item.image.url || item.image" class="goods-img" mode="aspectFill" />
           <view v-else class="goods-img-placeholder">
             <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
           </view>

@@ -215,7 +215,7 @@ async function cancelOrder(orderId: number) {
           <view class="order-goods">
             <view v-for="(item, index) in (order.items || []).slice(0, 3)" :key="index" class="goods-item" @click.stop>
               <view class="goods-img-wrap">
-                <image v-if="item.coverImage" :src="item.coverImage" class="goods-img" mode="aspectFill" lazy-load />
+                <image v-if="item.image" :src="item.image.url || item.image" class="goods-img" mode="aspectFill" lazy-load />
                 <view v-else class="goods-placeholder">
                   <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
                 </view>

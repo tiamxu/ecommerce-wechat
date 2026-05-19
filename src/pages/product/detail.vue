@@ -272,7 +272,7 @@ function buyNow() {
     quantity: quantity.value,
     price: product.value.price,
     productName: getProductName(),
-    coverImage: images.length > 0 ? images[0] : ''
+    images: images.slice(0, 3)
   })
   uni.navigateTo({
     url: '/pages/order/confirm'
@@ -308,19 +308,7 @@ function getCoverImages(): string[] {
   const images: string[] = []
   const seenUrls = new Set<string>()
 
-  // 优先添加封面图（is_cover=1）
-  if (product.value.images && product.value.images.length > 0) {
-    const coverImages = product.value.images.filter(img => img.isCover === 1)
-    coverImages.forEach(img => {
-      const imgUrl = img.urlLarge || img.urlMedium || img.url
-      if (imgUrl && !seenUrls.has(imgUrl)) {
-        images.push(imgUrl)
-        seenUrls.add(imgUrl)
-      }
-    })
-  }
-
-  // 添加其他图片（非封面）
+  // 图片已按 sort_order ASC 排序，取所有图片
   if (product.value.images && product.value.images.length > 0) {
     product.value.images.forEach(img => {
       const imgUrl = img.urlLarge || img.urlMedium || img.url

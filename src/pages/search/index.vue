@@ -122,7 +122,7 @@ function onLoadMore() {
         >
           <image
             class="result-image"
-            :src="item.coverImage || '/static/placeholder.png'"
+            :src="(item.images?.[0]?.url || item.images?.[0]) || '/static/placeholder.png'"
             mode="aspectFill"
           />
           <view class="result-info">

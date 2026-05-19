@@ -1,14 +1,21 @@
 import { request, type ApiResponse } from './request'
 
+export interface FavoriteImage {
+  url: string
+  urlThumb?: string
+  urlMedium?: string
+  urlLarge?: string
+  isCover?: number
+}
+
 export interface FavoriteItem {
   id: number
   productId: number
   productName: string
   productPrice: number
-  coverImage: string
   stock: number
   createdAt: string
-  images: { url: string; isCover?: number }[]
+  image?: FavoriteImage
 }
 
 export const favoriteApi = {
