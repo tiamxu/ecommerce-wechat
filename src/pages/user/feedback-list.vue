@@ -11,10 +11,11 @@ const feedbackList = ref<FeedbackItem[]>([])
 const page = ref(1)
 const pageSize = ref(10)
 const hasMore = ref(true)
-const statusFilter = ref(0) // 0=全部
+const statusFilter = ref(-1) // -1=全部, 0=待处理, 1=处理中, 2=已回复, 3=已完成, 4=已关闭
 
 const statusOptions = [
-  { value: 0, label: '全部' },
+  { value: -1, label: '全部' },
+  { value: 0, label: '待处理' },
   { value: 1, label: '处理中' },
   { value: 2, label: '已回复' },
   { value: 3, label: '已完成' },
@@ -63,13 +64,13 @@ async function loadList(reset = false) {
 
   loading.value = true
   try {
-    const res = await feedbackApi.list(page.value, pageSize.value)
+    const res = await feedbackApi.list(page.value, pageSize.value, statusFilter.value)
     if (res.code === 200 && res.data) {
       const items = res.data.items || []
       if (reset) {
-        feedbackList.value = filterByStatus(items)
+        feedbackList.value = items
       } else {
-        feedbackList.value = [...feedbackList.value, ...filterByStatus(items)]
+        feedbackList.value = [...feedbackList.value, ...items]
       }
       hasMore.value = items.length === pageSize.value
     }
@@ -79,11 +80,6 @@ async function loadList(reset = false) {
     loading.value = false
     refreshing.value = false
   }
-}
-
-function filterByStatus(list: FeedbackItem[]): FeedbackItem[] {
-  if (statusFilter.value === 0) return list
-  return list.filter(item => item.status === statusFilter.value)
 }
 
 function selectStatus(status: number) {

@@ -43,11 +43,11 @@ export const feedbackApi = {
   },
 
   // 获取反馈列表
-  list(page = 1, pageSize = 10): Promise<ApiResponse<FeedbackListResponse>> {
+  list(page = 1, pageSize = 10, status = -1): Promise<ApiResponse<FeedbackListResponse>> {
     return request({
       url: '/api/feedback',
       method: 'GET',
-      data: { page, pageSize },
+      data: { page, pageSize, status },
       showLoading: true
     })
   },

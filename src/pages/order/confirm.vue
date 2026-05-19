@@ -262,7 +262,7 @@ async function submitOrder() {
     <view class="pay-bar">
       <view class="pay-amount">
         <text class="amount-label">实付款</text>
-        <text class="amount-value">¥{{ orderTotal.toFixed(2) }}</text>
+        <PriceText :price="orderTotal" size="large" />
       </view>
       <view
         class="pay-btn"

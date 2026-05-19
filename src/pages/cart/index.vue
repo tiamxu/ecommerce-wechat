@@ -299,7 +299,7 @@ function onTouchEnd(productId: number) {
         </view>
         <view class="total-section">
           <text class="total-label">合计</text>
-          <text class="total-price">¥{{ totalPrice.toFixed(2) }}</text>
+          <PriceText :price="totalPrice" />
         </view>
         <text class="checkout-btn" :class="{ loading: checkoutLoading }" @click="checkout">
           {{ checkoutLoading ? '结算中...' : '结算' }}
@@ -570,19 +570,15 @@ function onTouchEnd(productId: number) {
   flex: 1;
   text-align: right;
   margin-right: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .total-label {
   font-size: 24rpx;
   color: var(--text-sub);
-}
-
-.total-price {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 700;
-  color: var(--price);
-  font-variant-numeric: tabular-nums;
+  margin-right: 8rpx;
 }
 
 .checkout-btn {
