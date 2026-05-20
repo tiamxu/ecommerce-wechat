@@ -327,6 +327,16 @@ function getCoverImages(): string[] {
   return images
 }
 
+function previewImage(index: number) {
+  const images = getCoverImages()
+  if (images.length > 0) {
+    uni.previewImage({
+      current: index,
+      urls: images
+    })
+  }
+}
+
 function goToRecommendDetail(id: number) {
   uni.navigateTo({
     url: `/pages/product/detail?id=${id}`
@@ -415,7 +425,7 @@ async function loadRecommendProducts() {
           indicator-active-color="var(--text-inverse)"
         >
           <swiper-item v-for="(img, index) in getCoverImages()" :key="index">
-            <image :src="img" mode="aspectFill" class="swiper-image" />
+            <image :src="img" mode="aspectFill" class="swiper-image" @click="previewImage(index)" />
           </swiper-item>
         </swiper>
         <view v-else class="img-placeholder">
@@ -578,7 +588,7 @@ async function loadRecommendProducts() {
 
 .detail-swiper {
   width: 100%;
-  height: 360rpx;
+  height: 420rpx;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
