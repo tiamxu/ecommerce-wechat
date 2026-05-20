@@ -259,7 +259,7 @@ function onTouchEnd(productId: number) {
             <view class="item-img">
               <image
                 v-if="item.image"
-                :src="item.image.url || item.image"
+                :src="item.image?.urlMedium || item.image?.url || item.image"
                 mode="aspectFill"
                 class="cover-img"
                 :alt="item.productName"

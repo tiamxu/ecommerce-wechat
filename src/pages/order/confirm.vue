@@ -225,7 +225,7 @@ async function submitOrder() {
       </view>
       <view v-for="item in checkoutItems" :key="item.id" class="goods-item">
         <view class="goods-img-wrap">
-          <image v-if="item.image" :src="item.image.url || item.image" class="goods-img" mode="aspectFill" />
+          <image v-if="item.image" :src="item.image?.urlMedium || item.image?.url || item.image" class="goods-img" mode="aspectFill" />
           <view v-else class="goods-img-placeholder">
             <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
           </view>

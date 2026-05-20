@@ -40,7 +40,7 @@ const productName = computed(() => {
 const coverImage = computed(() => {
   if (props.product.images && props.product.images.length > 0) {
     const first = props.product.images[0]
-    return typeof first === 'string' ? first : (first.url || '')
+    return typeof first === 'string' ? first : (first.urlMedium || first.url || '')
   }
   return ''
 })

@@ -140,7 +140,7 @@ function goBack() {
         </view>
         <view v-for="(item, index) in order.items" :key="index" class="goods-item">
           <view class="goods-img-wrap">
-            <image v-if="item.image" :src="item.image.url || item.image" class="goods-img" mode="aspectFill" />
+            <image v-if="item.image" :src="item.image?.urlMedium || item.image?.url || item.image" class="goods-img" mode="aspectFill" />
             <view v-else class="goods-placeholder">
               <text class="placeholder-text">{{ item.productName?.charAt(0) || 'P' }}</text>
             </view>
