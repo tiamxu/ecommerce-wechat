@@ -17,7 +17,6 @@ const favoriteStatus = ref({ isFavorite: false, favoriteId: 0 })
 const recommendProducts = ref<Product[]>([])
 const userStore = useUserStore()
 const cartStore = useCartStore()
-let currentScrollTop = 0
 
 const displayServices = computed(() => {
   return product.value?.services?.slice(0, 4) || []
@@ -50,9 +49,11 @@ onMounted(() => {
     loadProduct(Number(id))
     loadRecommendProducts()
   }
-  // 立即更新位置，300ms后再更新一次确保准确
-  updateSectionPositions()
-  setTimeout(updateSectionPositions, 300)
+
+  // 初始化 IntersectionObserver
+  setTimeout(() => {
+    initSectionObserver()
+  }, 300)
 })
 
 // 登录后返回时检查是否有待执行动作
@@ -72,88 +73,70 @@ onShow(() => {
   }
 })
 
-// 点击tab跳转到对应区块
-const sectionPositions = ref({
-  product: 0,
-  comment: 0,
-  detail: 0,
-  recommend: 0
-})
+// 区块观察器状态
+const showStickyTabs = ref(false)
+const scrollTrackingPaused = ref(false)
+let sectionObserver: any = null
 
+// 初始化 IntersectionObserver 监听各区块
+function initSectionObserver() {
+  // 创建全局观察器
+  sectionObserver = uni.createIntersectionObserver({
+    thresholds: [0, 0.5, 1]
+  })
+  sectionObserver.relativeTo('.page-content', { top: 88 })
+
+  // 观察各个区块
+  sectionObserver.observe('#product', (res: any) => {
+    if (res.intersectionRatio > 0 && !scrollTrackingPaused.value) {
+      activeTab.value = 'product'
+    }
+  })
+  sectionObserver.observe('#comment', (res: any) => {
+    if (res.intersectionRatio > 0 && !scrollTrackingPaused.value) {
+      activeTab.value = 'comment'
+    }
+  })
+  sectionObserver.observe('#detail', (res: any) => {
+    if (res.intersectionRatio > 0 && !scrollTrackingPaused.value) {
+      activeTab.value = 'detail'
+    }
+  })
+  sectionObserver.observe('#recommend', (res: any) => {
+    if (res.intersectionRatio > 0 && !scrollTrackingPaused.value) {
+      activeTab.value = 'recommend'
+    }
+  })
+}
+
+// 点击tab跳转到对应区块
 function scrollToTab(tab: string) {
-  const position = sectionPositions.value[tab as keyof typeof sectionPositions.value]
   activeTab.value = tab
 
-  // 点击Tab后暂停跟踪，等滚动稳定
+  // 点击Tab后暂停观察者跟踪，等滚动稳定
   scrollTrackingPaused.value = true
   setTimeout(() => {
     scrollTrackingPaused.value = false
   }, 300)
 
-  // 位置未获取时，延迟执行
-  if (position === undefined || position === 0) {
-    setTimeout(() => {
-      uni.pageScrollTo({
-        scrollTop: sectionPositions.value[tab as keyof typeof sectionPositions.value] - 88,
-        duration: 200
-      })
-    }, 100)
-    return
-  }
-
-  uni.pageScrollTo({
-    scrollTop: position - 88,
-    duration: 200
-  })
-}
-
-// 监听滚动，更新当前tab和Tab栏显示
-const showStickyTabs = ref(false)
-const scrollTrackingPaused = ref(false)
-
-// 更新各区块滚动位置（使用 offsetTop 计算固定位置）
-function updateSectionPositions() {
+  // 使用 selectorQuery 定位目标区块
   uni.createSelectorQuery()
-    .select('#product').boundingClientRect()
-    .select('#comment').boundingClientRect()
-    .select('#detail').boundingClientRect()
-    .select('#recommend').boundingClientRect()
-    .exec((res: any) => {
-      if (res[0] && res[0].top !== undefined) {
-        sectionPositions.value.product = res[0].top + currentScrollTop
-      }
-      if (res[1] && res[1].top !== undefined) {
-        sectionPositions.value.comment = res[1].top + currentScrollTop
-      }
-      if (res[2] && res[2].top !== undefined) {
-        sectionPositions.value.detail = res[2].top + currentScrollTop
-      }
-      if (res[3] && res[3].top !== undefined) {
-        sectionPositions.value.recommend = res[3].top + currentScrollTop
+    .select('#' + tab)
+    .boundingClientRect((rect: any) => {
+      if (rect) {
+        uni.pageScrollTo({
+          scrollTop: rect.top - 88,
+          duration: 200
+        })
       }
     })
+    .exec()
 }
 
-// 页面滚动监听
+// 页面滚动监听 - 仅用于控制吸顶 Tab 显示
 onPageScroll((e: any) => {
-  currentScrollTop = e.scrollTop
-
   // 滚动超过100px时显示吸顶Tab
   showStickyTabs.value = e.scrollTop > 100
-
-  // 点击Tab后暂停跟踪，等滚动稳定
-  if (scrollTrackingPaused.value) return
-
-  // 根据滚动位置判断当前tab（使用固定阈值）
-  if (e.scrollTop < 400) {
-    activeTab.value = 'product'
-  } else if (e.scrollTop < 800) {
-    activeTab.value = 'comment'
-  } else if (e.scrollTop < 1200) {
-    activeTab.value = 'detail'
-  } else {
-    activeTab.value = 'recommend'
-  }
 })
 
 async function loadProduct(id: number) {
@@ -516,8 +499,8 @@ async function loadRecommendProducts() {
         </view>
       </view>
       <view class="action-buttons">
-        <text class="btn-add" :class="{ loading: cartLoading }" aria-label="加入购物车" @click="addToCart">{{ cartLoading ? '' : '加入购物车' }}</text>
-        <text class="btn-buy" :class="{ loading: buyLoading }" aria-label="立即购买" @click="buyNow">{{ buyLoading ? '' : '立即购买' }}</text>
+        <text class="btn-add" :class="{ loading: cartLoading }" aria-label="加入购物车" @click="addToCart">{{ cartLoading ? '加入中...' : '加入购物车' }}</text>
+        <text class="btn-buy" :class="{ loading: buyLoading }" aria-label="立即购买" @click="buyNow">{{ buyLoading ? '跳转中...' : '立即购买' }}</text>
       </view>
     </view>
   </view>

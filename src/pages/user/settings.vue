@@ -230,7 +230,7 @@ function handleLogout() {
   width: 100%;
   padding: 28rpx;
   background: var(--bg-card);
-  color: var(--color-danger);
+  color: var(--accent);
   text-align: center;
   border-radius: 16rpx;
   font-size: 28rpx;

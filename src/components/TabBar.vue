@@ -10,7 +10,6 @@ const props = defineProps<{
 
 const tabs = [
   { pagePath: '/pages/index/index', text: '首页', icon: 'home' },
-  { pagePath: '/pages/product/list', text: '商品', icon: 'shop' },
   { pagePath: '/pages/cart/index', text: '购物车', icon: 'cart' },
   { pagePath: '/pages/user/index', text: '我的', icon: 'person' }
 ]

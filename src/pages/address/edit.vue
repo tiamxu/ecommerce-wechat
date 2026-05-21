@@ -254,7 +254,9 @@ async function saveAddress() {
     </view>
 
     <view class="save-btn-wrap">
-      <text class="save-btn" @click="saveAddress">保存</text>
+      <text class="save-btn" :class="{ loading }" @click="saveAddress">
+        {{ loading ? '保存中...' : '保存' }}
+      </text>
     </view>
 
     <!-- 地区选择器 -->
@@ -382,6 +384,10 @@ async function saveAddress() {
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
+
+  &.loading {
+    opacity: 0.6;
+  }
 
   &:active {
     opacity: 0.9;

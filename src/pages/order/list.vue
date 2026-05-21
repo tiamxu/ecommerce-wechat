@@ -4,6 +4,7 @@ import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { orderApi } from '../../api'
 import { useUserStore } from '../../store/user'
 import { THEME_CLASS } from '../../theme/config'
+import PriceText from '../../components/PriceText.vue'
 
 const userStore = useUserStore()
 const orders = ref<any[]>([])
@@ -240,7 +241,7 @@ async function cancelOrder(orderId: number) {
             </view>
             <view class="footer-right">
               <text class="amount-label">实付款</text>
-              <text class="amount-value">¥{{ order.totalAmount }}</text>
+              <PriceText :price="(order.totalAmount || 0) + (order.freight || 0)" />
             </view>
           </view>
 
@@ -546,7 +547,7 @@ async function cancelOrder(orderId: number) {
 
   &.cancel {
     background: var(--bg-page);
-    color: var(--text-sub);
+    color: var(--text-main);
     border: 1rpx solid var(--border);
   }
 }

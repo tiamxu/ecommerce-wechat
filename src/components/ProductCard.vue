@@ -197,7 +197,7 @@ function handleAddCart(e: any) {
   }
 
   &.adding {
-    animation: cartPulse 0.6s ease-out;
+    animation: cartPulse 0.6s ease-out forwards;
   }
 }
 

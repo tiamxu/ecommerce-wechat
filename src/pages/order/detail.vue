@@ -176,24 +176,23 @@ function goBack() {
       <view class="card summary-card">
         <view class="summary-row">
           <text class="label">商品金额</text>
-          <text class="value">¥{{ order.totalAmount }}</text>
+          <PriceText :price="order.totalAmount" />
         </view>
         <view class="summary-row">
           <text class="label">运费</text>
-          <text class="value" :class="{ highlight: order.freight === 0 }">
-            {{ order.freight === 0 ? '免运费' : '¥' + order.freight }}
-          </text>
+          <text v-if="order.freight === 0" class="value highlight">免运费</text>
+          <PriceText v-else :price="order.freight" />
         </view>
         <view class="summary-row total-row">
           <text class="total-label">实付款</text>
-          <text class="total-value">¥{{ order.totalAmount + order.freight }}</text>
+          <PriceText :price="order.totalAmount + order.freight" size="large" />
         </view>
       </view>
 
       <!-- 底部操作栏 -->
       <view class="action-bar">
         <view class="action-left">
-          <text class="pay-amount">¥{{ order.totalAmount + order.freight }}</text>
+          <PriceText :price="order.totalAmount + order.freight" size="large" />
           <text class="pay-label">实付款</text>
         </view>
         <view class="action-btns">

@@ -1,24 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useI18n } from 'vue-i18n'
-import { productApi, type Product, type ContentBlock } from '../../api'
+import { productApi, type Product } from '../../api'
 import { useSearchStore } from '../../store/search'
 import { useCartStore } from '../../store/cart'
 import { useUserStore } from '../../store/user'
-import { parseBannerExtra, getLocalizedValue } from '../../utils/banner'
 import ProductCard from '../../components/ProductCard.vue'
 import SearchBar from '../../components/SearchBar.vue'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
+import { getCategoryEmoji, getCategoryBgColor } from '../../config/categoryEmoji'
 
-const { locale } = useI18n()
 const searchStore = useSearchStore()
 const cartStore = useCartStore()
 const userStore = useUserStore()
 
-const hotProducts = ref<Product[]>([])
-const banners = ref<ContentBlock[]>([])
+const products = ref<Product[]>([])
+const categories = ref<any[]>([])
+const selectedCategoryId = ref<number | null>(null)
 const loading = ref(false)
 const hasLoaded = ref(false)
 
@@ -35,16 +34,20 @@ onShow(() => {
 async function loadData() {
   loading.value = true
   try {
-    const [hotRes, bannerRes] = await Promise.all([
-      productApi.getHotProducts(8),
-      productApi.getContents('banner')
+    const params: any = { pageNo: 1, pageSize: 50 }
+    if (selectedCategoryId.value) {
+      params.categoryId = selectedCategoryId.value
+    }
+    const [productRes, categoryRes] = await Promise.all([
+      productApi.getList(params),
+      productApi.getCategories()
     ])
 
-    if (hotRes.code === 200) {
-      hotProducts.value = hotRes.data.pageData || []
+    if (productRes.code === 200) {
+      products.value = productRes.data.pageData || []
     }
-    if (bannerRes.code === 200 && bannerRes.data) {
-      banners.value = bannerRes.data.filter((b: ContentBlock) => b.status === 1)
+    if (categoryRes.code === 200 && categoryRes.data) {
+      categories.value = categoryRes.data || []
     }
   } catch (error) {
     console.error('加载数据失败', error)
@@ -52,25 +55,6 @@ async function loadData() {
     loading.value = false
     hasLoaded.value = true
   }
-}
-
-function getBannerBg(banner: ContentBlock): string {
-  const extra = parseBannerExtra(banner)
-  return extra.image || ''
-}
-
-function getBannerTitle(banner: ContentBlock): string {
-  return locale.value === 'zh' ? (banner.zhValue || '') : (banner.enValue || '')
-}
-
-function getBannerSubtitle(banner: ContentBlock): string {
-  const extra = parseBannerExtra(banner)
-  return getLocalizedValue(extra.subtitle, locale.value)
-}
-
-function getBannerDesc(banner: ContentBlock): string {
-  const extra = parseBannerExtra(banner)
-  return getLocalizedValue(extra.desc, locale.value)
 }
 
 function goToProductDetail(id: number) {
@@ -88,17 +72,13 @@ function goToSearch(keyword: string) {
   })
 }
 
-function goToAllProducts() {
-  uni.switchTab({ url: '/pages/product/list' })
+function scrollToTop() {
+  uni.pageScrollTo({ scrollTop: 0, duration: 300 })
 }
 
-function handleBannerClick(banner: ContentBlock) {
-  const extra = parseBannerExtra(banner)
-  if (extra.productId) {
-    uni.navigateTo({
-      url: `/pages/product/detail?id=${extra.productId}`
-    })
-  }
+function selectCategory(categoryId: number | null) {
+  selectedCategoryId.value = categoryId
+  loadData()
 }
 
 async function addToCart(product: Product) {
@@ -124,65 +104,51 @@ async function addToCart(product: Product) {
     <TabBar />
     <!-- 顶部搜索栏 -->
     <view class="search-bar">
-      <SearchBar @search="goToSearch" />
-    </view>
-
-    <!-- Banner -->
-    <view class="banner">
-      <swiper v-if="banners.length > 0" class="banner-swiper" indicator-dots :autoplay="true" :circular="true">
-        <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
-          <view class="banner-item" :style="{ backgroundImage: `url('${getBannerBg(banner)}')` }">
-            <view class="banner-overlay"></view>
-            <view class="banner-content">
-              <text class="banner-title">{{ getBannerTitle(banner) }}</text>
-              <text v-if="getBannerDesc(banner)" class="banner-desc">{{ getBannerDesc(banner) }}</text>
-            </view>
-          </view>
-        </swiper-item>
-      </swiper>
-      <swiper v-else class="banner-swiper" indicator-dots :autoplay="true" :circular="true">
-        <swiper-item>
-          <view class="banner-item banner-1">
-            <view class="banner-content">
-              <text class="banner-title">新品上市</text>
-              <text class="banner-subtitle">精选优质好物</text>
-            </view>
-          </view>
-        </swiper-item>
-        <swiper-item>
-          <view class="banner-item banner-2">
-            <view class="banner-content">
-              <text class="banner-title">限时特惠</text>
-              <text class="banner-subtitle">全场低至5折</text>
-            </view>
-          </view>
-        </swiper-item>
-      </swiper>
-    </view>
-
-    <!-- 热门推荐 -->
-    <view class="section">
-      <view class="section-header">
-        <view class="section-title-wrap">
-          <text class="section-title">热门推荐</text>
-          <text class="section-subtitle">发现更多好物</text>
-        </view>
-        <view class="section-more" @click="goToAllProducts">
-          <text>查看全部</text>
-          <text class="more-arrow">›</text>
-        </view>
+      <view class="brand-logo" @click="scrollToTop">E-Shop</view>
+      <view class="search-wrap">
+        <SearchBar @search="goToSearch" />
       </view>
+    </view>
+
+    <!-- 分类入口（金刚位） -->
+    <view class="category-grid">
+      <view
+        class="category-item"
+        v-for="(category, index) in categories.slice(0, 8)"
+        :key="category.id"
+        :class="{ active: selectedCategoryId === category.id }"
+        @click="selectCategory(category.id)"
+      >
+        <view class="category-icon" :style="{ background: getCategoryBgColor(index) }">
+          <text class="emoji-text">{{ getCategoryEmoji(category.name) }}</text>
+        </view>
+        <text class="category-name">{{ category.name?.zh || category.name?.en || '分类' }}</text>
+      </view>
+      <view
+        class="category-item"
+        :class="{ active: selectedCategoryId === null }"
+        @click="selectCategory(null)"
+      >
+        <view class="category-icon more">
+          <text class="emoji-text">🔥</text>
+        </view>
+        <text class="category-name">全部</text>
+      </view>
+    </view>
+
+    <!-- 商品列表 -->
+    <view class="product-wrapper">
       <view class="product-grid">
         <ProductCard
-          v-for="item in hotProducts"
+          v-for="item in products"
           :key="item.id"
           :product="item"
           @click="goToProductDetail(item.id)"
         />
       </view>
-      <view v-if="hotProducts.length === 0 && !loading" class="empty-tip">
-        <text>暂无推荐商品</text>
-      </view>
+    </view>
+    <view v-if="products.length === 0 && !loading" class="empty-tip">
+      <text>暂无商品</text>
     </view>
   </view>
 </template>
@@ -201,122 +167,105 @@ async function addToCart(product: Product) {
   left: 0;
   right: 0;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
   padding: 12rpx 24rpx;
   padding-top: calc(12rpx + env(safe-area-inset-top));
   background: var(--bg-page);
   box-shadow: 0 2rpx 12rpx var(--shadow);
 }
 
-/* Banner */
-.banner {
-  padding-top: calc(88rpx + env(safe-area-inset-top));
+.brand-logo {
+  width: 140rpx;
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -1rpx;
+  text-shadow: 0 2rpx 8rpx var(--primary-light);
+  transition: opacity 0.2s ease;
+
+  &:active {
+    opacity: 0.6;
+  }
 }
 
-.banner-swiper {
-  width: 100%;
-  height: 360rpx;
-  border-radius: 0;
+.search-wrap {
+  flex: 1;
 }
 
-.banner-item {
-  width: 100%;
-  height: 360rpx;
-  background-size: cover;
-  background-position: center;
-  position: relative;
+/* 金刚位分类导航 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16rpx;
+  padding: 24rpx 20rpx;
+  margin-top: calc(104rpx + env(safe-area-inset-top));
+  background: var(--bg-card);
 }
 
-.banner-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 180rpx;
-  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
-}
-
-.banner-1 {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-}
-
-.banner-2 {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-}
-
-.banner-content {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 32rpx;
-  padding: 0 32rpx;
-  z-index: 1;
-}
-
-.banner-title {
-  display: block;
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.25);
-}
-
-.banner-subtitle {
-  display: block;
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: 8rpx;
-}
-
-.banner-desc {
-  display: block;
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 4rpx;
-}
-
-/* 热门推荐 */
-.section {
-  padding: 40rpx 20rpx;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.section-title-wrap {
+.category-item {
   display: flex;
   flex-direction: column;
-  gap: 4rpx;
+  align-items: center;
+  gap: 8rpx;
+  padding: 20rpx 8rpx;
+  border-radius: 16rpx;
+  background: var(--bg-page);
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    box-shadow: 0 4rpx 16rpx var(--primary-light);
+  }
+
+  &.active .category-name {
+    color: #fff;
+    font-weight: 600;
+  }
 }
 
-.section-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.section-subtitle {
-  font-size: 22rpx;
-  color: var(--text-sub);
-}
-
-.section-more {
+.category-icon {
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
-  padding: 12rpx 20rpx;
+  justify-content: center;
   background: var(--primary-light);
-  border-radius: 32rpx;
-  font-size: 24rpx;
-  color: var(--primary);
-  font-weight: 500;
+  border-radius: 16rpx;
+  transition: all 0.2s ease;
 }
 
-.more-arrow {
-  font-size: 24rpx;
-  margin-left: 4rpx;
+.emoji-text {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.category-item.active .emoji-text {
+  filter: brightness(0) invert(1);
+}
+
+.category-icon.more {
+  background: var(--bg-page);
+  border: 2rpx dashed var(--border);
+}
+
+.category-name {
+  font-size: 22rpx;
+  color: var(--text-main);
+  transition: color 0.2s ease;
+}
+
+/* 商品列表 */
+.product-wrapper {
+  padding: 24rpx 20rpx;
+  padding-bottom: calc(24rpx + 120rpx + env(safe-area-inset-bottom));
 }
 
 .product-grid {

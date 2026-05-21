@@ -100,10 +100,18 @@ async function moveToCart(item: FavoriteItem) {
   }
 }
 
-// 去购买 - 跳转到商品详情
+// 去购买 - 直接跳转订单确认页
 function goBuy(item: FavoriteItem) {
   closeSwipe(item.id)
-  goToDetail(item.productId)
+  // 存储商品信息用于快速下单
+  uni.setStorageSync('quickBuy', {
+    productId: item.productId,
+    productName: item.productName,
+    price: item.productPrice,
+    quantity: 1,
+    images: item.image ? [item.image.urlLarge || item.image.urlMedium || item.image.url] : []
+  })
+  uni.navigateTo({ url: '/pages/order/confirm' })
 }
 
 // 删除
@@ -177,8 +185,8 @@ function goToShop() {
               </view>
               <!-- 操作按钮 -->
               <view class="item-actions">
-                <text class="action-btn add-cart" @click="moveToCart(item)">加购</text>
-                <text class="action-btn buy" @click="goBuy(item)">去购买</text>
+                <text class="action-btn add-cart" @click.stop="moveToCart(item)">加购</text>
+                <text class="action-btn buy" @click.stop="goBuy(item)">去购买</text>
               </view>
             </view>
           </view>

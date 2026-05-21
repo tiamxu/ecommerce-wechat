@@ -149,15 +149,11 @@ function goToShop() {
   uni.switchTab({ url: '/pages/product/list' })
 }
 
-function goToDetail(productId: number) {
-  // 关闭滑动
-  swipeState.value[productId] = ''
-  uni.navigateTo({ url: `/pages/product/detail?id=${productId}` })
-}
-
 // 滑动相关
 let startX = 0
 let movingX = 0
+let isSwiping = false  // 标记是否正在滑动
+let clickTarget = ''   // 记录点击目标
 
 // 数量展开状态
 const expandedId = ref<number | null>(null)
@@ -173,6 +169,7 @@ function toggleExpand(productId: number) {
 function onTouchStart(e: TouchEvent, productId: number) {
   startX = e.touches[0].clientX
   movingX = 0
+  isSwiping = false
 }
 
 function onTouchMove(e: TouchEvent, productId: number) {
@@ -184,9 +181,15 @@ function onTouchMove(e: TouchEvent, productId: number) {
     e.preventDefault()
   }
 
-  if (movingX < -30) {
+  // 标记开始滑动
+  if (Math.abs(movingX) > 20) {
+    isSwiping = true
+  }
+
+  // 增大阈值到50px，减少误触
+  if (movingX < -50) {
     swipeState.value[productId] = 'left'
-  } else if (movingX > 30) {
+  } else if (movingX > 50) {
     swipeState.value[productId] = 'right'
   } else {
     swipeState.value[productId] = ''
@@ -194,12 +197,46 @@ function onTouchMove(e: TouchEvent, productId: number) {
 }
 
 function onTouchEnd(productId: number) {
+  // 重置滑动标记
+  setTimeout(() => {
+    isSwiping = false
+  }, 100)
+
   if (swipeState.value[productId] === 'left' || swipeState.value[productId] === 'right') {
     // 保持滑动状态
   } else {
     // 重置
     swipeState.value[productId] = ''
   }
+}
+
+function goToDetail(productId: number) {
+  // 如果正在滑动，不触发跳转
+  if (isSwiping) return
+  // 如果点击的是操作按钮或勾选框区域，不触发跳转
+  if (clickTarget !== '') return
+
+  // 关闭滑动
+  swipeState.value[productId] = ''
+  uni.navigateTo({ url: `/pages/product/detail?id=${productId}` })
+}
+
+function handleCheckboxClick(productId: number) {
+  clickTarget = 'checkbox'
+  toggleItem(productId)
+  setTimeout(() => { clickTarget = '' }, 100)
+}
+
+function handleControlClick(type: string, productId: number) {
+  clickTarget = type
+  if (type === 'expand') {
+    toggleExpand(productId)
+  } else if (type === 'decrease') {
+    updateQuantity(productId, -1)
+  } else if (type === 'increase') {
+    updateQuantity(productId, 1)
+  }
+  setTimeout(() => { clickTarget = '' }, 100)
 }
 </script>
 
@@ -241,7 +278,7 @@ function onTouchEnd(productId: number) {
             @touchstart="onTouchStart($event, item.productId)"
             @touchmove="onTouchMove($event, item.productId)"
             @touchend="onTouchEnd(item.productId)"
-            @click="goToDetail(item.productId)"
+            @click.stop.prevent="goToDetail(item.productId)"
           >
             <!-- 选择框 -->
             <view
@@ -250,13 +287,13 @@ function onTouchEnd(productId: number) {
               :aria-label="item.selected ? '取消选择商品' : '选择商品'"
               role="checkbox"
               :aria-checked="item.selected"
-              @click="toggleItem(item.productId)"
+              @click="handleCheckboxClick(item.productId)"
             >
               <view v-if="item.selected" class="check-icon"></view>
             </view>
 
             <!-- 商品图片 -->
-            <view class="item-img">
+            <view class="item-img" @click.stop.prevent="goToDetail(item.productId)">
               <image
                 v-if="item.image"
                 :src="item.image?.urlMedium || item.image?.url || item.image"
@@ -269,20 +306,20 @@ function onTouchEnd(productId: number) {
             </view>
 
             <!-- 商品信息 -->
-            <view class="item-info">
+            <view class="item-info" @click.stop.prevent="goToDetail(item.productId)">
               <text class="item-name">{{ item.productName }}</text>
               <PriceText :price="item.productPrice || 0" size="small" />
             </view>
 
             <!-- 数量控制 -->
-            <view class="item-control">
-              <view v-if="expandedId !== item.productId" class="qty-display" @click="toggleExpand(item.productId)">
+            <view class="item-control" @click.stop>
+              <view v-if="expandedId !== item.productId" class="qty-display" @click="handleControlClick('expand', item.productId)">
                 <text class="qty-text">×{{ item.quantity }}</text>
               </view>
               <view v-else class="qty-edit">
-                <text class="qty-btn" aria-label="减少数量" @click="updateQuantity(item.productId, -1)">-</text>
+                <text class="qty-btn" aria-label="减少数量" @click="handleControlClick('decrease', item.productId)">-</text>
                 <text class="qty-value">{{ item.quantity }}</text>
-                <text class="qty-btn" aria-label="增加数量" @click="updateQuantity(item.productId, 1)">+</text>
+                <text class="qty-btn" aria-label="增加数量" @click="handleControlClick('increase', item.productId)">+</text>
               </view>
             </view>
           </view>
