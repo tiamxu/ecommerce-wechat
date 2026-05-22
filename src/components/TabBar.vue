@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useCartStore } from '../store/cart'
-import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
   hidden?: boolean
 }>()
 
 const tabs = [
-  { pagePath: '/pages/index/index', text: '首页', icon: 'home' },
-  { pagePath: '/pages/cart/index', text: '购物车', icon: 'cart' },
+  { pagePath: '/pages/ai/chat', text: 'AI对话', icon: 'chat' },
+  { pagePath: '/pages/destination/search', text: '目的地', icon: 'location' },
+  { pagePath: '/pages/plan/list', text: '行程', icon: 'calendar' },
   { pagePath: '/pages/user/index', text: '我的', icon: 'person' }
 ]
-
-const cartStore = useCartStore()
-const { totalCount } = storeToRefs(cartStore)
 
 const currentIndex = ref(0)
 
@@ -61,9 +57,6 @@ function goTo(tab: typeof tabs[0], index: number) {
           :size="24"
           :color="currentIndex === index ? 'var(--tab-bar-active)' : 'var(--tab-bar-color)'"
         />
-        <view v-if="tab.icon === 'cart' && totalCount > 0" class="badge" :class="{ small: totalCount < 10 }">
-          {{ totalCount > 99 ? '99+' : totalCount }}
-        </view>
       </view>
       <text class="tab-text" :class="{ active: currentIndex === index }">{{ tab.text }}</text>
     </view>
@@ -78,10 +71,10 @@ function goTo(tab: typeof tabs[0], index: number) {
   right: 0;
   display: flex;
   height: calc(100rpx + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
   background: var(--tab-bar-bg);
   box-shadow: 0 -2rpx 12rpx var(--shadow);
   z-index: 999;
+  overflow: hidden;
 }
 
 .tab-item {
@@ -121,30 +114,6 @@ function goTo(tab: typeof tabs[0], index: number) {
   &.active {
     color: var(--tab-bar-active);
     font-weight: 600;
-  }
-}
-
-.badge {
-  position: absolute;
-  top: -4rpx;
-  right: -12rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 18rpx;
-  font-weight: 600;
-  line-height: 28rpx;
-  text-align: center;
-  border-radius: 14rpx;
-
-  &.small {
-    min-width: 24rpx;
-    height: 24rpx;
-    font-size: 16rpx;
-    line-height: 24rpx;
-    border-radius: 12rpx;
   }
 }
 </style>

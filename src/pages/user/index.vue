@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 
 import { useUserStore } from '../../store/user'
-import { useCartStore } from '../../store/cart'
 import { userApi, type UserInfo } from '../../api'
 import TabBar from '../../components/TabBar.vue'
 import { THEME_CLASS } from '../../theme/config'
 
 const userStore = useUserStore()
-const cartStore = useCartStore()
 const userInfo = ref<UserInfo | null>(null)
 
 onMounted(() => {
@@ -71,26 +69,24 @@ function handleLogout() {
     success: (res) => {
       if (res.confirm) {
         userStore.logout()
-        cartStore.resetCart()
         userInfo.value = null
       }
     }
   })
 }
 
-// 订单tab
-const orderTabs = [
-  { id: '0', text: '待付款', icon: 'wallet', path: '/pages/order/list?status=0' },
-  { id: '1', text: '待发货', icon: 'shop', path: '/pages/order/list?status=1' },
-  { id: '2', text: '待收货', icon: 'cart', path: '/pages/order/list?status=2' },
-  { id: '3', text: '已完成', icon: 'checkbox', path: '/pages/order/list?status=3' }
+// 行程tab
+const tripTabs = [
+  { id: 'planning', text: '规划中', icon: 'calendar', path: '/pages/plan/list?status=planning' },
+  { id: 'ongoing', text: '进行中', icon: 'flag', path: '/pages/plan/list?status=ongoing' },
+  { id: 'completed', text: '已出行', icon: 'checkbox', path: '/pages/plan/list?status=completed' },
+  { id: 'favorite', text: '收藏', icon: 'star', path: '/pages/user/favorite' }
 ]
 
 // 快捷工具
 const quickTools = [
-  { id: 1, icon: 'star', text: '收藏', path: '/pages/user/favorite' },
-  { id: 2, icon: 'location', text: '收货地址', path: '/pages/address/list' },
-  { id: 3, icon: 'help', text: '帮助', path: '/pages/user/help' }
+  { id: 1, icon: 'location', text: '常用地址', path: '/pages/address/list' },
+  { id: 2, icon: 'help', text: '帮助', path: '/pages/user/help' }
 ]
 </script>
 
@@ -126,18 +122,18 @@ const quickTools = [
       </view>
     </view>
 
-    <!-- 订单入口 -->
+    <!-- 行程入口 -->
     <view class="order-section">
       <view class="section-header">
-        <text class="section-title">我的订单</text>
-        <view class="section-more" @click="goTo('/pages/order/list')">
+        <text class="section-title">我的行程</text>
+        <view class="section-more" @click="goTo('/pages/plan/list')">
           <text>查看全部</text>
           <uni-icons type="right" size="12" color="var(--text-placeholder)" />
         </view>
       </view>
       <view class="order-tabs">
         <view
-          v-for="tab in orderTabs"
+          v-for="tab in tripTabs"
           :key="tab.id"
           class="order-tab"
           @click="goTo(tab.path)"

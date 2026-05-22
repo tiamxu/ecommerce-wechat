@@ -1,7 +1,7 @@
 {
-  "name": "ecommerce-wechat",
+  "name": "zhilo-wechat",
   "version": "1.0.0",
-  "description": "微信小程序电商项目",
+  "description": "智旅ai助手",
   "scripts": {
     "dev:mp-weixin": "uni build --watch --platform mp-weixin",
     "build:mp-weixin": "uni build --platform mp-weixin",
