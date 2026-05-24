@@ -5,7 +5,6 @@ import { blueTheme } from './blue'
 import { luxuryTheme } from './luxury'
 import { purpleTheme } from './purple'
 import { techTheme } from './tech'
-import { travelTheme } from './travel'
 import type { ThemePreset } from '../tokens'
 
 // 导出所有预设主题
@@ -15,8 +14,7 @@ export const themes: Record<string, ThemePreset> = {
   blue: blueTheme,
   luxury: luxuryTheme,
   purple: purpleTheme,
-  tech: techTheme,
-  travel: travelTheme
+  tech: techTheme
 }
 
 // 导出单个主题便于引用
@@ -26,4 +24,3 @@ export { blueTheme } from './blue'
 export { luxuryTheme } from './luxury'
 export { purpleTheme } from './purple'
 export { techTheme } from './tech'
-export { travelTheme } from './travel'

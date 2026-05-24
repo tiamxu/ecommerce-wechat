@@ -1,7 +1,7 @@
 {
   "name": "ecommerce-wechat",
   "appid": "wx51adb06f586c8ac0", 
-  "description": "智能旅行小程序",
+  "description": "快想买买小程序",
   "versionName": "1.0.0",
   "versionCode": "100",
   "transformPx": false,

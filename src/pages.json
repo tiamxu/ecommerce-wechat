@@ -7,28 +7,53 @@
   },
   "pages": [
     {
-      "path": "pages/ai/chat",
+      "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "AI旅行助手"
+        "navigationBarTitleText": "首页"
       }
     },
     {
-      "path": "pages/destination/search",
+      "path": "pages/product/list",
       "style": {
-        "navigationBarTitleText": "目的地"
+        "navigationBarTitleText": "商品列表"
       }
     },
     {
-      "path": "pages/plan/list",
+      "path": "pages/product/detail",
       "style": {
-        "navigationBarTitleText": "我的行程",
+        "navigationBarTitleText": "商品详情"
+      }
+    },
+    {
+      "path": "pages/cart/index",
+      "style": {
+        "navigationBarTitleText": "购物车",
         "enablePullDownRefresh": true
       }
     },
     {
-      "path": "pages/plan/detail",
+      "path": "pages/order/confirm",
       "style": {
-        "navigationBarTitleText": "行程详情"
+        "navigationBarTitleText": "确认订单"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/order/success",
+      "style": {
+        "navigationBarTitleText": "订单结果"
       }
     },
     {
@@ -63,10 +88,24 @@
       }
     },
     {
+      "path": "pages/user/password",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+    {
       "path": "pages/user/login",
       "style": {
         "navigationBarTitleText": "登录",
-        "navigationBarBackgroundColor": "#f0fdfa"
+        "navigationBarBackgroundColor": "#f5f5f7"
+      }
+    },
+    {
+      "path": "pages/user/login-modal",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -78,7 +117,7 @@
     {
       "path": "pages/address/list",
       "style": {
-        "navigationBarTitleText": "常用地址"
+        "navigationBarTitleText": "收货地址"
       }
     },
     {
@@ -128,16 +167,16 @@
     "custom": true,
     "list": [
       {
-        "pagePath": "pages/ai/chat",
-        "text": "AI对话"
+        "pagePath": "pages/index/index",
+        "text": "首页"
       },
       {
-        "pagePath": "pages/destination/search",
-        "text": "目的地"
+        "pagePath": "pages/product/list",
+        "text": "商品"
       },
       {
-        "pagePath": "pages/plan/list",
-        "text": "行程"
+        "pagePath": "pages/cart/index",
+        "text": "购物车"
       },
       {
         "pagePath": "pages/user/index",
@@ -147,8 +186,8 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "智旅AI助手",
+    "navigationBarTitleText": "电商小程序",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#f0fdfa"
+    "backgroundColor": "#f5f5f5"
   }
 }
